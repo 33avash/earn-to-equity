@@ -1,0 +1,183 @@
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import type { Assumptions, FinancialProfile, ScenarioDeltas, ScenarioKey } from '@/types/profile';
+import { DEFAULT_SCENARIO_DELTAS } from '@/finance/scenarios';
+import { DEFAULT_TAX, type TaxAssumptions } from '@/features/learn/tax';
+import { DEFAULT_ASSUMPTIONS, blankProfile, demoProfile } from './demo';
+
+export type ThemePref = 'light' | 'dark' | 'system';
+
+export interface CoachMessage {
+  id: string;
+  role: 'user' | 'coach';
+  text: string;
+  source?: 'rules' | 'gemini';
+}
+
+export interface RiskLabSettings {
+  salaryGrowthDelta: number;
+  inflationDelta: number;
+  expenseCut: number;
+  stepUpDelta: number;
+  retireDelay: number; // years later than FI age (0 = none)
+  breakMonths: number;
+  breakYear: number;
+  purchaseCost: number;
+  purchaseYear: number;
+  shockOn: boolean;
+  shockDrop: number;
+  shockYear: number;
+  recoveryYears: number;
+}
+
+export interface AppState {
+  profile: FinancialProfile;
+  assumptions: Assumptions;
+  scenarioDeltas: Record<ScenarioKey, ScenarioDeltas>;
+  isDemo: boolean;
+  hasPlan: boolean; // the user completed onboarding (or chose the demo)
+  onboarding: { step: number; draft: FinancialProfile | null };
+  settings: { theme: ThemePref; compact: boolean; showRule503020: boolean };
+  riskLab: RiskLabSettings;
+  tax: TaxAssumptions;
+  coach: CoachMessage[];
+  learnProgress: Record<string, number>; // module id → best quiz score
+
+  updateProfile: (fn: (draft: FinancialProfile) => void) => void;
+  updateAssumptions: (patch: Partial<Assumptions>) => void;
+  setScenarioDelta: (key: ScenarioKey, patch: Partial<ScenarioDeltas>) => void;
+  resetScenarioDeltas: () => void;
+  loadDemo: () => void;
+  startOnboarding: (fromCurrent?: boolean) => void;
+  saveDraft: (draft: FinancialProfile, step: number) => void;
+  completeOnboarding: (profile: FinancialProfile) => void;
+  setSettings: (patch: Partial<AppState['settings']>) => void;
+  setRiskLab: (patch: Partial<RiskLabSettings>) => void;
+  setTax: (patch: Partial<TaxAssumptions>) => void;
+  pushCoach: (m: CoachMessage) => void;
+  clearCoach: () => void;
+  setLearnScore: (id: string, score: number) => void;
+  clearAll: () => void;
+}
+
+const thisYear = () => new Date().getFullYear();
+
+export const defaultRiskLab = (): RiskLabSettings => ({
+  salaryGrowthDelta: 0,
+  inflationDelta: 0,
+  expenseCut: 0,
+  stepUpDelta: 0,
+  retireDelay: 0,
+  breakMonths: 0,
+  breakYear: thisYear() + 3,
+  purchaseCost: 0,
+  purchaseYear: thisYear() + 5,
+  shockOn: false,
+  shockDrop: 0.3,
+  shockYear: thisYear() + 4,
+  recoveryYears: 3,
+});
+
+const initial = () => ({
+  profile: demoProfile(),
+  assumptions: structuredClone(DEFAULT_ASSUMPTIONS),
+  scenarioDeltas: structuredClone(DEFAULT_SCENARIO_DELTAS),
+  isDemo: true,
+  hasPlan: false,
+  onboarding: { step: 0, draft: null },
+  settings: { theme: 'light' as ThemePref, compact: true, showRule503020: false },
+  riskLab: defaultRiskLab(),
+  tax: structuredClone(DEFAULT_TAX),
+  coach: [] as CoachMessage[],
+  learnProgress: {} as Record<string, number>,
+});
+
+export const useStore = create<AppState>()(
+  persist(
+    (set) => ({
+      ...initial(),
+      updateProfile: (fn) =>
+        set((s) => {
+          const next = structuredClone(s.profile);
+          fn(next);
+          return { profile: next };
+        }),
+      updateAssumptions: (patch) => set((s) => ({ assumptions: { ...s.assumptions, ...patch } })),
+      setScenarioDelta: (key, patch) => set((s) => ({ scenarioDeltas: { ...s.scenarioDeltas, [key]: { ...s.scenarioDeltas[key], ...patch } } })),
+      resetScenarioDeltas: () => set({ scenarioDeltas: structuredClone(DEFAULT_SCENARIO_DELTAS) }),
+      loadDemo: () =>
+        set({
+          profile: demoProfile(),
+          assumptions: structuredClone(DEFAULT_ASSUMPTIONS),
+          scenarioDeltas: structuredClone(DEFAULT_SCENARIO_DELTAS),
+          riskLab: defaultRiskLab(),
+          isDemo: true,
+          hasPlan: true,
+          onboarding: { step: 0, draft: null },
+          coach: [],
+        }),
+      startOnboarding: (fromCurrent = false) =>
+        set((s) => ({
+          onboarding: {
+            step: s.onboarding.draft ? s.onboarding.step : 0,
+            draft: s.onboarding.draft ?? (fromCurrent && !s.isDemo ? structuredClone(s.profile) : blankProfile()),
+          },
+        })),
+      saveDraft: (draft, step) => set({ onboarding: { step, draft } }),
+      completeOnboarding: (profile) =>
+        set({ profile, isDemo: false, hasPlan: true, onboarding: { step: 0, draft: null }, coach: [] }),
+      setSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
+      setRiskLab: (patch) => set((s) => ({ riskLab: { ...s.riskLab, ...patch } })),
+      setTax: (patch) => set((s) => ({ tax: { ...s.tax, ...patch } })),
+      pushCoach: (m) => set((s) => ({ coach: [...s.coach, m].slice(-40) })),
+      clearCoach: () => set({ coach: [] }),
+      setLearnScore: (id, score) => set((s) => ({ learnProgress: { ...s.learnProgress, [id]: Math.max(score, s.learnProgress[id] ?? 0) } })),
+      clearAll: () => set({ ...initial() }),
+    }),
+    {
+      name: 'e2e:v1',
+      version: 1,
+      storage: createJSONStorage(() => {
+        try {
+          const k = '__e2e_probe__';
+          localStorage.setItem(k, '1');
+          localStorage.removeItem(k);
+          return localStorage;
+        } catch {
+          // Private mode or blocked storage: fall back to an in-memory store.
+          const mem = new Map<string, string>();
+          return {
+            getItem: (k: string) => mem.get(k) ?? null,
+            setItem: (k: string, v: string) => void mem.set(k, v),
+            removeItem: (k: string) => void mem.delete(k),
+          };
+        }
+      }),
+      partialize: (s) => ({
+        profile: s.profile,
+        assumptions: s.assumptions,
+        scenarioDeltas: s.scenarioDeltas,
+        isDemo: s.isDemo,
+        hasPlan: s.hasPlan,
+        onboarding: s.onboarding,
+        settings: s.settings,
+        riskLab: s.riskLab,
+        tax: s.tax,
+        coach: s.coach,
+        learnProgress: s.learnProgress,
+      }),
+      // Merge persisted data over fresh defaults so newly added fields always exist.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppState>;
+        return {
+          ...current,
+          ...p,
+          assumptions: { ...current.assumptions, ...(p.assumptions ?? {}) },
+          settings: { ...current.settings, ...(p.settings ?? {}) },
+          riskLab: { ...current.riskLab, ...(p.riskLab ?? {}) },
+          tax: { ...current.tax, ...(p.tax ?? {}) },
+        };
+      },
+    },
+  ),
+);
