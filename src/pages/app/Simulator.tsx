@@ -7,7 +7,8 @@ import { PageHeader, Section, Stat, Field, PercentInput, Segmented, Disclaimer, 
 import { WealthChart, WealthLegend, type WealthMode } from '@/components/charts/WealthChart';
 import { MultiLineChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
-import { attributeScenario, SCENARIO_LABELS, DRIVER_LABELS, type DriverKey } from '@/finance/scenarios';
+import { tornado, SCENARIO_LABELS, DRIVER_LABELS, type DriverKey } from '@/finance/scenarios';
+import { Tornado } from '@/components/charts/Tornado';
 import { formatPct } from '@/finance/money';
 
 const KEYS: ScenarioKey[] = ['conservative', 'base', 'high'];
@@ -26,7 +27,7 @@ export default function Simulator() {
   const [selected, setSelected] = useState<number | null>(p.planStartYear + 4);
 
   const scen = useMemo(() => scenarioSet(plan, deltas), [plan, deltas]);
-  const attribution = useMemo(() => ({ conservative: attributeScenario(p, a, deltas.conservative), high: attributeScenario(p, a, deltas.high) }), [p, a, deltas]);
+  const bars = useMemo(() => tornado(p, a, deltas.conservative, deltas.high), [p, a, deltas]);
   const rows = plan.sim.rows;
   const close = plan.sim.points.at(-1)!;
   const inspect = selected === null ? null : yearInspector(plan, selected);
@@ -85,7 +86,7 @@ export default function Simulator() {
               <Stat size="sm" label="Invested" value={money(sel.contributions)} />
               <Stat size="sm" label="One-time costs & goals" value={money(sel.oneTimeCosts + sel.goalWithdrawals)} />
               <Stat size="sm" label="Portfolio (year-end)" value={money(sel.portfolio)} />
-              <Stat size="sm" label="Retirement accounts" value={money(sel.retirement)} />
+              <Stat size="sm" label="Retirement accounts" value={money(sel.retirement)} sub={sel.epf > 0 ? `incl. EPF ${money(sel.epf)} (+${money(sel.epfInterest)} interest)` : undefined} />
               <Stat size="sm" label="Liabilities" value={money(sel.liabilities)} />
               <Stat size="sm" label="Net worth" value={money(sel.netWorth)} sub={`${money(sel.netWorthReal)} in today’s ₹`} />
             </dl>
@@ -104,6 +105,9 @@ export default function Simulator() {
                 {goalsInYear.filter((g) => !sel.goals.some((o) => o.goalId === g.id)).map((g) => <li key={g.id} className="text-grey">{g.name}: tracked against your corpus</li>)}
                 {sel.flags.includes('deficit') && <li className="text-danger">Spending exceeds income for part of the year. Savings cover the gap.</li>}
                 {sel.flags.includes('borrowing') && <li className="text-danger">Liquid assets run out. Unfunded costs are shown as borrowing at 14%.</li>}
+                {sel.flags.includes('emi-over-limit') && <li className="text-danger">EMIs take more than half of take-home. Most lenders would not approve new loans at this level.</li>}
+                {sel.capitalGainsTax > 0 && <li className="text-grey">Selling investments this year costs {money(sel.capitalGainsTax)} in capital gains tax.</li>}
+                {sel.incomeTax > 0 && <li className="text-grey">Income tax: {money(sel.incomeTax)} under the {sel.regime} regime, already deducted from take-home.</li>}
                 {sel.fiReached && <li className="text-forest">Financial assets exceed the FI target ({money(sel.fiTarget)}).</li>}
                 {!sel.events.length && !sel.goals.length && !sel.flags.length && !sel.fiReached && <li className="text-grey">No events or goals this year.</li>}
               </ul>
@@ -115,10 +119,10 @@ export default function Simulator() {
 
       <Section title="Year-by-year projection" description={`Flows for each calendar year and balances on 31 December, in future rupees. The last line is your position on 1 January ${close.year}, the date every headline figure uses.`}>
         <div className="-mx-1 max-h-[480px] overflow-auto px-1">
-          <table className="table-fin w-full min-w-[900px]">
+          <table className="table-fin w-full min-w-[1080px]">
             <thead className="sticky top-0 z-10 bg-ivory">
               <tr>
-                {['Year', 'Age', 'Income', 'Expenses', 'Debt paid', 'Invested', 'Portfolio', 'Cash', 'Liabilities', 'Net worth', 'Today’s ₹', ''].map((h) => <th key={h} scope="col">{h}</th>)}
+                {['Year', 'Age', 'Take-home', 'Income tax', 'Expenses', 'Debt paid', 'Invested', 'Portfolio', 'EPF', 'Cash', 'Liabilities', 'Net worth', 'Today’s ₹', ''].map((h) => <th key={h} scope="col">{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -127,10 +131,12 @@ export default function Simulator() {
                   <td><button type="button" className="hit font-semibold text-evergreen" onClick={() => setSelected(r.year)}>{r.year}</button></td>
                   <td>{r.age}</td>
                   <td>{money(r.income)}</td>
+                  <td className="text-grey">{r.incomeTax > 0 ? money(r.incomeTax) : '—'}</td>
                   <td>{money(r.expenses)}</td>
                   <td>{money(r.debtPayments)}</td>
                   <td>{money(r.contributions)}</td>
                   <td>{money(r.portfolio)}</td>
+                  <td>{money(r.epf)}</td>
                   <td className={r.cash < 0 ? 'text-danger' : ''}>{money(r.cash)}</td>
                   <td>{money(r.liabilities)}</td>
                   <td className="font-semibold text-evergreen">{money(r.netWorth)}</td>
@@ -141,7 +147,7 @@ export default function Simulator() {
               <tr className="border-t-2 border-evergreen/20">
                 <td className="font-semibold text-evergreen">1 Jan {close.year}</td>
                 <td>{close.age}</td>
-                <td colSpan={7} className="font-sans text-xs text-grey">Closing position, same as 31 December {close.year - 1}</td>
+                <td colSpan={9} className="font-sans text-xs text-grey">Closing position, same as 31 December {close.year - 1}</td>
                 <td className="font-semibold text-evergreen">{money(close.netWorth)}</td>
                 <td>{money(close.netWorthReal)}</td>
                 <td />
@@ -201,26 +207,16 @@ export default function Simulator() {
         </div>
         <p className="mt-2 text-xs text-grey">Adjustment columns show the change applied to the base case, in percentage points.</p>
 
-        <div className="mt-10 grid gap-10 lg:grid-cols-2">
-          {(['conservative', 'high'] as const).map((k) => {
-            const at = attribution[k];
-            return (
-              <div key={k}>
-                <p className="text-[15px] font-semibold">Why {SCENARIO_LABELS[k].toLowerCase()} differs by {money(at.total)}</p>
-                <ul className="mt-3">
-                  {[...at.parts].sort((x, y) => Math.abs(y.impact) - Math.abs(x.impact)).map((x) => (
-                    <li key={x.driver} className="flex justify-between border-b border-line/70 py-2 text-sm">
-                      <span className="text-grey">{x.label}</span>
-                      <span className={`num font-semibold ${x.impact < 0 ? 'text-danger' : 'text-forest'}`}>{x.impact >= 0 ? '+' : ''}{money(x.impact)}</span>
-                    </li>
-                  ))}
-                  <li className="flex justify-between py-2 text-sm"><span className="text-grey">Interaction between changes</span><span className="num">{at.interaction >= 0 ? '+' : ''}{money(at.interaction)}</span></li>
-                </ul>
-              </div>
-            );
-          })}
+        <div className="mt-10">
+          <h3 className="text-[15px] font-semibold">What moves the outcome most</h3>
+          <p className="mt-1 text-sm text-grey">
+            {bars[0].label} matters most: alone, it moves your {plan.headline.year} net worth from {bars[0].low >= 0 ? '+' : ''}{money(bars[0].low)} to {bars[0].high >= 0 ? '+' : ''}{money(bars[0].high)} in today’s rupees.
+          </p>
+          <div className="mt-5 max-w-3xl">
+            <Tornado bars={bars} lowLabel={SCENARIO_LABELS.conservative} highLabel={SCENARIO_LABELS.high} />
+          </div>
+          <p className="mt-4 text-xs text-grey">Each bar changes one assumption to its conservative or high-growth setting and leaves the rest at the base case. Together, the changes compound, so the scenarios differ by more than the bars add up to.</p>
         </div>
-        <p className="mt-4 text-xs text-grey">Each assumption’s impact is measured by changing only that assumption from the base case. Effects compound together, so the remainder is shown as interaction.</p>
       </Section>
 
       <Disclaimer>Projections are estimates, not guarantees. Constant annual returns are assumed here. See the Risk Lab for market declines and a range of outcomes.</Disclaimer>

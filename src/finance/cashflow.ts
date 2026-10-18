@@ -1,4 +1,5 @@
 import type { FinancialProfile } from '@/types/profile';
+import { currentTakeHome } from './income';
 import { sum } from './money';
 
 export interface MonthlyCashflow {
@@ -23,7 +24,7 @@ export interface MonthlyCashflow {
  * Transfers to savings and investments are NOT expenses; they come out of the surplus.
  */
 export function monthlyCashflow(p: FinancialProfile): MonthlyCashflow {
-  const income = Math.max(0, p.income.monthlyTakeHome) + Math.max(0, p.income.otherMonthlyIncome);
+  const income = currentTakeHome(p) + Math.max(0, p.income.otherMonthlyIncome);
   const essential = sum(p.cashflow.essential.map((l) => Math.max(0, l.amount)));
   const lifestyle = sum(p.cashflow.lifestyle.map((l) => Math.max(0, l.amount)));
   const expenses = essential + lifestyle;

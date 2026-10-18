@@ -3,10 +3,11 @@ import type { FundingMode, Goal, GoalCategory, Priority } from '@/types/profile'
 import { Field, MoneyInput, NumberInput, PercentInput, Select, TextInput } from '@/components/ui/Form';
 import { Button } from '@/components/ui/Button';
 import { uid } from '@/state/demo';
+import { EDUCATION_INFLATION } from '@/finance/assumptions';
 import { FUNDING_MODE_LABELS, defaultFundingMode, goalFundingMode, goalLoanTerms } from '@/finance/goalFunding';
 
 export const GOAL_CATEGORIES: Record<GoalCategory, { label: string; inflation: number; cost: number; years: number }> = {
-  education: { label: 'Higher education', inflation: 0.08, cost: 1500000, years: 3 },
+  education: { label: 'Higher education', inflation: EDUCATION_INFLATION.value, cost: 1500000, years: 3 },
   travel: { label: 'Travel', inflation: 0.06, cost: 200000, years: 1 },
   car: { label: 'Car', inflation: 0.05, cost: 800000, years: 4 },
   wedding: { label: 'Wedding', inflation: 0.07, cost: 1000000, years: 5 },

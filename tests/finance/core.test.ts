@@ -83,9 +83,10 @@ describe('position & cash flow', () => {
     const cf = monthlyCashflow(p);
     close(cf.expenses, 41500 + 14000);
     close(cf.debtPayments, 10000);
-    close(cf.investableSurplus, 85000 - 55500 - 10000);
-    close(cf.savingsRate, 19500 / 85000);
-    close(cf.unallocated, 19500 - 15000 - 4000);
+    // Take-home from CTC ₹11.4 L: gross ₹10,85,280 − PF ₹54,720 − PT ₹2,500, no tax = ₹10,28,060 a year.
+    close(cf.income, 1028060 / 12, 1e-9);
+    close(cf.investableSurplus, 1028060 / 12 - 55500 - 10000, 1e-9);
+    close(cf.unallocated, 1028060 / 12 - 55500 - 10000 - 15000 - 4000, 1e-9);
   });
   it('emergency fund covers essentials + EMIs', () => {
     const e = emergencyPlan(p);

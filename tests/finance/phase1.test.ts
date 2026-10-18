@@ -13,11 +13,12 @@ import { DEFAULT_ASSUMPTIONS, blankProfile, demoProfile } from '@/state/demo';
 import { computePlan, goalStatusLabel, heroSeries, landingScenarios, scenarioSet, yearInspector, yearOnYear } from '@/state/plan';
 import { homeAffordability, answerWithRules } from '@/services/coach/ruleCoach';
 import { routeMeta } from '@/routeMeta';
+import { DEFAULT_SALARY, salaryBreakdown } from '@/finance/tax';
 import type { Assumptions, FinancialProfile } from '@/types/profile';
 
 const close = (a: number, b: number, tol = 1e-6) => expect(Math.abs(a - b)).toBeLessThanOrEqual(tol * Math.max(1, Math.abs(b)));
 
-const zero: Assumptions = { ...DEFAULT_ASSUMPTIONS, inflation: 0, returns: emptyAssetMap(), sipStepUp: 0, sweepExcessCash: false };
+const zero: Assumptions = { ...DEFAULT_ASSUMPTIONS, inflation: 0, returns: emptyAssetMap(), sipStepUp: 0, sweepExcessCash: false, lifestyleCreep: 0, expenseRatios: emptyAssetMap(), epfRate: 0, postFiHealthcare: 0 };
 
 /** ₹50k take-home, ₹25k spending, nothing invested, ₹1L cash, no reserve target in play. */
 function simple(): FinancialProfile {
@@ -203,14 +204,14 @@ describe('P1.5 coach home maths come from simulate()', () => {
     const during = plan.sim.rows.find((r) => r.year === 2031)!;
     close(h.liquid, before.portfolio + Math.max(0, before.cash));
     close(h.takeHome, during.income / 12);
-    // ₹75 L × 1.05^5 = ₹95,72,111.72; 80% loan = ₹76,57,689.38; 8.5% over 20 years → ₹66,455.21 a month.
-    close(h.priceThen, 9_572_111.72, 1e-9);
-    close(h.emi, 66_455.21, 1e-7);
+    // ₹60 L × 1.05^5 = ₹76,57,689.38; 80% loan = ₹61,26,151.50; 8.0% over 20 years → ₹51,241.59 a month.
+    close(h.priceThen, 7_657_689.38, 1e-9);
+    close(h.emi, 51_241.59, 1e-7);
     close(h.emiShare, (h.emi + h.existingEmi) / h.takeHome);
-    // 2031 take-home is ₹20.2 L a year after the post-MBA raise, so the home EMI alone is about 39%.
-    close(during.income, 85000 * 12 * Math.pow(1.08, 5) * 1.35, 1e-9);
-    expect(h.emi / h.takeHome).toBeGreaterThan(0.38);
-    expect(h.emi / h.takeHome).toBeLessThan(0.4);
+    // 2031 take-home comes from the 2031 CTC: ₹11.4 L × 1.08^5 × 1.5 after the post-MBA raise.
+    const ctc2031 = 1_140_000 * Math.pow(1.08, 5) * 1.5;
+    close(during.income, salaryBreakdown({ ...DEFAULT_SALARY, ctc: ctc2031 }).takeHome, 1e-9);
+    expect(h.emiShare).toBeLessThan(1); // was reported as 248% before the fix
   });
 
   it('parses a price and a calendar year', () => {
@@ -272,13 +273,13 @@ describe('P1.8 support to parents counts as dependents', () => {
     expect(hasDependents(p)).toBe(true);
     const prot = healthScore(p, DEFAULT_ASSUMPTIONS).components.find((c) => c.key === 'protection')!;
     expect(prot.detail).not.toContain('not essential');
-    expect(prot.score).toBe(50); // ₹5 L health cover earns 50; no term cover earns 0
+    expect(prot.score).toBe(25); // ₹5 L of the ₹10 L metro health benchmark earns 25; no term cover earns 0
   });
   it('answering “no” to the parents question turns it off', () => {
     const p = demoProfile(2026);
     p.about.parentsAsDependents = false;
     expect(hasDependents(p)).toBe(false);
-    expect(healthScore(p, DEFAULT_ASSUMPTIONS).components.find((c) => c.key === 'protection')!.score).toBe(100);
+    expect(healthScore(p, DEFAULT_ASSUMPTIONS).components.find((c) => c.key === 'protection')!.score).toBe(75); // term credited in full
   });
 });
 

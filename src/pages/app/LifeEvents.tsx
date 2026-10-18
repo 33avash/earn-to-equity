@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Goal, LifeEvent, LifeEventKind } from '@/types/profile';
-import { usePlan, useMoney } from '@/state/selectors';
+import { homeCheck, usePlan, useMoney, type Plan } from '@/state/selectors';
+import { HOME_DEFAULTS, HOME_LOAN_RATE, STATE_NAMES, propertyCharges, type StateCode } from '@/finance/assumptions';
 import { useStore } from '@/state/store';
-import { PageHeader, Section, Stat, Button, Field, Select, TextInput, MoneyInput, NumberInput, PercentInput, EmptyState, Disclaimer, Badge, confirmAction, toast } from '@/components/ui';
+import { PageHeader, Section, Stat, Button, Field, Select, TextInput, MoneyInput, NumberInput, PercentInput, EmptyState, Disclaimer, Badge, Toggle, confirmAction, toast } from '@/components/ui';
 import { MultiLineChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
 import { simulate } from '@/finance/simulate';
@@ -18,7 +19,10 @@ export const EVENT_KINDS: Record<LifeEventKind, { label: string; defaults: Parti
   careerBreak: { label: 'Career break', defaults: { breakMonths: 12 } },
   education: { label: 'Education', defaults: { oneTimeCost: 1000000 } },
   marriage: { label: 'Marriage', defaults: { oneTimeCost: 800000, monthlyExpenseChange: 8000 } },
-  homePurchase: { label: 'Home purchase', defaults: { oneTimeCost: 300000, monthlyExpenseChange: -15000, home: { propertyValue: 6000000, downPaymentPct: 0.2, loanRate: 0.085, tenureYears: 20 } } },
+  homePurchase: {
+    label: 'Home purchase',
+    defaults: { oneTimeCost: 0, monthlyExpenseChange: -15000, home: { propertyValue: 6000000, downPaymentPct: 0.2, loanRate: HOME_LOAN_RATE.value, tenureYears: 20, state: 'MH', interiors: HOME_DEFAULTS.interiors, sizeSqft: 800, maintenancePerSqft: HOME_DEFAULTS.maintenancePerSqft } },
+  },
   family: { label: 'Child / family expenses', defaults: { oneTimeCost: 150000, monthlyExpenseChange: 15000 } },
   majorPurchase: { label: 'Major purchase', defaults: { oneTimeCost: 800000 } },
   emergency: { label: 'Emergency expense', defaults: { oneTimeCost: 300000 } },
@@ -67,6 +71,23 @@ function EventForm({ initial, start, goals, onSave, onCancel }: { initial: LifeE
           <Field label="Down payment">{(id) => <PercentInput id={id} value={e.home!.downPaymentPct} max={100} onChange={(v) => set({ home: { ...e.home!, downPaymentPct: v } })} />}</Field>
           <Field label="Loan rate">{(id) => <PercentInput id={id} value={e.home!.loanRate} max={30} onChange={(v) => set({ home: { ...e.home!, loanRate: v } })} />}</Field>
           <Field label="Loan tenure (years)">{(id) => <NumberInput id={id} value={e.home!.tenureYears} min={1} max={30} onChange={(v) => set({ home: { ...e.home!, tenureYears: Math.round(v) } })} />}</Field>
+          <Field label="State" help="Sets stamp duty and registration. Maharashtra is checked against IGR Maharashtra; other states are approximate.">
+            {(id) => (
+              <Select id={id} value={e.home!.state ?? 'MH'} onChange={(x) => set({ home: { ...e.home!, state: x.target.value as StateCode, stampDutyPct: undefined } })}>
+                {(Object.keys(STATE_NAMES) as StateCode[]).map((k) => <option key={k} value={k}>{STATE_NAMES[k]}</option>)}
+              </Select>
+            )}
+          </Field>
+          <Field label="Stamp duty + registration" hint={`State default ${formatPct(propertyCharges(e.home!.state ?? 'MH').stampDuty + propertyCharges(e.home!.state ?? 'MH').registration, 1)} (registration may be capped).`}>
+            {(id, d) => <PercentInput id={id} describedBy={d} value={e.home!.stampDutyPct ?? propertyCharges(e.home!.state ?? 'MH').stampDuty + propertyCharges(e.home!.state ?? 'MH').registration} max={15} onChange={(v) => set({ home: { ...e.home!, stampDutyPct: v } })} />}
+          </Field>
+          <Field label="Interiors and furnishing (today’s ₹)">{(id) => <MoneyInput id={id} value={e.home!.interiors ?? HOME_DEFAULTS.interiors} max={1e8} onChange={(v) => set({ home: { ...e.home!, interiors: v } })} />}</Field>
+          <Field label="Size (sq ft)" hint="For maintenance charges.">{(id, d) => <NumberInput native id={id} describedBy={d} value={e.home!.sizeSqft ?? 0} min={0} max={20000} onChange={(v) => set({ home: { ...e.home!, sizeSqft: Number.isFinite(v) ? v : 0 } })} />}</Field>
+          <Field label="Maintenance (₹ per sq ft a month)" hint="₹3–5 is typical in metro societies.">{(id, d) => <MoneyInput id={id} describedBy={d} value={e.home!.maintenancePerSqft ?? HOME_DEFAULTS.maintenancePerSqft} max={100} onChange={(v) => set({ home: { ...e.home!, maintenancePerSqft: v } })} />}</Field>
+          <Field label="Property tax a year (today’s ₹)" optional hint="Leave blank for 0.1% of the property value.">{(id, d) => <MoneyInput id={id} describedBy={d} value={e.home!.propertyTaxAnnual ?? Math.round(e.home!.propertyValue * HOME_DEFAULTS.propertyTaxShare)} max={1e7} onChange={(v) => set({ home: { ...e.home!, propertyTaxAnnual: v } })} />}</Field>
+          <div className="sm:col-span-2 lg:col-span-3">
+            <Toggle checked={e.home!.underConstruction ?? false} onChange={(v) => set({ home: { ...e.home!, underConstruction: v } })} label="Under construction" description="Adds 5% GST on the price. Ready-to-move homes with a completion certificate carry no GST." />
+          </div>
         </>
       )}
       {e.kind === 'retirement' && <p className="text-sm text-grey sm:col-span-2">Salary stops from January of this year. Expenses continue and are paid from savings and investments.</p>}
@@ -84,9 +105,28 @@ function describe(e: LifeEvent, money: (v: number) => string) {
   if (e.incomeChangePct) bits.push(`salary ${e.incomeChangePct > 0 ? '+' : ''}${formatPct(e.incomeChangePct, 0)}`);
   if (e.monthlyExpenseChange) bits.push(`${e.monthlyExpenseChange > 0 ? '+' : '−'}${money(Math.abs(e.monthlyExpenseChange))}/mo expenses`);
   if (e.breakMonths) bits.push(`${e.breakMonths} months without salary`);
-  if (e.home) bits.push(`${money(e.home.propertyValue)} home, ${formatPct(e.home.downPaymentPct, 0)} down, ${formatPct(e.home.loanRate)} over ${e.home.tenureYears} yrs`);
+  if (e.home) bits.push(`${money(e.home.propertyValue)} home in ${STATE_NAMES[e.home.state ?? 'MH']}, ${formatPct(e.home.downPaymentPct, 0)} down, ${formatPct(e.home.loanRate)} over ${e.home.tenureYears} yrs${e.home.underConstruction ? ', under construction' : ''}`);
   if (e.kind === 'retirement') bits.push('salary stops');
   return bits.join(' · ') || 'No financial impact entered';
+}
+
+/** Upfront cash and the lender check for a home purchase, from the projection for that year. */
+function HomeSummary({ plan, e, money }: { plan: Plan; e: LifeEvent; money: (v: number) => string }) {
+  const h = homeCheck(plan, e);
+  if (!h) return null;
+  return (
+    <div className="mt-2 text-[13px] text-grey">
+      <p>
+        In {e.year}: {money(h.value)} price, {money(h.costs.downPayment)} down payment, plus {money(h.costs.stampDuty)} stamp duty and registration
+        {h.costs.gst > 0 ? `, ${money(h.costs.gst)} GST` : ''} and {money(h.costs.interiors)} interiors. Upfront: <strong className="num text-charcoal">{money(h.costs.upfront)}</strong>.
+        {h.costs.maintenanceMonthly + h.costs.propertyTaxMonthly > 0 && ` Then ${money(h.costs.maintenanceMonthly + h.costs.propertyTaxMonthly)} a month in maintenance and property tax.`}
+      </p>
+      <p className={h.overLimit ? 'mt-1 text-danger' : 'mt-1'}>
+        EMI {money(h.emi)} a month; all EMIs would take {formatPct(h.emiShare, 0)} of take-home.{' '}
+        {h.overLimit ? `That is over the 50% most lenders allow. The largest loan within it is about ${money(h.maxLoan)}, against the ${money(h.costs.loan)} needed.` : `Lenders usually allow up to 50%, about ${money(h.maxLoan)} of loan here.`}
+      </p>
+    </div>
+  );
 }
 
 export default function LifeEvents() {
@@ -144,6 +184,7 @@ export default function LifeEvents() {
                     <p className="mt-0.5 flex items-center gap-2 text-lg font-semibold text-evergreen">{e.label} <Badge>{EVENT_KINDS[e.kind].label}</Badge></p>
                     <p className="mt-1 text-[13px] text-grey">{describe(e, money)}</p>
                     {e.year >= p.planStartYear + a.horizonYears && <p className="mt-1 text-xs text-danger">Outside the {a.horizonYears}-year projection.</p>}
+                    <HomeSummary plan={plan} e={e} money={money} />
                     {skipped.has(e.id) && (
                       <p className="mt-1 text-xs text-danger">
                         Left out of the projection: it depends on “{p.goals.find((g) => g.id === skipped.get(e.id)!.goalId)?.name}”, which your plan can’t pay for. Change the goal’s funding, or tick “Keep these events anyway” on it.

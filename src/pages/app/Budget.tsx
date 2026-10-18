@@ -2,6 +2,7 @@ import { usePlan, useMoney } from '@/state/selectors';
 import { useStore } from '@/state/store';
 import { PageHeader, Section, Field, MoneyInput, Toggle, Notice, Stat, Disclaimer } from '@/components/ui';
 import { LineItemsEditor } from '@/features/editors/LineItems';
+import { SalaryEditor } from '@/features/editors/SalaryEditor';
 import { LoansEditor } from '@/features/editors/Loans';
 import { fiftyThirtyTwenty } from '@/finance/cashflow';
 import { formatPct } from '@/finance/money';
@@ -22,9 +23,9 @@ export default function Budget() {
       <div className="grid gap-12 xl:grid-cols-12">
         <div className="flex flex-col gap-12 xl:col-span-8">
           <Section title="Income">
-            <div className="grid gap-6 sm:grid-cols-2">
-              <Field label="Monthly take-home salary">{(id) => <MoneyInput id={id} value={p.income.monthlyTakeHome} max={1e8} onChange={(v) => update((x) => void (x.income.monthlyTakeHome = v))} />}</Field>
-              <Field label="Other monthly income">{(id) => <MoneyInput id={id} value={p.income.otherMonthlyIncome} max={1e8} onChange={(v) => update((x) => void (x.income.otherMonthlyIncome = v))} />}</Field>
+            <SalaryEditor p={p} update={update} />
+            <div className="mt-6 grid gap-6 sm:grid-cols-2">
+              <Field label="Other monthly income" hint="After tax. Assumed to rise with inflation.">{(id) => <MoneyInput id={id} value={p.income.otherMonthlyIncome} max={1e8} onChange={(v) => update((x) => void (x.income.otherMonthlyIncome = v))} />}</Field>
             </div>
           </Section>
           <Section title="Essential expenses" description="Costs that continue even if income stops.">

@@ -2,8 +2,10 @@ import type { Plan } from '@/state/selectors';
 import { simulate } from '@/finance/simulate';
 import { fiAnalysis } from '@/finance/fi';
 import { formatCompact as c, formatPct } from '@/finance/money';
-import { emi } from '@/finance/rates';
+import { emi, maxEligibleLoan } from '@/finance/rates';
 import { ageInYear } from '@/finance/timeline';
+import { HOME_DEFAULTS, HOME_LOAN_RATE, STATE_NAMES } from '@/finance/assumptions';
+import { homePurchaseCosts } from '@/finance/simulate';
 
 /**
  * Rule-based educational coach. Every figure comes from the financial engine.
@@ -34,6 +36,8 @@ export interface HomeAffordability {
   priceToday: number;
   priceThen: number;
   downPayment: number;
+  otherCosts: number; // stamp duty, registration, GST and interiors
+  upfront: number; // down payment + other costs
   liquid: number; // investments + cash on 1 January of `year`
   reserve: number; // emergency reserve kept back
   available: number;
@@ -42,6 +46,7 @@ export interface HomeAffordability {
   existingEmi: number; // other loan repayments that year, monthly
   takeHome: number; // monthly take-home in `year`
   emiShare: number; // (emi + existingEmi) ÷ take-home
+  maxLoan: number; // largest loan with all EMIs within 50% of take-home
   assumedPrice: boolean;
 }
 
@@ -60,21 +65,23 @@ export function homeAffordability(plan: Plan, q: string): HomeAffordability {
   const asked = amount(q);
   const priceToday = asked ?? homeEvent?.home?.propertyValue ?? (homeGoal ? homeGoal.cost / 0.2 : 6000000);
   const dpPct = homeEvent?.home?.downPaymentPct ?? 0.2;
-  const rate = homeEvent?.home?.loanRate ?? 0.085;
+  const rate = homeEvent?.home?.loanRate ?? HOME_LOAN_RATE.value;
   const tenureYears = homeEvent?.home?.tenureYears ?? 20;
+  const details = { ...(homeEvent?.home ?? { state: 'MH' as const }), propertyValue: priceToday, downPaymentPct: dpPct, loanRate: rate, tenureYears };
   const before = sim.rows[years - 1]; // 31 December of year T − 1
   const during = sim.rows[years]; // year T
   const priceThen = priceToday * Math.pow(1 + a.propertyGrowth, years);
-  const downPayment = priceThen * dpPct;
+  const costs = homePurchaseCosts(details, priceThen, Math.pow(1 + a.inflation, years));
+  const downPayment = costs.downPayment;
   const reserve = p.protection.emergencyTargetMonths * (plan.cashflow.essential + plan.cashflow.debtPayments) * Math.pow(1 + a.inflation, years);
   const liquid = before.portfolio + Math.max(0, before.cash);
   const available = liquid - reserve;
-  const loan = priceThen - downPayment;
+  const loan = costs.loan;
   const monthlyEmi = emi(loan, rate, Math.max(1, tenureYears) * 12);
   // A home already planned for this year has its EMI inside `during`; leave it out so it is not counted twice.
   const planned =
     homeEvent && homeEvent.year === year
-      ? emi(homeEvent.home!.propertyValue * Math.pow(1 + a.propertyGrowth, years) * (1 - homeEvent.home!.downPaymentPct), homeEvent.home!.loanRate, homeEvent.home!.tenureYears * 12)
+      ? emi(homePurchaseCosts(homeEvent.home!, homeEvent.home!.propertyValue * Math.pow(1 + a.propertyGrowth, years), 1).loan, homeEvent.home!.loanRate, homeEvent.home!.tenureYears * 12)
       : 0;
   const existingEmi = Math.max(0, during.debtPayments / 12 - planned);
   const takeHome = during.income / 12;
@@ -83,6 +90,8 @@ export function homeAffordability(plan: Plan, q: string): HomeAffordability {
     priceToday,
     priceThen,
     downPayment,
+    otherCosts: costs.upfront - costs.downPayment,
+    upfront: costs.upfront,
     liquid,
     reserve,
     available,
@@ -91,29 +100,32 @@ export function homeAffordability(plan: Plan, q: string): HomeAffordability {
     existingEmi,
     takeHome,
     emiShare: takeHome > 0 ? (monthlyEmi + existingEmi) / takeHome : Infinity,
+    maxLoan: maxEligibleLoan(takeHome, existingEmi, rate, Math.max(1, tenureYears) * 12, HOME_DEFAULTS.foir),
     assumedPrice: asked === null && !homeEvent && !homeGoal,
   };
 }
+
+const homeState = (plan: Plan) => plan.profile.lifeEvents.find((e) => e.kind === 'homePurchase' && e.home)?.home?.state ?? 'MH';
 
 function home(plan: Plan, q: string): string {
   const h = homeAffordability(plan, q);
   const { profile: p, assumptions: a } = plan;
   const verdict =
-    h.available >= h.downPayment && h.emiShare <= 0.4
+    h.available >= h.upfront && h.emiShare <= 0.4
       ? 'On these assumptions, it looks feasible.'
-      : h.available < h.downPayment
+      : h.available < h.upfront
         ? 'On these assumptions, the down payment is the constraint.'
         : 'On these assumptions, the EMI would take a large share of your income.';
   const missing = h.assumedPrice
-    ? `\n\nMissing information: you haven’t added a home goal or a home-purchase life event, so I assumed a ₹60 lakh property in today’s prices with 20% down and an 8.5% loan over 20 years. Add one in Life Events for a precise answer.`
+    ? `\n\nMissing information: you haven’t added a home goal or a home-purchase life event, so I assumed a ₹60 lakh property in today’s prices in Maharashtra, with 20% down and a ${formatPct(HOME_LOAN_RATE.value)} loan over 20 years. Add one in Life Events for a precise answer.`
     : '';
   return `${verdict}
 
-• A property worth ${c(h.priceToday)} today would cost about ${c(h.priceThen)} in ${h.year} (at ${formatPct(a.propertyGrowth)} property growth). A ${formatPct(h.downPayment / h.priceThen, 0)} down payment is ${c(h.downPayment)}.
-• On 1 January ${h.year} your projection holds ${c(h.liquid)} in investments and cash. After keeping your emergency reserve (${c(h.reserve)}), ${c(Math.max(0, h.available))} would be available${h.available < h.downPayment ? `, which is ${c(h.downPayment - Math.max(0, h.available))} short` : ''}.
-• The EMI on a ${c(h.loan)} loan would be about ${c(h.emi)} a month${h.existingEmi > 0 ? `, plus ${c(h.existingEmi)} of other EMIs` : ''}. That is ${formatPct(h.emiShare, 0)} of your projected ${h.year} take-home of ${c(h.takeHome * 12)} a year. Many lenders become cautious above 40–50%.
+• A property worth ${c(h.priceToday)} today would cost about ${c(h.priceThen)} in ${h.year} (at ${formatPct(a.propertyGrowth)} property growth). A ${formatPct(h.downPayment / h.priceThen, 0)} down payment is ${c(h.downPayment)}, and stamp duty, registration and interiors add ${c(h.otherCosts)}: ${c(h.upfront)} upfront.
+• On 1 January ${h.year} your projection holds ${c(h.liquid)} in investments and cash. After keeping your emergency reserve (${c(h.reserve)}), ${c(Math.max(0, h.available))} would be available${h.available < h.upfront ? `, which is ${c(h.upfront - Math.max(0, h.available))} short` : ''}.
+• The EMI on a ${c(h.loan)} loan would be about ${c(h.emi)} a month${h.existingEmi > 0 ? `, plus ${c(h.existingEmi)} of other EMIs` : ''}. That is ${formatPct(h.emiShare, 0)} of your projected ${h.year} take-home of ${c(h.takeHome * 12)} a year. Lenders usually cap all EMIs at 50% of take-home, which puts your maximum loan near ${c(h.maxLoan)}${h.maxLoan < h.loan ? ', less than this loan needs' : ''}.
 
-${assumptionsLine(plan)} You would be ${ageInYear(p, h.year)}. Registration, stamp duty and furnishing costs are not included unless you add them as a one-time cost.${missing}`;
+${assumptionsLine(plan)} You would be ${ageInYear(p, h.year)}. Stamp duty uses ${STATE_NAMES[homeState(plan)]} rates.${missing}`;
 }
 
 function behind(plan: Plan): string {

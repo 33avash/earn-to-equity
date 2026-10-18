@@ -4,13 +4,15 @@ import { MoneyInput, PercentInput, Select } from '@/components/ui/Form';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/Misc';
 import { uid } from '@/state/demo';
+import { HOME_LOAN_RATE } from '@/finance/assumptions';
+import { DEFAULT_LOAN_TERMS } from '@/finance/goalFunding';
 
 export const LOAN_KINDS: Record<LiabilityKind, { label: string; rate: number }> = {
   personal: { label: 'Personal loan', rate: 0.14 },
-  education: { label: 'Education loan', rate: 0.095 },
-  car: { label: 'Car loan', rate: 0.09 },
+  education: { label: 'Education loan', rate: DEFAULT_LOAN_TERMS.education.rate },
+  car: { label: 'Car loan', rate: DEFAULT_LOAN_TERMS.car.rate },
   creditCard: { label: 'Credit card', rate: 0.36 },
-  home: { label: 'Home loan', rate: 0.085 },
+  home: { label: 'Home loan', rate: HOME_LOAN_RATE.value },
   other: { label: 'Other loan', rate: 0.12 },
 };
 

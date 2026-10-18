@@ -9,6 +9,7 @@ import { blankProfile } from '@/state/demo';
 import { Wordmark } from '@/components/layout/Wordmark';
 import { Button, Field, MoneyInput, NumberInput, PercentInput, Select, Slider, TextInput, Disclaimer, Notice, Badge, toast } from '@/components/ui';
 import { LineItemsEditor } from '@/features/editors/LineItems';
+import { SalaryEditor } from '@/features/editors/SalaryEditor';
 import { LoansEditor } from '@/features/editors/Loans';
 import { AllocationEditor } from '@/features/editors/Allocation';
 import { GOAL_CATEGORIES, GoalForm, PRIORITY_LABEL, newGoal } from '@/features/editors/GoalForm';
@@ -47,7 +48,12 @@ function stepErrors(step: number, p: FinancialProfile): StepErrors {
     }
     case 1:
       return {
-        income: p.income.monthlyTakeHome <= 0 && p.income.otherMonthlyIncome <= 0 ? 'Enter your monthly take-home pay (or other income) so the plan has something to project.' : null,
+        income:
+          (p.income.mode === 'ctc' ? (p.income.ctc ?? 0) <= 0 : p.income.monthlyTakeHome <= 0) && p.income.otherMonthlyIncome <= 0
+            ? p.income.mode === 'ctc'
+              ? 'Enter your annual CTC, or switch to monthly take-home.'
+              : 'Enter your monthly take-home pay (or other income) so the plan has something to project.'
+            : null,
         growth: p.income.salaryGrowth < -0.2 || p.income.salaryGrowth > 0.5 ? 'Use a growth rate between −20% and 50%.' : null,
       };
     case 2:
@@ -278,9 +284,9 @@ function StepAbout({ p, update, errs = {} }: StepProps) {
 function StepIncome({ p, update, errs = {} }: StepProps) {
   return (
     <div className="grid max-w-2xl gap-6 sm:grid-cols-2">
-      <Field label="Monthly take-home salary" hint="After tax, PF and other payroll deductions: what reaches your bank account." error={errs.income}>
-        {(id, d, invalid) => <MoneyInput id={id} describedBy={d} invalid={invalid} value={p.income.monthlyTakeHome} max={1e8} onChange={(v) => update((x) => void (x.income.monthlyTakeHome = v))} />}
-      </Field>
+      <div className="sm:col-span-2">
+        <SalaryEditor p={p} update={update} error={errs.income} />
+      </div>
       <Field label="Expected annual salary growth" help="Average yearly increase including raises and promotions. 6–10% is common early in a career, but it varies widely." error={errs.growth}>
         {(id, d, invalid) => <PercentInput id={id} describedBy={d} invalid={invalid} value={p.income.salaryGrowth} min={-20} max={50} onChange={(v) => update((x) => void (x.income.salaryGrowth = v))} />}
       </Field>
@@ -635,7 +641,7 @@ function StepReview({ p, goTo }: { p: FinancialProfile; goTo: (n: number) => voi
         </div>
       )}
       <ReviewBlock title="About you" step={0} goTo={goTo} rows={[['Name', p.about.name || '—'], ['Age', String(p.about.age)], ['Employment', p.about.employment], ['FI target age', String(p.about.fiAge)], ['Dependents', p.about.dependents === 0 && hasDependents(p) ? 'Parents (you send money home)' : String(p.about.dependents)]]} />
-      <ReviewBlock title="Income" step={1} goTo={goTo} rows={[['Take-home', money(p.income.monthlyTakeHome)], ['Salary growth', formatPct(p.income.salaryGrowth)], ['Other income', money(p.income.otherMonthlyIncome)]]} />
+      <ReviewBlock title="Income" step={1} goTo={goTo} rows={[p.income.mode === 'ctc' ? ['Annual CTC', money(p.income.ctc ?? 0)] : ['Take-home', money(p.income.monthlyTakeHome)], ['Monthly take-home', money(monthlyCashflow(p).income - p.income.otherMonthlyIncome)], ['Salary growth', formatPct(p.income.salaryGrowth)], ['Other income', money(p.income.otherMonthlyIncome)]]} />
       <ReviewBlock title="Monthly cash flow" step={2} goTo={goTo} rows={[['Essential', money(cf.essential)], ['Lifestyle', money(cf.lifestyle)], ['Debt repayments', money(cf.debtPayments)], ['Investable surplus', money(cf.investableSurplus)], ['Investments', money(cf.plannedInvestments)], ['Savings', money(cf.plannedSavings)]]} />
       <ReviewBlock title="Current position" step={3} goTo={goTo} rows={[['Cash & reserve', money(bs.cash)], ['Investments', money(bs.investments)], ['Retirement', money(bs.retirement)], ['Other assets', money(bs.otherAssets)], ['Liabilities', money(bs.liabilities)], ['Net worth', money(bs.netWorth)]]} />
       <ReviewBlock title="Protection" step={4} goTo={goTo} rows={[['Emergency target', `${p.protection.emergencyTargetMonths} months`], ['Health cover', money(p.protection.healthCover)], ['Life cover', money(p.protection.lifeCover)]]} />

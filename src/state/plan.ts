@@ -4,11 +4,13 @@ import { monthlyCashflow } from '@/finance/cashflow';
 import { balanceSheet } from '@/finance/networth';
 import { emergencyPlan } from '@/finance/emergency';
 import { analyzeGoals, type GoalAnalysis } from '@/finance/goals';
-import { NON_WITHDRAWAL_GOALS, simulate } from '@/finance/simulate';
+import { NON_WITHDRAWAL_GOALS, homePurchaseCosts, simulate } from '@/finance/simulate';
+import { HOME_DEFAULTS } from '@/finance/assumptions';
+import { emi, maxEligibleLoan } from '@/finance/rates';
 import { fiAnalysis } from '@/finance/fi';
 import { healthScore } from '@/finance/health';
 import { nextSteps } from '@/finance/insights';
-import { currentWeights, portfolioVolatility, weightedReturn } from '@/finance/portfolio';
+import { currentWeights, netReturns, portfolioVolatility, weightedReturn } from '@/finance/portfolio';
 import { runScenario } from '@/finance/scenarios';
 import { ageInYear } from '@/finance/timeline';
 
@@ -87,7 +89,9 @@ export function computePlan(profile: FinancialProfile, assumptions: Assumptions)
   const fi = fiAnalysis(profile, assumptions);
   const health = healthScore(profile, assumptions);
   const insights = nextSteps(profile, cashflow, emergency, goals, fi, sim);
-  const portfolioReturn = weightedReturn(profile.preferences.targetAllocation, assumptions.returns);
+  // After fund costs; the return every projection uses.
+  const portfolioReturn = weightedReturn(profile.preferences.targetAllocation, netReturns(assumptions));
+  const portfolioReturnGross = weightedReturn(profile.preferences.targetAllocation, assumptions.returns);
   const volatility = portfolioVolatility(profile.preferences.targetAllocation, assumptions.volatility);
   const final = sim.rows[sim.rows.length - 1];
   const end = sim.points[sim.points.length - 1];
@@ -122,6 +126,7 @@ export function computePlan(profile: FinancialProfile, assumptions: Assumptions)
     health,
     insights,
     portfolioReturn,
+    portfolioReturnGross,
     volatility,
     currentAllocation: currentWeights(profile.position.holdings),
   };
@@ -245,4 +250,31 @@ export function landingScenarios(plan: Plan) {
       altFinal: alt.points[alt.points.length - 1].netWorthReal,
     };
   });
+}
+
+/**
+ * Costs and the lender check for a planned home purchase, read from the projection for its year:
+ * upfront cash, EMI share of take-home (all EMIs), and the largest loan within a 50% EMI-to-income limit.
+ */
+export function homeCheck(plan: Plan, event: LifeEvent) {
+  const { profile: p, assumptions: a, sim } = plan;
+  if (!event.home) return null;
+  const idx = event.year - p.planStartYear;
+  const row = sim.rows[idx];
+  if (!row) return null;
+  const value = event.home.propertyValue * Math.pow(1 + a.propertyGrowth, idx);
+  const costs = homePurchaseCosts(event.home, value, Math.pow(1 + a.inflation, idx));
+  const tenureMonths = Math.max(1, event.home.tenureYears) * 12;
+  const ownEmi = emi(costs.loan, event.home.loanRate, tenureMonths);
+  const takeHome = row.income / 12;
+  const otherEmi = Math.max(0, row.debtPayments / 12 - ownEmi);
+  const share = takeHome > 0 ? (ownEmi + otherEmi) / takeHome : Infinity;
+  return {
+    value,
+    costs,
+    emi: ownEmi,
+    emiShare: share,
+    overLimit: share > HOME_DEFAULTS.foir,
+    maxLoan: maxEligibleLoan(takeHome, otherEmi, event.home.loanRate, tenureMonths, HOME_DEFAULTS.foir),
+  };
 }

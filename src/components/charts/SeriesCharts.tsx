@@ -121,7 +121,7 @@ export function FanChart({ data, baseline, height = 300 }: { data: { year: numbe
             content={({ active, payload, label }) =>
               active && payload?.length ? (
                 <MoneyTip
-                  title={`End of ${label}`}
+                  title={`1 January ${label}`}
                   rows={[
                     { name: '90th percentile', value: (payload[0].payload as { p90: number }).p90, color: t.muted },
                     { name: 'Median', value: (payload[0].payload as { p50: number }).p50, color: t.primary },
@@ -134,6 +134,8 @@ export function FanChart({ data, baseline, height = 300 }: { data: { year: numbe
           />
           <Area animationDuration={900} animationEasing="ease-out" type="monotone" dataKey="base" stackId="b" stroke="none" fill="transparent" />
           <Area animationDuration={900} animationEasing="ease-out" type="monotone" dataKey="band" stackId="b" stroke="none" fill={t.muted} fillOpacity={0.35} name="10th–90th percentile" />
+          <Area animationDuration={900} animationEasing="ease-out" type="monotone" dataKey="p90" stroke={t.axis} strokeWidth={1} strokeDasharray="3 3" fill="none" name="90th percentile" />
+          <Area animationDuration={900} animationEasing="ease-out" type="monotone" dataKey="p10" stroke={t.axis} strokeWidth={1} strokeDasharray="3 3" fill="none" name="10th percentile" />
           <Area animationDuration={900} animationEasing="ease-out" type="monotone" dataKey="p50" stroke={t.primary} strokeWidth={2} fill="none" name="Median" />
           {baseline && <Area animationDuration={900} animationEasing="ease-out" type="monotone" dataKey="baseline" stroke={t.secondary} strokeDasharray="5 4" strokeWidth={2} fill="none" name="Deterministic plan" />}
         </AreaChart>

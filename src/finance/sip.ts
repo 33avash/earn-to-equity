@@ -1,4 +1,5 @@
 import type { ContributionTiming } from '@/types/profile';
+import { CAPITAL_GAINS, CESS } from './assumptions';
 import { monthlyRate, toReal } from './rates';
 
 export interface SipInput {
@@ -25,6 +26,9 @@ export interface SipResult {
   corpus: number;
   gains: number;
   corpusReal: number;
+  /** Corpus if fully redeemed at the end, after equity LTCG (12.5% above ₹1.25 L, plus cess). */
+  afterTaxCorpus: number;
+  tax: number;
   years: SipYear[];
 }
 
@@ -63,11 +67,14 @@ export function projectSip(input: SipInput): SipResult {
       valueReal: toReal(value, inflation, y),
     });
   }
+  const tax = equityLtcgTax(value - contributed);
   return {
     totalContributions: contributed,
     corpus: value,
     gains: value - contributed,
     corpusReal: toReal(value, inflation, n),
+    afterTaxCorpus: value - tax,
+    tax,
     years: out,
   };
 }
@@ -96,4 +103,10 @@ export function requiredMonthly(
   if (i === 0) return remaining / months;
   const factor = ((growth - 1) / i) * (timing === 'start' ? 1 + i : 1);
   return remaining / factor;
+}
+
+/** Long-term capital gains tax on equity fund gains sold in one year: 12.5% above ₹1.25 lakh, plus 4% cess. */
+export function equityLtcgTax(gain: number): number {
+  const cg = CAPITAL_GAINS.value;
+  return Math.max(0, gain - cg.equityLtcgExemption) * cg.equityLtcg * (1 + CESS.value);
 }

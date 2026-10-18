@@ -1,5 +1,5 @@
 import type { Assumptions, FinancialProfile } from '@/types/profile';
-import { isValidAllocation, weightSum, weightedReturn } from './portfolio';
+import { isValidAllocation, netReturns, weightSum, weightedReturn } from './portfolio';
 
 export type Severity = 'error' | 'warning';
 export interface Issue {
@@ -79,7 +79,7 @@ export function validateProfile(p: FinancialProfile, a: Assumptions): Issue[] {
     add('preferences.targetAllocation', `Target allocation adds up to ${(weightSum(p.preferences.targetAllocation) * 100).toFixed(1)}%. It must total 100%.`);
   if (a.withdrawalRate <= 0 || a.withdrawalRate > 0.1) add('assumptions.withdrawalRate', 'Withdrawal rate should be between 0.1% and 10%.');
   if (a.inflation < 0 || a.inflation > 0.2) add('assumptions.inflation', 'Inflation should be between 0% and 20%.');
-  if (weightedReturn(p.preferences.targetAllocation, a.returns) <= a.inflation)
+  if (weightedReturn(p.preferences.targetAllocation, netReturns(a)) <= a.inflation)
     add('assumptions.returns', 'Your assumed portfolio return is at or below inflation, so investments lose purchasing power in this projection.', 'warning');
   return issues;
 }

@@ -4,7 +4,8 @@ import type { MonthlyCashflow } from './cashflow';
 import type { EmergencyPlan } from './emergency';
 import type { FiAnalysis } from './fi';
 import type { GoalsSummary } from './goals';
-import { hasDependents } from './household';
+import { currentSalary } from './income';
+import { healthCoverBenchmark, termCoverBenchmark } from './protection';
 import { formatCompact, formatMonths, formatPct } from './money';
 import { allocationDrift, maxDrift } from './portfolio';
 
@@ -54,21 +55,23 @@ export function nextSteps(
       link: '/app/emergency-debt',
     });
   }
-  if (p.protection.healthCover < 500000) {
+  const healthTarget = healthCoverBenchmark(p);
+  if (p.protection.healthCover < healthTarget) {
     out.push({
       id: 'health-cover',
       priority: 3,
-      title: 'Review your health cover',
-      detail: 'A single hospital stay can undo years of saving. Many planners suggest an individual cover of at least ₹5 lakh. Check what your employer policy actually covers.',
+      title: `Raise your health cover to ${formatCompact(healthTarget)}`,
+      detail: `You have ${formatCompact(p.protection.healthCover)}. For your city and household, ${formatCompact(healthTarget)} of base cover is a sensible floor, and a ₹25–50 lakh super top-up covers large bills for a small premium. Employer cover ends when the job does.`,
       link: '/app/settings',
     });
   }
-  if (hasDependents(p) && p.protection.lifeCover < cf.income * 12 * 10) {
+  const term = termCoverBenchmark(p, currentSalary(p)?.ctc ?? cf.income * 12);
+  if (term && p.protection.lifeCover < term.min) {
     out.push({
       id: 'life-cover',
       priority: 3,
       title: p.about.dependents > 0 ? 'Consider term life cover for your dependents' : 'Consider term cover for the parents you support',
-      detail: `Your current cover is ${formatCompact(p.protection.lifeCover)}. A common rule of thumb is 10× annual income (${formatCompact(cf.income * 120)}).`,
+      detail: `Your current cover is ${formatCompact(p.protection.lifeCover)}. Aim for 10–15× your annual income: ${formatCompact(term.min)} to ${formatCompact(term.max)}.`,
       link: '/app/settings',
     });
   }

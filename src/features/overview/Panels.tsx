@@ -95,8 +95,9 @@ export function FiPanel({ plan }: { plan: Plan }) {
           <dd className="num font-semibold text-evergreen">{money(fi.targetCorpus)}</dd>
         </div>
         <div>
-          <dt className="text-xs text-grey">Projected</dt>
+          <dt className="text-xs text-grey">Projected, after tax</dt>
           <dd className="num font-semibold text-evergreen">{money(fi.projectedCorpus)}</dd>
+          <dd className="num text-[11px] text-grey">{money(fi.projectedCorpusPreTax)} before tax</dd>
         </div>
         <div>
           <dt className="text-xs text-grey">Remaining gap</dt>

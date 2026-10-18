@@ -28,6 +28,8 @@ export interface RiskLabSettings {
   shockDrop: number;
   shockYear: number;
   recoveryYears: number;
+  creepDelta: number; // added to the lifestyle-creep assumption
+  mcModel: 'student-t' | 'historical';
 }
 
 export interface AppState {
@@ -76,6 +78,8 @@ export const defaultRiskLab = (): RiskLabSettings => ({
   shockDrop: 0.3,
   shockYear: thisYear() + 4,
   recoveryYears: 3,
+  creepDelta: 0,
+  mcModel: 'student-t',
 });
 
 const initial = () => ({
@@ -175,7 +179,8 @@ export const useStore = create<AppState>()(
           assumptions: { ...current.assumptions, ...(p.assumptions ?? {}) },
           settings: { ...current.settings, ...(p.settings ?? {}) },
           riskLab: { ...current.riskLab, ...(p.riskLab ?? {}) },
-          tax: { ...current.tax, ...(p.tax ?? {}) },
+          // Reference dates and rates always come from the current assumptions file, never an old save.
+          tax: { ...current.tax, ...(p.tax ?? {}), asOf: current.tax.asOf, ppfRate: current.tax.ppfRate, epfRate: current.tax.epfRate },
         };
       },
     },

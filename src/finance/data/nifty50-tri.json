@@ -1,0 +1,29 @@
+{
+  "name": "Nifty 50 Total Return Index, calendar-year returns (INR)",
+  "source": "https://www.bajajamc.com/knowledge-centre/nifty-50-historical-returns",
+  "sourceLabel": "Bajaj Finserv AMC, citing NSE Indices Limited, Nifty 50 Whitepaper 2026",
+  "asOf": "Calendar years 2005–2025, checked 18 Oct 2026",
+  "returns": {
+    "2005": 0.393,
+    "2006": 0.419,
+    "2007": 0.568,
+    "2008": -0.513,
+    "2009": 0.776,
+    "2010": 0.192,
+    "2011": -0.238,
+    "2012": 0.294,
+    "2013": 0.081,
+    "2014": 0.329,
+    "2015": -0.03,
+    "2016": 0.044,
+    "2017": 0.303,
+    "2018": 0.046,
+    "2019": 0.135,
+    "2020": 0.161,
+    "2021": 0.256,
+    "2022": 0.057,
+    "2023": 0.213,
+    "2024": 0.101,
+    "2025": 0.119
+  }
+}

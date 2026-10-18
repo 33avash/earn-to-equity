@@ -3,12 +3,12 @@ import type { RiskProfile } from '@/types/profile';
 import { ASSET_CLASSES } from '@/types/profile';
 import { usePlan, useMoney } from '@/state/selectors';
 import { useStore } from '@/state/store';
-import { PageHeader, Section, Stat, Notice, Disclaimer, MoneyInput, Button, Field, toast } from '@/components/ui';
+import { PageHeader, Section, Stat, Notice, Disclaimer, MoneyInput, PercentInput, Button, Field, toast } from '@/components/ui';
 import { AllocationEditor } from '@/features/editors/Allocation';
 import { AllocationBar } from '@/components/charts/Bars';
 import { ContribGainsChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
-import { ASSET_LABELS, PRESETS, isValidAllocation, maxDrift, rebalancePlan, riskBand, DEFAULT_RETURNS } from '@/finance/portfolio';
+import { ASSET_LABELS, PRESETS, isValidAllocation, maxDrift, rebalancePlan, riskBand, DEFAULT_RETURNS, DEFAULT_EXPENSE_RATIOS, EXPENSE_PRESETS } from '@/finance/portfolio';
 import { projectSip } from '@/finance/sip';
 import { formatMonths, formatPct } from '@/finance/money';
 
@@ -46,7 +46,7 @@ export default function Portfolio() {
 
       <dl className="grid grid-cols-2 gap-8 border-b border-line pb-8 lg:grid-cols-4">
         <Stat label="Current value" value={money(total)} def="portfolio" />
-        <Stat label="Weighted assumed return" value={formatPct(plan.portfolioReturn)} def="weightedReturn" sub={`Real ≈ ${formatPct((1 + plan.portfolioReturn) / (1 + a.inflation) - 1)} after inflation`} />
+        <Stat label="Return after fund costs" value={formatPct(plan.portfolioReturn)} def="weightedReturn" sub={`${formatPct(plan.portfolioReturnGross)} before costs; real ≈ ${formatPct((1 + plan.portfolioReturn) / (1 + a.inflation) - 1)} after inflation`} />
         <Stat label="Illustrative volatility" value={formatPct(plan.volatility)} def="volatility" sub={`${band.label}: ${band.note}`} />
         <Stat label="Largest drift" value={`${(drift * 100).toFixed(1)} pts`} sub={drift > 0.05 ? 'Consider rebalancing' : 'Within 5 points'} />
       </dl>
@@ -86,6 +86,21 @@ export default function Portfolio() {
           <p className="mt-3 text-xs text-grey">Portfolio only. Excludes cash sweeps, goal withdrawals and life events, which the Wealth Simulator includes.</p>
         </Section>
       </div>
+
+      <Section title="Fund costs" description="Expense ratios are deducted from returns in every projection. Index funds cost about 0.2% a year; actively managed direct plans up to about 0.8%; regular plans more.">
+        <div className="mb-4 flex flex-wrap gap-2">
+          <Button variant="secondary" size="sm" onClick={() => updateAssumptions({ expenseRatios: { ...a.expenseRatios, indianEquity: EXPENSE_PRESETS.index, intlEquity: 0.005 } })}>Equity in index funds</Button>
+          <Button variant="secondary" size="sm" onClick={() => updateAssumptions({ expenseRatios: { ...a.expenseRatios, indianEquity: EXPENSE_PRESETS.activeDirect, intlEquity: EXPENSE_PRESETS.activeDirect } })}>Equity in active direct funds</Button>
+          <Button variant="ghost" size="sm" onClick={() => updateAssumptions({ expenseRatios: { ...DEFAULT_EXPENSE_RATIOS } })}>Reset</Button>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {ASSET_CLASSES.filter((c) => c !== 'govtSchemes').map((c) => (
+            <Field key={c} label={ASSET_LABELS[c]} hint={`${formatPct(a.returns[c])} → ${formatPct(a.returns[c] - a.expenseRatios[c])} after costs`}>
+              {(id, d) => <PercentInput id={id} describedBy={d} value={a.expenseRatios[c]} max={3} onChange={(v) => updateAssumptions({ expenseRatios: { ...a.expenseRatios, [c]: v } })} />}
+            </Field>
+          ))}
+        </div>
+      </Section>
 
       <Section title="Current vs target, and rebalancing" description="Edit current values to match your statements. Rebalancing uses new SIP money only: under-weight classes get your monthly investment until the mix is back on target. Nothing is sold.">
         {!valid && <Notice tone="error">Target weights must total 100% before drift and rebalancing are meaningful.</Notice>}

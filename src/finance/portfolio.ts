@@ -32,6 +32,28 @@ export const DEFAULT_RETURNS: AssetMap = {
   other: 0.08,
 };
 
+/**
+ * Annual fund costs by asset class, deducted from returns. Defaults assume index funds where they exist
+ * (about 0.2%) and direct-plan active funds elsewhere (up to 0.8%). Government schemes have no fee.
+ */
+export const DEFAULT_EXPENSE_RATIOS: AssetMap = {
+  indianEquity: 0.002,
+  intlEquity: 0.005,
+  debt: 0.003,
+  govtSchemes: 0,
+  gold: 0.002,
+  cash: 0.002,
+  other: 0.008,
+};
+
+export const EXPENSE_PRESETS = { index: 0.002, activeDirect: 0.008 };
+
+/** Assumed returns after expense ratios. */
+export function netReturns(a: { returns: AssetMap; expenseRatios?: AssetMap }): AssetMap {
+  const er = a.expenseRatios ?? DEFAULT_EXPENSE_RATIOS;
+  return Object.fromEntries(ASSET_CLASSES.map((c) => [c, a.returns[c] - (er[c] ?? 0)])) as AssetMap;
+}
+
 export const DEFAULT_VOLATILITY: AssetMap = {
   indianEquity: 0.18,
   intlEquity: 0.16,

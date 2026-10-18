@@ -53,3 +53,29 @@ export function attributeScenario(p: FinancialProfile, a: Assumptions, d: Scenar
   const explained = parts.reduce((s, x) => s + x.impact, 0);
   return { base, scenario: full, total: full - base, parts, interaction: full - base - explained };
 }
+
+export interface TornadoBar {
+  driver: DriverKey;
+  label: string;
+  low: number; // change in final net worth (today's ₹) with only the conservative setting
+  high: number; // change with only the high-growth setting
+  range: number;
+}
+
+/**
+ * Tornado chart data: each assumption moved alone to its conservative and its high-growth setting,
+ * measured as the change in final net worth in today's rupees. Sorted widest first, so the top bar
+ * is the assumption that moves the outcome most.
+ */
+export function tornado(p: FinancialProfile, a: Assumptions, low: ScenarioDeltas, high: ScenarioDeltas): TornadoBar[] {
+  const final = (d: ScenarioDeltas) => runScenario(p, a, d).points.at(-1)!.netWorthReal;
+  const zero: ScenarioDeltas = { salaryGrowth: 0, returns: 0, inflation: 0, sipStepUp: 0 };
+  const base = final(zero);
+  return (Object.keys(DRIVER_LABELS) as DriverKey[])
+    .map((k) => {
+      const lo = final({ ...zero, [k]: low[k] }) - base;
+      const hi = final({ ...zero, [k]: high[k] }) - base;
+      return { driver: k, label: DRIVER_LABELS[k], low: lo, high: hi, range: Math.abs(hi - lo) };
+    })
+    .sort((x, y) => y.range - x.range);
+}

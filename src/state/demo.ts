@@ -1,18 +1,24 @@
 import type { Assumptions, FinancialProfile } from '@/types/profile';
-import { DEFAULT_RETURNS, DEFAULT_VOLATILITY, PRESETS, emptyAssetMap } from '@/finance/portfolio';
+import { DEFAULT_EXPENSE_RATIOS, DEFAULT_RETURNS, DEFAULT_VOLATILITY, PRESETS, emptyAssetMap } from '@/finance/portfolio';
+import { EPF_RATE, HEALTHCARE_INFLATION, HOME_LOAN_RATE, PLANNING_INFLATION, SMALL_SAVINGS, WITHDRAWAL_RATE } from '@/finance/assumptions';
 
 export const uid = () => Math.random().toString(36).slice(2, 10);
 
 export const DEFAULT_ASSUMPTIONS: Assumptions = {
-  inflation: 0.06,
+  inflation: PLANNING_INFLATION.value,
   returns: { ...DEFAULT_RETURNS },
   volatility: { ...DEFAULT_VOLATILITY },
   sipStepUp: 0.1,
-  withdrawalRate: 0.035,
+  withdrawalRate: WITHDRAWAL_RATE.value,
   propertyGrowth: 0.05,
   contributionTiming: 'end',
   sweepExcessCash: true,
   horizonYears: 20,
+  lifestyleCreep: 0.4,
+  expenseRatios: { ...DEFAULT_EXPENSE_RATIOS },
+  epfRate: EPF_RATE.value,
+  healthcareInflation: HEALTHCARE_INFLATION.value,
+  postFiHealthcare: 3000,
 };
 
 /**
@@ -23,8 +29,16 @@ export function demoProfile(startYear = new Date().getFullYear()): FinancialProf
   const Y = startYear;
   return {
     planStartYear: Y,
-    about: { name: 'Riya', age: 26, employment: 'salaried', fiAge: 50, dependents: 0 },
-    income: { monthlyTakeHome: 85000, salaryGrowth: 0.08, otherMonthlyIncome: 0, careerNotes: 'Considering an MBA in a few years.' },
+    about: { name: 'Riya', age: 26, employment: 'salaried', fiAge: 50, dependents: 0, cityTier: 1 },
+    income: {
+      mode: 'ctc',
+      ctc: 1140000,
+      salary: { basicShare: 0.4, pfOnWageCeiling: false, state: 'MH', regime: 'auto' },
+      monthlyTakeHome: 85000, // derived from CTC; kept for display before the first calculation
+      salaryGrowth: 0.08,
+      otherMonthlyIncome: 0,
+      careerNotes: 'Considering an MBA in a few years.',
+    },
     cashflow: {
       essential: [
         { id: 'rent', label: 'Rent', amount: 20000 },
@@ -47,7 +61,8 @@ export function demoProfile(startYear = new Date().getFullYear()): FinancialProf
       cashSavings: 60000,
       emergencyFund: 120000,
       holdings: { indianEquity: 240000, intlEquity: 40000, debt: 60000, govtSchemes: 50000, gold: 30000, cash: 20000, other: 0 },
-      retirement: { balance: 280000, monthlyContribution: 3600, returnRate: 0.0825 },
+      retirement: { balance: 0, monthlyContribution: 0, returnRate: SMALL_SAVINGS.ppf.value },
+      epf: { balance: 280000 },
       otherAssets: 50000,
     },
     liabilities: [
@@ -62,12 +77,12 @@ export function demoProfile(startYear = new Date().getFullYear()): FinancialProf
     ],
     preferences: { risk: 'growth', horizonYears: 20, targetAllocation: { ...PRESETS.growth.weights } },
     lifeEvents: [
-      { id: 'promo', kind: 'promotion', label: 'Post-MBA role', year: Y + 5, oneTimeCost: 0, incomeChangePct: 0.35, monthlyExpenseChange: 0, breakMonths: 0, goalId: 'mba' },
+      { id: 'promo', kind: 'promotion', label: 'Post-MBA role', year: Y + 5, oneTimeCost: 0, incomeChangePct: 0.5, monthlyExpenseChange: 0, breakMonths: 0, goalId: 'mba' },
       { id: 'mbabreak', kind: 'careerBreak', label: 'Full-time MBA', year: Y + 3, oneTimeCost: 0, incomeChangePct: 0, monthlyExpenseChange: 0, breakMonths: 21, goalId: 'mba' },
-      { id: 'wed', kind: 'marriage', label: 'Wedding', year: Y + 7, oneTimeCost: 800000, incomeChangePct: 0, monthlyExpenseChange: 8000, breakMonths: 0 },
+      { id: 'wed', kind: 'marriage', label: 'Wedding', year: Y + 7, oneTimeCost: 600000, incomeChangePct: 0, monthlyExpenseChange: 8000, breakMonths: 0 },
       {
-        id: 'home', kind: 'homePurchase', label: 'Buy a flat', year: Y + 9, oneTimeCost: 300000, incomeChangePct: 0, monthlyExpenseChange: -20000, breakMonths: 0,
-        home: { propertyValue: 7500000, downPaymentPct: 0.2, loanRate: 0.085, tenureYears: 20 },
+        id: 'home', kind: 'homePurchase', label: 'Buy a flat', year: Y + 13, oneTimeCost: 0, incomeChangePct: 0, monthlyExpenseChange: -20000, breakMonths: 0,
+        home: { propertyValue: 6000000, downPaymentPct: 0.2, loanRate: HOME_LOAN_RATE.value, tenureYears: 20, state: 'MH', interiors: 500000, sizeSqft: 900, maintenancePerSqft: 4 },
       },
     ],
   };
@@ -77,8 +92,8 @@ export function demoProfile(startYear = new Date().getFullYear()): FinancialProf
 export function blankProfile(startYear = new Date().getFullYear()): FinancialProfile {
   return {
     planStartYear: startYear,
-    about: { name: '', age: 25, employment: 'salaried', fiAge: 50, dependents: 0 },
-    income: { monthlyTakeHome: 0, salaryGrowth: 0.07, otherMonthlyIncome: 0, careerNotes: '' },
+    about: { name: '', age: 25, employment: 'salaried', fiAge: 50, dependents: 0, cityTier: 1 },
+    income: { mode: 'ctc', ctc: 0, salary: { basicShare: 0.4, state: 'MH', regime: 'auto' }, monthlyTakeHome: 0, salaryGrowth: 0.07, otherMonthlyIncome: 0, careerNotes: '' },
     cashflow: {
       essential: [
         { id: uid(), label: 'Rent / housing', amount: 0 },
@@ -98,7 +113,8 @@ export function blankProfile(startYear = new Date().getFullYear()): FinancialPro
       cashSavings: 0,
       emergencyFund: 0,
       holdings: emptyAssetMap(),
-      retirement: { balance: 0, monthlyContribution: 0, returnRate: 0.0825 },
+      retirement: { balance: 0, monthlyContribution: 0, returnRate: SMALL_SAVINGS.ppf.value },
+      epf: { balance: 0 },
       otherAssets: 0,
     },
     liabilities: [],

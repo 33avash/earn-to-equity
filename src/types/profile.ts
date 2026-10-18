@@ -1,3 +1,6 @@
+import type { CityTier, StateCode } from '@/finance/assumptions';
+import type { RegimeChoice } from '@/finance/tax';
+
 /**
  * Shared financial profile — the single source of truth every module reads.
  *
@@ -103,12 +106,31 @@ export interface LifeEvent {
   monthlyExpenseChange: number; // today's INR, recurring from this year (negative = saving)
   breakMonths: number; // career break: months without salary
   goalId?: string; // the goal this event depends on (e.g. an MBA break and the post-MBA raise)
-  home?: {
-    propertyValue: number; // today's INR
-    downPaymentPct: number; // decimal
-    loanRate: number;
-    tenureYears: number;
-  };
+  home?: HomeDetails;
+}
+
+export interface SalaryStructure {
+  basicShare?: number; // default 0.4
+  pfOnWageCeiling?: boolean; // PF on basic capped at ₹15,000 a month
+  state?: StateCode; // for professional tax (default Maharashtra)
+  regime?: RegimeChoice; // default: the cheaper regime each year
+  other80C?: number; // old-regime 80C beyond employee PF (ELSS, PPF, insurance)
+  sec80D?: number; // health-insurance premium deduction (old regime)
+  hraExemption?: number; // annual HRA exemption (old regime)
+}
+
+export interface HomeDetails {
+  propertyValue: number; // today's INR
+  downPaymentPct: number; // decimal
+  loanRate: number;
+  tenureYears: number;
+  state?: StateCode; // stamp duty and registration (default Maharashtra)
+  stampDutyPct?: number; // overrides the state default (stamp duty + registration, decimal)
+  underConstruction?: boolean; // adds 5% GST
+  interiors?: number; // today's INR (default ₹5 L)
+  sizeSqft?: number; // for maintenance
+  maintenancePerSqft?: number; // INR per sq ft per month, today's prices
+  propertyTaxAnnual?: number; // today's INR; default 0.1% of value
 }
 
 export interface FinancialProfile {
@@ -121,9 +143,18 @@ export interface FinancialProfile {
     dependents: number;
     /** Answer to "Should we count your parents as dependents?" when family support is paid. Unset = yes. */
     parentsAsDependents?: boolean;
+    cityTier?: CityTier; // 1 = metro (default)
   };
   income: {
-    monthlyTakeHome: number;
+    /**
+     * 'ctc': take-home is derived from annual CTC every year (tax, EPF and professional tax recomputed).
+     * 'takeHome' (or unset): the monthly take-home below is used directly and grows at salaryGrowth.
+     */
+    mode?: 'ctc' | 'takeHome';
+    ctc?: number; // annual cost to company, INR
+    salary?: SalaryStructure;
+    monthlyTakeHome: number; // used when mode is 'takeHome'; otherwise a derived display value
+
     salaryGrowth: number;
     otherMonthlyIncome: number;
     careerNotes: string;
@@ -139,10 +170,12 @@ export interface FinancialProfile {
     emergencyFund: number; // ring-fenced liquid reserve
     holdings: AssetMap; // current investments by asset class, INR
     retirement: {
-      balance: number; // EPF + PPF + NPS combined
-      monthlyContribution: number; // e.g. EPF deducted before take-home
+      balance: number; // PPF + NPS (and EPF too, when position.epf is absent)
+      monthlyContribution: number; // paid before take-home (e.g. EPF when position.epf is absent, or employer NPS)
       returnRate: number;
     };
+    /** EPF account, separate from other retirement savings; locked until 58. When absent, EPF is inside `retirement`. */
+    epf?: { balance: number };
     otherAssets: number; // e.g. vehicle, property already owned (not invested)
     elssLocked?: number; // ELSS units bought in the last 3 years, inside Indian equity; cannot be sold yet
   };
@@ -175,6 +208,13 @@ export interface Assumptions {
   contributionTiming: ContributionTiming;
   sweepExcessCash: boolean; // invest cash above the emergency target each year-end
   horizonYears: number; // 20 by spec
+  /** Share of each real (above-inflation) rise in take-home that goes to lifestyle spending. */
+  lifestyleCreep: number;
+  /** Annual fund costs by asset class, deducted from returns. */
+  expenseRatios: AssetMap;
+  epfRate: number;
+  healthcareInflation: number; // for the post-FI healthcare line
+  postFiHealthcare: number; // extra monthly healthcare cost after FI, today's INR
 }
 
 export interface ScenarioDeltas {

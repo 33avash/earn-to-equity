@@ -1,4 +1,5 @@
 import type { FundingMode, Goal, GoalCategory, LoanTerms } from '@/types/profile';
+import { HOME_LOAN_RATE } from './assumptions';
 
 /** Goals in these categories default to "savings first, loan for the rest". */
 const MIXED_BY_DEFAULT = new Set<GoalCategory>(['education', 'home']);
@@ -12,7 +13,7 @@ const MIXED_BY_DEFAULT = new Set<GoalCategory>(['education', 'home']);
 export const DEFAULT_LOAN_TERMS: Record<GoalCategory, LoanTerms> = {
   education: { rate: 0.105, tenureYears: 7, moratoriumMonths: 12 },
   car: { rate: 0.095, tenureYears: 5, moratoriumMonths: 0 },
-  home: { rate: 0.085, tenureYears: 20, moratoriumMonths: 0 },
+  home: { rate: HOME_LOAN_RATE.value, tenureYears: 20, moratoriumMonths: 0 },
   wedding: { rate: 0.13, tenureYears: 5, moratoriumMonths: 0 },
   travel: { rate: 0.13, tenureYears: 3, moratoriumMonths: 0 },
   business: { rate: 0.13, tenureYears: 5, moratoriumMonths: 0 },

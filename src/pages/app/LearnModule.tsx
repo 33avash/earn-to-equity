@@ -66,12 +66,12 @@ function TaxAwareness() {
     ['PPF', `15-year government-backed scheme (reference rate ${formatPct(tax.ppfRate)}, notified quarterly). Contributions qualify under 80C up to ${formatINR(tax.sec80cLimit)} in the old regime. Interest and maturity are tax-free.`],
     ['NPS', `Additional deduction of ${formatINR(tax.nps80ccd1b)} under 80CCD(1B) in the old regime. Employer contributions can be deductible under 80CCD(2) in both regimes, within limits. At 60, up to 60% can be withdrawn tax-free. The remainder buys an annuity, whose income is taxable.`],
     ['ELSS', `Equity funds with a 3-year lock-in. They qualify under 80C (old regime only), and gains are taxed like other equity funds.`],
-    ['New vs old regime', `The new regime is the default and has lower rates but few deductions. A rebate means no tax up to about ${formatINR(tax.newRegimeZeroTaxIncome)} of taxable income under the new regime (reference value). Compare both before choosing tax-saving products.`],
+    ['New vs old regime', `The new regime is the default and has lower rates but few deductions. With the ₹75,000 standard deduction and the rebate, salary up to about ₹12.75 lakh (taxable income ${formatINR(tax.newRegimeZeroTaxIncome)}) pays no tax. Compare both before choosing tax-saving products.`],
   ];
   return (
     <div className="flex flex-col gap-12">
       <Notice tone="warning" title="Education, not tax advice">
-        These are reference values for <strong>{tax.asOf}</strong>. Tax law changes with each Budget, and from April 2026 provisions may be renumbered under the Income-tax Act, 2025. Verify on the official sources below or with a qualified professional before acting.
+        These are reference values for <strong>{tax.asOf}</strong>. Section numbers changed under the new Act (for example, the 87A rebate is now section 202), and share buybacks are now taxed as capital gains. Verify on the official sources below or with a CA before acting.
       </Notice>
       <section>
         <h2 className="text-xl font-semibold tracking-tight">How common instruments are taxed</h2>

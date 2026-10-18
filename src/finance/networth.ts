@@ -5,7 +5,8 @@ import { sum } from './money';
 export interface BalanceSheet {
   cash: number; // bank savings + emergency fund
   investments: number;
-  retirement: number;
+  retirement: number; // incl. EPF
+  epf: number;
   otherAssets: number;
   totalAssets: number;
   liabilities: number;
@@ -19,9 +20,10 @@ export function portfolioValue(p: FinancialProfile): number {
 export function balanceSheet(p: FinancialProfile): BalanceSheet {
   const cash = Math.max(0, p.position.cashSavings) + Math.max(0, p.position.emergencyFund);
   const investments = portfolioValue(p);
-  const retirement = Math.max(0, p.position.retirement.balance);
+  const epf = Math.max(0, p.position.epf?.balance ?? 0);
+  const retirement = Math.max(0, p.position.retirement.balance) + epf;
   const otherAssets = Math.max(0, p.position.otherAssets);
   const totalAssets = cash + investments + retirement + otherAssets;
   const liabilities = sum(p.liabilities.map((l) => Math.max(0, l.balance)));
-  return { cash, investments, retirement, otherAssets, totalAssets, liabilities, netWorth: totalAssets - liabilities };
+  return { cash, investments, retirement, epf, otherAssets, totalAssets, liabilities, netWorth: totalAssets - liabilities };
 }

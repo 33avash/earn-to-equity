@@ -3,6 +3,9 @@ import { monthlyCashflow } from './cashflow';
 import { emergencyPlan } from './emergency';
 import { analyzeGoals } from './goals';
 import { hasDependents } from './household';
+import { currentSalary } from './income';
+import { formatCompact } from './money';
+import { healthCoverBenchmark } from './protection';
 import { clamp } from './money';
 
 export type HealthKey = 'emergency' | 'savings' | 'debt' | 'investing' | 'goals' | 'protection';
@@ -14,7 +17,7 @@ export const HEALTH_METHOD: Record<HealthKey, { label: string; weight: number; r
   debt: { label: 'Debt burden', weight: 15, rule: 'EMI-to-income ratio. 100 at 10% or less, falling to 0 at 50%.' },
   investing: { label: 'Investment consistency', weight: 15, rule: 'Monthly investments as a share of income. 0 at 0%, 100 at 20% or more.' },
   goals: { label: 'Goal readiness', weight: 15, rule: 'Average share of each goal’s required monthly contribution that current capacity covers. 50 if no goals are set.' },
-  protection: { label: 'Financial protection', weight: 15, rule: 'Health cover of ₹5 lakh or more earns 50. Term cover of 10× annual income earns 50 (credited if no one depends on your income; regular support to parents counts as dependents).' },
+  protection: { label: 'Financial protection', weight: 15, rule: 'Health cover at or above the benchmark for your city and household (₹10 L for one person in a metro, ₹7.5 L in a tier-2 city, ₹5 L elsewhere; ×1.5 for 2–3 people, ×2 for 4+) earns 50. Term cover of 10× annual income earns 50 (credited if no one depends on your income; regular support to parents counts as dependents).' },
 };
 
 export interface HealthResult {
@@ -40,8 +43,9 @@ export function healthScore(p: FinancialProfile, a: Assumptions): HealthResult {
       : scored.length === 0
         ? 100
         : (scored.reduce((s, g) => s + Math.min(1, g.allocatedMonthly / g.requiredMonthly), 0) / scored.length) * 100;
-  const annualIncome = cf.income * 12;
-  const health = p.protection.healthCover >= 500000 ? 50 : (p.protection.healthCover / 500000) * 50;
+  const annualIncome = currentSalary(p)?.ctc ?? cf.income * 12;
+  const healthTarget = healthCoverBenchmark(p);
+  const health = Math.min(1, p.protection.healthCover / healthTarget) * 50;
   const dependents = hasDependents(p);
   const life = !dependents ? 50 : annualIncome > 0 ? Math.min(1, p.protection.lifeCover / (annualIncome * 10)) * 50 : 0;
   const protection = health + life;
@@ -52,7 +56,7 @@ export function healthScore(p: FinancialProfile, a: Assumptions): HealthResult {
     debt: { score: debt, detail: `${(cf.debtToIncome * 100).toFixed(1)}% of income goes to repayments` },
     investing: { score: investing, detail: `${cf.income > 0 ? ((cf.plannedInvestments / cf.income) * 100).toFixed(1) : 0}% of income invested monthly` },
     goals: { score: goalScore, detail: p.goals.length === 0 ? 'No goals set yet' : `${goals.goals.filter((g) => g.status === 'on-track' || g.status === 'funded').length} of ${p.goals.length} goals on track` },
-    protection: { score: protection, detail: `Health cover ${p.protection.healthCover >= 500000 ? 'meets' : 'below'} ₹5 L benchmark; term cover ${!dependents ? 'not essential without dependents' : annualIncome > 0 ? `${(p.protection.lifeCover / annualIncome).toFixed(1)}× annual income` : 'n/a'}` },
+    protection: { score: protection, detail: `Health cover ${p.protection.healthCover >= healthTarget ? 'meets' : 'below'} the ${formatCompact(healthTarget)} benchmark; term cover ${!dependents ? 'not essential without dependents' : annualIncome > 0 ? `${(p.protection.lifeCover / annualIncome).toFixed(1)}× annual income` : 'n/a'}` },
   };
 
   const components = (Object.keys(HEALTH_METHOD) as HealthKey[]).map((key) => ({

@@ -1,6 +1,8 @@
+import { CAPITAL_GAINS, EPF_RATE, NEW_REGIME, OLD_REGIME, SMALL_SAVINGS, TAX_LAW } from '@/finance/assumptions';
+
 /**
- * Tax AWARENESS assumptions — dated, editable and sourced. These are educational
- * reference values, not current law. Users are asked to verify them on the official sites.
+ * Tax AWARENESS reference values for the Learning Centre, read from src/finance/assumptions.ts so they
+ * always match the engine. Users are asked to verify them on the official sites.
  */
 export interface TaxAssumptions {
   asOf: string; // what the values reflect
@@ -15,15 +17,15 @@ export interface TaxAssumptions {
 }
 
 export const DEFAULT_TAX: TaxAssumptions = {
-  asOf: 'FY 2025-26 rules, as announced up to the Union Budget of February 2025',
-  equityStcgRate: 0.2,
-  equityLtcgRate: 0.125,
-  equityLtcgExemption: 125000,
-  sec80cLimit: 150000,
+  asOf: `Tax year 2026-27 under the ${TAX_LAW.value} (in force from 1 April 2026); Budget 2026 left slabs unchanged`,
+  equityStcgRate: CAPITAL_GAINS.value.equityStcg,
+  equityLtcgRate: CAPITAL_GAINS.value.equityLtcg,
+  equityLtcgExemption: CAPITAL_GAINS.value.equityLtcgExemption,
+  sec80cLimit: OLD_REGIME.value.sec80cLimit,
   nps80ccd1b: 50000,
-  ppfRate: 0.071,
-  epfRate: 0.0825,
-  newRegimeZeroTaxIncome: 1200000,
+  ppfRate: SMALL_SAVINGS.ppf.value,
+  epfRate: EPF_RATE.value,
+  newRegimeZeroTaxIncome: NEW_REGIME.value.rebateLimit,
 };
 
 export const TAX_SOURCES = [

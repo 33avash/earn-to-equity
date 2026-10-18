@@ -37,3 +37,15 @@ export function emi(principal: number, apr: number, months: number): number {
   const f = Math.pow(1 + i, months);
   return (principal * i * f) / (f - 1);
 }
+
+/**
+ * Largest loan a lender is likely to approve: the EMI that keeps all EMIs within `foir` (fixed obligations
+ * to income ratio, typically 50%) of monthly take-home, turned back into a principal at the loan's rate.
+ */
+export function maxEligibleLoan(monthlyTakeHome: number, existingEmi: number, apr: number, months: number, foir = 0.5): number {
+  const room = Math.max(0, monthlyTakeHome * foir - existingEmi);
+  if (room <= 0 || months <= 0) return 0;
+  const i = loanMonthlyRate(apr);
+  if (i === 0) return room * months;
+  return (room * (1 - Math.pow(1 + i, -months))) / i;
+}

@@ -15,6 +15,10 @@ const zeroAssumptions: Assumptions = {
   returns: emptyAssetMap(),
   sipStepUp: 0,
   sweepExcessCash: false,
+  lifestyleCreep: 0,
+  expenseRatios: emptyAssetMap(),
+  epfRate: 0,
+  postFiHealthcare: 0,
 };
 
 function simpleProfile(): FinancialProfile {
@@ -54,21 +58,21 @@ describe('simulate — invariants', () => {
     const r = simulate(p, a);
     let expected = r.startNetWorth;
     for (const row of r.rows) {
-      expected += row.income - row.expenses - row.interestPaid - row.oneTimeCosts - row.goalWithdrawals;
+      expected += row.income - row.expenses - row.interestPaid - row.oneTimeCosts - row.goalWithdrawals - row.capitalGainsTax;
       // retirement contributions come from pre-take-home pay; home purchase converts assets (neutral);
       // the purchase "cost" here includes down payment, which is offset by the property asset.
     }
-    const retIn = r.rows.reduce((s, row, i) => s + (i === 0 ? row.retirement - p.position.retirement.balance : row.retirement - r.rows[i - 1].retirement), 0);
-    const downPayments = r.rows.reduce((s, row) => s + row.oneTimeCosts, 0) - 300000 - 800000; // event-only one-time costs at 0% inflation
-    // Loan-financed goals and short-term borrowing are covered too: their interest is in interestPaid.
+    const retIn = r.rows.reduce((s, row, i) => s + (i === 0 ? row.retirement - p.position.retirement.balance - (p.position.epf?.balance ?? 0) : row.retirement - r.rows[i - 1].retirement), 0);
+    // Loan-financed goals, home-buying costs and short-term borrowing are covered too.
     expect(r.rows.some((row) => row.goalLoans > 0)).toBe(true);
-    close(r.rows[19].netWorth, expected + retIn + downPayments, 1e-6);
+    expect(r.rows.some((row) => row.downPayments > 0)).toBe(true);
+    close(r.rows[19].netWorth, expected + retIn, 1e-6);
   });
 
   it('a home purchase does not change net worth on the day it happens', () => {
     const p = simpleProfile();
     p.position.cashSavings = 5_000_000;
-    p.lifeEvents = [{ id: 'h', kind: 'homePurchase', label: 'Home', year: 2026, oneTimeCost: 0, incomeChangePct: 0, monthlyExpenseChange: 0, breakMonths: 0, home: { propertyValue: 4_000_000, downPaymentPct: 0.25, loanRate: 0, tenureYears: 10 } }];
+    p.lifeEvents = [{ id: 'h', kind: 'homePurchase', label: 'Home', year: 2026, oneTimeCost: 0, incomeChangePct: 0, monthlyExpenseChange: 0, breakMonths: 0, home: { propertyValue: 4_000_000, downPaymentPct: 0.25, loanRate: 0, tenureYears: 10, stampDutyPct: 0, interiors: 0, propertyTaxAnnual: 0 } }];
     const withHome = simulate(p, zeroAssumptions).rows[0];
     p.lifeEvents = [];
     const without = simulate(p, zeroAssumptions).rows[0];
@@ -157,11 +161,11 @@ describe('financial independence', () => {
     const p = demoProfile(2026);
     const fi = fiAnalysis(p, DEFAULT_ASSUMPTIONS);
     const row = fi.sim.rows[fi.yearsToTarget - 1];
-    close(fi.targetCorpus, row.expenses / DEFAULT_ASSUMPTIONS.withdrawalRate + row.liabilities);
+    close(fi.targetCorpus, (row.expenses + row.fiHealthcare) / DEFAULT_ASSUMPTIONS.withdrawalRate + row.liabilities);
     expect(row.liabilities).toBeGreaterThan(0); // demo still owes on the home loan at 50
     if (fi.gap > 0 && fi.extraMonthlyNeeded !== null) {
       const check = simulate(p, DEFAULT_ASSUMPTIONS, { years: fi.yearsToTarget, extraMonthlyInvestment: fi.extraMonthlyNeeded }).rows[fi.yearsToTarget - 1];
-      expect(check.financialAssets).toBeGreaterThanOrEqual(check.fiTarget * 0.9999);
+      expect(check.financialAssetsAfterTax).toBeGreaterThanOrEqual(check.fiTarget * 0.9999);
     }
   });
 });

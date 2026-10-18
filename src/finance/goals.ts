@@ -1,6 +1,6 @@
 import type { Assumptions, FinancialProfile, Goal } from '@/types/profile';
 import { monthlyCashflow } from './cashflow';
-import { weightedReturn } from './portfolio';
+import { netReturns, weightedReturn } from './portfolio';
 import { inflate, monthlyRate } from './rates';
 import { requiredMonthly, sipFutureValue } from './sip';
 
@@ -33,8 +33,8 @@ export interface GoalsSummary {
 export function goalReturn(goal: Goal, months: number, p: FinancialProfile, a: Assumptions): number {
   if (goal.source === 'savings') return a.returns.cash;
   // Money needed within 3 years is assumed to sit in debt instruments, not equities.
-  if (months < 36) return a.returns.debt;
-  return weightedReturn(p.preferences.targetAllocation, a.returns);
+  if (months < 36) return netReturns(a).debt;
+  return weightedReturn(p.preferences.targetAllocation, netReturns(a));
 }
 
 function completionMonths(goal: Goal, monthly: number, annualReturn: number): number | null {

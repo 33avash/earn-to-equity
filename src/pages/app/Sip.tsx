@@ -39,10 +39,11 @@ export default function Sip() {
           <Toggle checked={compare} onChange={setCompare} label="Compare with a flat SIP" description="Same starting amount, no annual increase." />
         </div>
         <div className="lg:col-span-8">
-          <div className="grid grid-cols-2 gap-6 border-b border-line pb-6 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-6 border-b border-line pb-6 sm:grid-cols-3 xl:grid-cols-5">
             <Stat size="sm" label="Total contributions" value={money(stepped.totalContributions)} />
             <Stat size="sm" label="Estimated gains" value={money(stepped.gains)} />
-            <Stat size="sm" label="Nominal corpus" value={money(stepped.corpus)} def="projected" />
+            <Stat size="sm" label="Nominal corpus" value={money(stepped.corpus)} def="projected" sub="before tax" />
+            <Stat size="sm" label="After tax" value={money(stepped.afterTaxCorpus)} sub={`${money(stepped.tax)} LTCG if sold in one year`} />
             <Stat size="sm" label="Inflation-adjusted" value={money(stepped.corpusReal)} def="real" sub={`at ${formatPct(infl)} inflation`} />
           </div>
           <div className="mt-6">
@@ -70,7 +71,7 @@ export default function Sip() {
           </table>
         </div>
       </Section>
-      <Disclaimer>Illustrative. Ignores fund expenses, exit loads and taxes. Actual market returns vary year to year and can be negative.</Disclaimer>
+      <Disclaimer>Illustrative. Enter the return after fund costs: your plan’s default of {formatPct(plan.portfolioReturn)} already deducts expense ratios ({formatPct(plan.portfolioReturnGross)} before costs). The after-tax figure assumes an equity fund held over a year and sold in one go: 12.5% on gains above ₹1.25 lakh, plus 4% cess. Spreading sales over several years uses the ₹1.25 lakh exemption each year. Exit loads are ignored, and actual returns vary year to year.</Disclaimer>
     </div>
   );
 }

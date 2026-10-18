@@ -8,7 +8,7 @@ import { MultiLineChart, FanChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
 import { simulate } from '@/finance/simulate';
 import { fiAnalysis } from '@/finance/fi';
-import { monteCarlo, type MonteCarloResult } from '@/finance/montecarlo';
+import { NIFTY_TRI, T_DEGREES_OF_FREEDOM, monteCarlo, type MonteCarloResult } from '@/finance/montecarlo';
 import { formatPct, formatINR } from '@/finance/money';
 
 const pp = (v: number) => `${v > 0 ? '+' : ''}${(v * 100).toFixed(1).replace(/\.0$/, '')} pts`;
@@ -34,15 +34,16 @@ export default function RiskLab() {
       inflation: Math.max(0, a.inflation + r.inflationDelta),
       expenseCut: r.expenseCut,
       sipStepUp: Math.max(0, a.sipStepUp + r.stepUpDelta),
+      lifestyleCreep: Math.min(1, Math.max(0, a.lifestyleCreep + r.creepDelta)),
       extraEvents: extra,
       shock: r.shockOn ? { year: r.shockYear, drop: r.shockDrop, recoveryYears: r.recoveryYears } : undefined,
     };
-  }, [r, p.income.salaryGrowth, a.inflation, a.sipStepUp]);
+  }, [r, p.income.salaryGrowth, a.inflation, a.sipStepUp, a.lifestyleCreep]);
 
   const base = plan.sim;
   const mod = useMemo(() => simulate(p, a, overrides), [p, a, overrides]);
   const fiMod = useMemo(() => fiAnalysis({ ...p, about: { ...p.about, fiAge: p.about.fiAge + r.retireDelay } }, a, overrides), [p, a, overrides, r.retireDelay]);
-  const changed = Boolean(r.salaryGrowthDelta || r.inflationDelta || r.expenseCut || r.stepUpDelta || r.retireDelay || r.breakMonths || r.purchaseCost || r.shockOn);
+  const changed = Boolean(r.salaryGrowthDelta || r.inflationDelta || r.expenseCut || r.stepUpDelta || r.creepDelta || r.retireDelay || r.breakMonths || r.purchaseCost || r.shockOn);
 
   const bEnd = base.points.at(-1)!;
   const mEnd = mod.points.at(-1)!;
@@ -59,7 +60,7 @@ export default function RiskLab() {
     setTimeout(() => {
       const { shock: _s, ...noShock } = overrides;
       void _s;
-      setMc({ base: monteCarlo(p, a, { seed: 42 }), mod: monteCarlo(p, a, { seed: 42, overrides: noShock }) });
+      setMc({ base: monteCarlo(p, a, { seed: 42, model: r.mcModel }), mod: monteCarlo(p, a, { seed: 42, overrides: noShock, model: r.mcModel }) });
       setRunning(false);
     }, 30);
   };
@@ -75,6 +76,7 @@ export default function RiskLab() {
             <Slider label="Salary growth change" value={r.salaryGrowthDelta} min={-0.08} max={0.05} step={0.005} onChange={(v) => set({ salaryGrowthDelta: v })} format={pp} help={`Baseline ${formatPct(p.income.salaryGrowth)} a year.`} />
             <Slider label="Inflation change" value={r.inflationDelta} min={-0.02} max={0.05} step={0.005} onChange={(v) => set({ inflationDelta: v })} format={pp} help={`Baseline ${formatPct(a.inflation)}.`} />
             <Slider label="Increase savings (cut lifestyle spend)" value={r.expenseCut} min={0} max={Math.max(5000, Math.round(plan.cashflow.lifestyle / 500) * 500)} step={500} onChange={(v) => set({ expenseCut: v })} format={(v) => `${formatINR(v)}/mo`} />
+            <Slider label="Lifestyle creep" value={Math.min(1, Math.max(0, a.lifestyleCreep + r.creepDelta))} min={0} max={1} step={0.05} onChange={(v) => set({ creepDelta: v - a.lifestyleCreep })} format={(v) => `${formatPct(v, 0)} of raises`} help={`Share of each above-inflation raise that goes to spending. Baseline ${formatPct(a.lifestyleCreep, 0)}.`} />
             <Slider label="SIP step-up change" value={r.stepUpDelta} min={-0.1} max={0.15} step={0.01} onChange={(v) => set({ stepUpDelta: v })} format={pp} help={`Baseline ${formatPct(a.sipStepUp, 0)} a year.`} />
             <Slider label="Delay financial independence by" value={r.retireDelay} min={0} max={10} step={1} onChange={(v) => set({ retireDelay: v })} format={(v) => (v ? `${v} yrs (age ${p.about.fiAge + v})` : 'No delay')} />
           </fieldset>
@@ -134,17 +136,32 @@ export default function RiskLab() {
         </div>
       </div>
 
-      <Section title="Range of outcomes (Monte Carlo)" description="1,000 simulated paths with randomly varying annual returns. Includes your income, spending and event tests, but not the single market decline above.">
+      <Section title="Range of outcomes (Monte Carlo)" description="1,000 simulated paths with randomly varying annual returns. The chart shows the 10th, 50th and 90th percentiles of net worth. Includes your income, spending and event tests, but not the single market decline above.">
         <div className="flex flex-wrap items-center gap-4">
+          <Segmented
+            label="Return model"
+            size="sm"
+            value={r.mcModel}
+            onChange={(v) => { set({ mcModel: v }); setMc(null); }}
+            options={[
+              { value: 'student-t', label: 'Fat-tailed' },
+              { value: 'historical', label: 'Nifty history' },
+            ]}
+          />
           <Button onClick={runMc} disabled={running}>{running ? 'Running 1,000 paths…' : mc ? 'Run again' : 'Run 1,000 simulations'}</Button>
-          <p className="text-xs text-grey">Mean return {formatPct(plan.portfolioReturn)}, volatility {formatPct(plan.volatility)} (from your allocation). Fixed seed for repeatable results.</p>
+          <p className="text-xs text-grey">
+            {r.mcModel === 'student-t'
+              ? `Student-t returns (ν = ${T_DEGREES_OF_FREEDOM}), mean ${formatPct(plan.portfolioReturn)} after costs, volatility ${formatPct(plan.volatility)}. Crashes like 2008 are more likely than a bell curve allows.`
+              : `Your Indian-equity share replays random calendar years of Nifty 50 TRI returns, 2005–2025 (worst ${formatPct(Math.min(...NIFTY_TRI.series), 0)}, best ${formatPct(Math.max(...NIFTY_TRI.series), 0)}). Source: ${NIFTY_TRI.sourceLabel}.`}{' '}
+            Fixed seed for repeatable results.
+          </p>
         </div>
         {running && <div role="status" className="mt-6 text-sm text-grey">Simulating…</div>}
         {mc && (
           <div className="mt-8 grid gap-12 lg:grid-cols-12">
             <div className="lg:col-span-8">
               <FanChart data={mc.mod.percentiles} baseline={mod.rows.map((x) => x.netWorth)} />
-              <p className="mt-2 text-xs text-grey">Shaded band: 10th–90th percentile of net worth. Solid line: median. Dashed: the deterministic projection.</p>
+              <p className="mt-2 text-xs text-grey">Shaded band between the dotted lines: 10th to 90th percentile (P10–P90) of net worth. Solid line: median (P50). Dashed gold: the deterministic projection.</p>
             </div>
             <div className="flex flex-col gap-6 lg:col-span-4">
               <div className="grid grid-cols-3 gap-4">
@@ -171,7 +188,7 @@ export default function RiskLab() {
             </div>
           </div>
         )}
-        <Disclaimer className="mt-8">Returns are drawn independently each year from a lognormal distribution with your assumed mean and a simplified volatility. Real markets show streaks, regime changes and fat tails that this model does not capture. Neither historical nor assumed return distributions predict future results. Probabilities are illustrative, not forecasts.</Disclaimer>
+        <Disclaimer className="mt-8">Each year’s return is drawn independently, so streaks and regime changes are not modelled. Twenty-one years of Nifty history is a short sample, and its average is above the long-run return most planners assume. Neither historical nor assumed distributions predict future results. Probabilities are illustrative, not forecasts.</Disclaimer>
       </Section>
     </div>
   );
