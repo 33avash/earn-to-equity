@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Download, FileText, RotateCcw, Trash2 } from 'lucide-react';
 import { usePlan } from '@/state/selectors';
-import { useStore, type ThemePref } from '@/state/store';
+import { useStore } from '@/state/store';
+import { useTheme, type ThemePref } from '@/theme/ThemeProvider';
 import { PageHeader, Section, Field, TextInput, NumberInput, MoneyInput, PercentInput, Segmented, Toggle, Button, ButtonLink, Notice, Disclaimer, confirmAction, toast } from '@/components/ui';
 import { AGE_MAX, AGE_MIN, ageError, fiAgeBounds, fiAgeError, validateProfile } from '@/finance/validate';
 import { familySupportMonthly } from '@/finance/household';
@@ -27,6 +28,7 @@ export default function Settings() {
   const s = useStore();
   const { profile: p, assumptions: a } = plan;
   const issues = validateProfile(p, a);
+  const theme = useTheme();
 
   const resetDemo = async () => {
     if (await confirmAction({ title: 'Reset to the demo profile?', body: 'This replaces your current profile, goals, events and assumptions with the fictional demo data.', confirmLabel: 'Reset to demo', danger: true })) {
@@ -124,7 +126,7 @@ export default function Settings() {
                 <tr key={d.label}>
                   <td className="font-sans text-[13px] font-medium text-evergreen">
                     {d.label}
-                    {d.approximate && <span className="ml-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#7a5b22] dark:text-champagne">Approximate</span>}
+                    {d.approximate && <span className="ml-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-champagne">Approximate</span>}
                     {d.note && <span className="mt-0.5 block text-xs font-normal text-grey">{d.note}</span>}
                   </td>
                   <td>{datedValue(d)}</td>
@@ -141,7 +143,7 @@ export default function Settings() {
         <div className="flex max-w-xl flex-col gap-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div><p className="text-sm font-medium">Theme</p><p className="text-xs text-grey">System follows your device setting.</p></div>
-            <Segmented<ThemePref> label="Theme" value={s.settings.theme} onChange={(v) => s.setSettings({ theme: v })} options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System' }]} />
+            <Segmented<ThemePref> label="Theme" value={theme.theme} onChange={theme.setTheme} options={[{ value: 'light', label: 'Light' }, { value: 'dark', label: 'Dark' }, { value: 'system', label: 'System' }]} />
           </div>
           <Toggle checked={s.settings.compact} onChange={(v) => s.setSettings({ compact: v })} label="Compact amounts (lakh / crore)" description="Show ₹12.5 L instead of ₹12,50,000. Currency is Indian rupees throughout." />
         </div>

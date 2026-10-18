@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { Pencil, Plus, Trash2, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useLocation, useSearchParams } from 'react-router-dom';
+import { Reorder, motion, useDragControls } from 'motion/react';
+import { GripVertical, Pencil, Plus, Trash2, SlidersHorizontal } from 'lucide-react';
 import type { Goal } from '@/types/profile';
-import { goalStatusLabel, usePlan, useMoney } from '@/state/selectors';
+import { goalStatusLabel, usePlan, useMoney, type GoalPlanStatus, type GoalView } from '@/state/selectors';
 import { useStore } from '@/state/store';
-import { PageHeader, Section, Stat, Notice, Badge, Button, Slider, EmptyState, Disclaimer, confirmAction, toast, type BadgeTone } from '@/components/ui';
+import { PageHeader, Section, Stat, Notice, Badge, Button, Slider, EmptyState, Disclaimer, Segmented, confirmAction, toast, type BadgeTone } from '@/components/ui';
 import { GoalForm, GOAL_CATEGORIES, PRIORITY_LABEL, newGoal } from '@/features/editors/GoalForm';
-import { analyzeGoal, type GoalAnalysis, type GoalStatus } from '@/finance/goals';
+import { analyzeGoal, fundingOrder, reorderGoals, type GoalAnalysis, type GoalStatus } from '@/finance/goals';
 import { FUNDING_MODE_LABELS, goalFundingMode, goalLoanTerms } from '@/finance/goalFunding';
 import { formatINR, formatMonths, formatPct } from '@/finance/money';
-import { FundingBar, PLAN_STATUS } from '@/features/goals/GoalTimeline';
+import { FundingBar, GoalTimeline, PLAN_STATUS } from '@/features/goals/GoalTimeline';
 
 /** Status of the dedicated-savings view (a monthly amount set aside per goal). Secondary to the whole-plan status. */
 const DEDICATED: Record<GoalStatus, { label: string; tone: BadgeTone }> = {
@@ -66,13 +68,158 @@ function Explorer({ a, onApply, onClose }: { a: GoalAnalysis; onApply: (g: Goal)
   );
 }
 
+type CardProps = {
+  v: GoalView;
+  money: (n: number) => string;
+  exploring: boolean;
+  onExplore: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onApply: (g: Goal) => void;
+  dragHandle?: ReactNode;
+};
+
+function GoalCard({ v, money, exploring, onExplore, onEdit, onDelete, onApply, dragHandle }: CardProps) {
+  const a = v.analysis;
+  const g = v.goal;
+  const mode = goalFundingMode(g);
+  const terms = goalLoanTerms(g);
+  return (
+    <article id={`goal-${g.id}`} className="scroll-mt-24 rounded-lg border border-line bg-surface p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 gap-3">
+          {dragHandle}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-[17px] font-semibold text-evergreen">{g.name}</h3>
+              <Badge tone={PLAN_STATUS[v.status].tone}>{PLAN_STATUS[v.status].label}</Badge>
+              <Badge>{PRIORITY_LABEL[g.priority]} priority</Badge>
+            </div>
+            <p className="mt-1 text-[13px] text-grey">
+              {GOAL_CATEGORIES[g.category].label}, target {g.targetYear} ({a.months > 0 ? `in ${formatMonths(a.months)}` : 'now'}), {formatPct(g.inflation)} cost inflation. {FUNDING_MODE_LABELS[mode]}
+              {mode !== 'savings' && ` at ${formatPct(terms.rate)} over ${terms.tenureYears} years${terms.moratoriumMonths ? ` after a ${terms.moratoriumMonths}-month moratorium` : ''}`}.
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-1">
+          <Button variant="ghost" size="sm" icon={<SlidersHorizontal size={14} />} onClick={onExplore} aria-expanded={exploring}>
+            Explore options
+          </Button>
+          <Button variant="ghost" size="sm" icon={<Pencil size={14} />} onClick={onEdit}>
+            Edit
+          </Button>
+          <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={onDelete} aria-label={`Delete ${g.name}`}>
+            Delete
+          </Button>
+        </div>
+      </div>
+
+      <p className={`mt-4 text-sm font-medium ${v.status === 'unfunded' ? 'text-danger' : 'text-evergreen'}`}>{goalStatusLabel(v, money)}</p>
+      {v.outcome && (
+        <div className="mt-3 max-w-xl">
+          <FundingBar view={v} />
+          <p className="mt-1.5 flex flex-wrap gap-x-4 text-[11.5px] text-grey">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-forest" aria-hidden />
+              Savings
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-champagne" aria-hidden />
+              Loan
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-danger" aria-hidden />
+              Gap
+            </span>
+          </p>
+        </div>
+      )}
+      <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-5">
+        <Stat size="sm" label="Cost today" value={money(g.cost)} />
+        <Stat size="sm" label={`Cost in ${g.targetYear}`} value={money(v.outcome?.cost ?? a.futureCost)} def="futureCost" />
+        <Stat
+          size="sm"
+          label={v.status === 'unfunded' ? 'Savings available' : 'From savings'}
+          value={v.outcome ? money(v.status === 'unfunded' ? v.outcome.cost - v.outcome.shortfall : v.outcome.fromSavings) : '—'}
+          sub={v.status === 'unfunded' ? 'not enough, so nothing is paid' : undefined}
+        />
+        <Stat size="sm" label="Loan" value={v.outcome ? money(v.outcome.loan) : '—'} />
+        <Stat size="sm" label="Unpaid" value={v.outcome ? money(v.outcome.shortfall) : '—'} tone={v.outcome && v.outcome.shortfall > 0 ? 'negative' : undefined} />
+      </div>
+
+      <details className="group mt-5">
+        <summary className="tap flex cursor-pointer items-center text-[13px] font-medium text-forest">Dedicated savings view</summary>
+        <p className="mt-2 max-w-2xl text-xs text-grey">If you set money aside for this goal alone, in funding order from your monthly surplus. Useful for sizing a goal-specific SIP. The status above comes from the full projection.</p>
+        <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-5">
+          <Stat size="sm" label="Saved" value={money(g.saved)} sub={`grows to ${money(a.fvSaved)}`} />
+          <Stat size="sm" label="Covered so far" value={formatPct(a.fundedPct, 0)} def="fundedPct" />
+          <Stat size="sm" label="Needed monthly" value={Number.isFinite(a.requiredMonthly) ? money(a.requiredMonthly) : '—'} />
+          <Stat size="sm" label="Set aside" value={money(a.allocatedMonthly)} sub={a.shortfallMonthly > 0 && Number.isFinite(a.shortfallMonthly) ? <span className="text-danger">short {money(a.shortfallMonthly)}</span> : undefined} />
+          <Stat size="sm" label="Dedicated status" value={<Badge tone={DEDICATED[a.status].tone}>{DEDICATED[a.status].label}</Badge>} />
+        </div>
+      </details>
+
+      {exploring && <Explorer a={a} onClose={onExplore} onApply={onApply} />}
+    </article>
+  );
+}
+
+/** A draggable goal card. Only the grip starts a drag, so the buttons on the card still work. */
+function DraggableGoal(props: Omit<CardProps, 'dragHandle'> & { onDragEnd: () => void }) {
+  const controls = useDragControls();
+  const { onDragEnd, ...card } = props;
+  return (
+    <Reorder.Item value={props.v.goal.id} dragListener={false} dragControls={controls} onDragEnd={onDragEnd} className="list-none" layout>
+      <GoalCard
+        {...card}
+        dragHandle={
+          <button
+            type="button"
+            onPointerDown={(e) => controls.start(e)}
+            className="hit mt-0.5 cursor-grab touch-none rounded-sm text-grey hover:text-evergreen active:cursor-grabbing"
+            aria-label={`Drag to reorder ${props.v.goal.name}`}
+          >
+            <GripVertical size={18} aria-hidden />
+          </button>
+        }
+      />
+    </Reorder.Item>
+  );
+}
+
+type View = 'list' | 'board' | 'timeline';
+const BOARD: { status: GoalPlanStatus[]; title: string }[] = [
+  { status: ['funded'], title: 'Paid from savings' },
+  { status: ['financed'], title: 'Loan needed' },
+  { status: ['unfunded'], title: 'Unpaid' },
+  { status: ['beyond', 'corpus'], title: 'Later or tracked' },
+];
+
 export default function Goals() {
   const plan = usePlan();
   const money = useMoney();
   const update = useStore((s) => s.updateProfile);
+  const [params, setParams] = useSearchParams();
+  const { hash } = useLocation();
   const [editing, setEditing] = useState<Goal | null>(null);
   const [exploring, setExploring] = useState<string | null>(null);
+  const [view, setView] = useState<View>('list');
   const { goals: summary, profile: p, goalViews } = plan;
+  const ordered = useMemo(() => [...goalViews].sort((a, b) => fundingOrder(a.goal, b.goal)), [goalViews]);
+  const [order, setOrder] = useState<string[]>(() => ordered.map((v) => v.goal.id));
+  useEffect(() => setOrder(ordered.map((v) => v.goal.id)), [ordered]);
+
+  // The command palette's "Add goal" opens the form; "#goal-…" scrolls to a goal.
+  useEffect(() => {
+    if (params.get('new') === '1') {
+      setEditing(newGoal('education', p.planStartYear));
+      params.delete('new');
+      setParams(params, { replace: true });
+    }
+  }, [params, setParams, p.planStartYear]);
+  useEffect(() => {
+    if (hash.startsWith('#goal-')) document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' });
+  }, [hash]);
 
   const save = (g: Goal) => {
     const isNew = !p.goals.some((x) => x.id === g.id);
@@ -93,15 +240,32 @@ export default function Goals() {
     });
     toast(`Deleted “${g.name}”`);
   };
+  const commitOrder = () => {
+    if (order.join() === ordered.map((v) => v.goal.id).join()) return;
+    update((x) => void (x.goals = reorderGoals(x.goals, order)));
+    toast('Funding order updated');
+  };
   const counts = { paid: goalViews.filter((v) => v.status === 'funded').length, loan: goalViews.filter((v) => v.status === 'financed').length, unpaid: goalViews.filter((v) => v.status === 'unfunded').length };
-  const ordered = [...goalViews].sort((a, b) => a.goal.priority - b.goal.priority || a.goal.targetYear - b.goal.targetYear);
   const linkedEvents = (id: string) => p.lifeEvents.filter((e) => e.goalId === id).map((e) => e.label);
+  const cardProps = (v: GoalView) => ({
+    v,
+    money,
+    exploring: exploring === v.goal.id,
+    onExplore: () => setExploring(exploring === v.goal.id ? null : v.goal.id),
+    onEdit: () => setEditing(v.goal),
+    onDelete: () => remove(v.goal),
+    onApply: (next: Goal) => {
+      save(next);
+      setExploring(null);
+    },
+  });
+  const byId = new Map(goalViews.map((v) => [v.goal.id, v]));
 
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col gap-10">
       <PageHeader
-        title="Goals Planner"
-        description="Goals are entered in today’s prices and inflated to their target year. In that year your plan pays for each one from savings, a loan, or both, depending on how you chose to fund it."
+        title="Goals"
+        description="Enter each goal in today’s prices. In its target year your plan pays for it from savings, a loan, or both, depending on how you fund it."
         actions={
           !editing && (
             <Button icon={<Plus size={16} />} onClick={() => setEditing(newGoal('education', p.planStartYear))}>
@@ -119,12 +283,20 @@ export default function Goals() {
       )}
 
       {p.goals.length > 0 && (
-        <dl className="grid grid-cols-2 gap-8 border-y border-line py-6 lg:grid-cols-4">
-          <Stat label="Paid from savings" value={`${counts.paid} of ${p.goals.length}`} />
-          <Stat label="Need a loan" value={String(counts.loan)} />
-          <Stat label="Unpaid" value={String(counts.unpaid)} tone={counts.unpaid > 0 ? 'negative' : undefined} />
-          <Stat label="Monthly surplus" value={money(summary.capacity)} def="surplus" sub={`Dedicated plans need ${money(summary.totalRequired)}`} />
-        </dl>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line lg:grid-cols-4">
+          <div className="bg-surface p-4">
+            <Stat label="Paid from savings" value={`${counts.paid} of ${p.goals.length}`} />
+          </div>
+          <div className="bg-surface p-4">
+            <Stat label="Need a loan" value={String(counts.loan)} />
+          </div>
+          <div className="bg-surface p-4">
+            <Stat label="Unpaid" value={String(counts.unpaid)} tone={counts.unpaid > 0 ? 'negative' : undefined} />
+          </div>
+          <div className="bg-surface p-4">
+            <Stat label="Monthly surplus" value={money(summary.capacity)} def="surplus" sub={`Dedicated plans need ${money(summary.totalRequired)}`} />
+          </div>
+        </div>
       )}
 
       {plan.unfundedGoals.length > 0 && (
@@ -134,89 +306,80 @@ export default function Goals() {
       )}
 
       {p.goals.length === 0 && !editing ? (
-        <EmptyState title="No goals yet" action={<Button icon={<Plus size={16} />} onClick={() => setEditing(newGoal('education', p.planStartYear))}>Add your first goal</Button>}>
-          A degree, a car, a wedding, a home, or time off to start something. Add one to see its cost in the year you need it and how your plan pays for it.
+        <EmptyState
+          art="goals"
+          title="No goals yet"
+          action={
+            <Button icon={<Plus size={16} />} onClick={() => setEditing(newGoal('education', p.planStartYear))}>
+              Add your first goal
+            </Button>
+          }
+        >
+          A degree, a car, a wedding or a home. Add one to see its cost in the year you need it and how your plan pays for it.
         </EmptyState>
       ) : (
-        <Section title="Your goals" description="Sorted by priority, then by date.">
-          <ul>
-            {ordered.map((v) => {
-              const a = v.analysis;
-              const g = v.goal;
-              const mode = goalFundingMode(g);
-              const terms = goalLoanTerms(g);
-              return (
-                <li key={g.id} className="border-t border-line py-6 last:border-b">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-semibold text-evergreen">{g.name}</h3>
-                        <Badge tone={PLAN_STATUS[v.status].tone}>{PLAN_STATUS[v.status].label}</Badge>
-                        <Badge>{PRIORITY_LABEL[g.priority]} priority</Badge>
-                      </div>
-                      <p className="mt-1 text-[13px] text-grey">
-                        {GOAL_CATEGORIES[g.category].label}, target {g.targetYear} ({a.months > 0 ? `in ${formatMonths(a.months)}` : 'now'}), {formatPct(g.inflation)} cost inflation. {FUNDING_MODE_LABELS[mode]}
-                        {mode !== 'savings' && ` at ${formatPct(terms.rate)} over ${terms.tenureYears} years${terms.moratoriumMonths ? ` after a ${terms.moratoriumMonths}-month moratorium` : ''}`}.
-                      </p>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" icon={<SlidersHorizontal size={14} />} onClick={() => setExploring(exploring === g.id ? null : g.id)} aria-expanded={exploring === g.id}>
-                        Explore options
-                      </Button>
-                      <Button variant="ghost" size="sm" icon={<Pencil size={14} />} onClick={() => setEditing(g)}>
-                        Edit
-                      </Button>
-                      <Button variant="ghost" size="sm" icon={<Trash2 size={14} />} onClick={() => remove(g)} aria-label={`Delete ${g.name}`}>
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-
-                  <p className={`mt-4 text-sm font-medium ${v.status === 'unfunded' ? 'text-danger' : 'text-evergreen'}`}>{goalStatusLabel(v, money)}</p>
-                  {v.outcome && (
-                    <div className="mt-3 max-w-xl">
-                      <FundingBar view={v} />
-                    </div>
-                  )}
-                  <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-5">
-                    <Stat size="sm" label="Cost today" value={money(g.cost)} />
-                    <Stat size="sm" label={`Cost in ${g.targetYear}`} value={money(v.outcome?.cost ?? a.futureCost)} def="futureCost" />
-                    <Stat
-                      size="sm"
-                      label={v.status === 'unfunded' ? 'Savings available' : 'From savings'}
-                      value={v.outcome ? money(v.status === 'unfunded' ? v.outcome.cost - v.outcome.shortfall : v.outcome.fromSavings) : '—'}
-                      sub={v.status === 'unfunded' ? 'not enough, so nothing is paid' : undefined}
-                    />
-                    <Stat size="sm" label="Loan" value={v.outcome ? money(v.outcome.loan) : '—'} />
-                    <Stat size="sm" label="Unpaid" value={v.outcome ? money(v.outcome.shortfall) : '—'} tone={v.outcome && v.outcome.shortfall > 0 ? 'negative' : undefined} />
-                  </dl>
-
-                  <details className="group mt-5">
-                    <summary className="tap flex cursor-pointer items-center text-[13px] font-medium text-forest">Dedicated savings view</summary>
-                    <p className="mt-2 max-w-2xl text-xs text-grey">If you set money aside for this goal alone, in priority order from your monthly surplus. Useful for sizing a goal-specific SIP. Your plan’s status above comes from the full projection.</p>
-                    <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-5">
-                      <Stat size="sm" label="Saved" value={money(g.saved)} sub={`grows to ${money(a.fvSaved)}`} />
-                      <Stat size="sm" label="Covered so far" value={formatPct(a.fundedPct, 0)} def="fundedPct" />
-                      <Stat size="sm" label="Needed monthly" value={Number.isFinite(a.requiredMonthly) ? money(a.requiredMonthly) : '—'} />
-                      <Stat size="sm" label="Set aside" value={money(a.allocatedMonthly)} sub={a.shortfallMonthly > 0 && Number.isFinite(a.shortfallMonthly) ? <span className="text-danger">short {money(a.shortfallMonthly)}</span> : undefined} />
-                      <Stat size="sm" label="Dedicated status" value={<Badge tone={DEDICATED[a.status].tone}>{DEDICATED[a.status].label}</Badge>} />
-                    </dl>
-                  </details>
-
-                  {exploring === g.id && (
-                    <Explorer
-                      a={a}
-                      onClose={() => setExploring(null)}
-                      onApply={(next) => {
-                        save(next);
-                        setExploring(null);
-                      }}
-                    />
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+        <Section
+          title="Your goals"
+          description={view === 'list' ? 'In funding order. Drag the grip to change which goal gets money first.' : view === 'board' ? 'Grouped by how your plan pays for each one.' : 'In date order.'}
+          actions={
+            <Segmented<View>
+              label="Goals view"
+              size="sm"
+              value={view}
+              onChange={setView}
+              options={[
+                { value: 'list', label: 'Priority' },
+                { value: 'board', label: 'Board' },
+                { value: 'timeline', label: 'Timeline' },
+              ]}
+            />
+          }
+        >
+          {view === 'list' && (
+            <Reorder.Group axis="y" values={order} onReorder={setOrder} className="flex flex-col gap-3">
+              {order.map((id) => {
+                const v = byId.get(id);
+                return v ? <DraggableGoal key={id} {...cardProps(v)} onDragEnd={commitOrder} /> : null;
+              })}
+            </Reorder.Group>
+          )}
+          {view === 'board' && (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {BOARD.map((col) => {
+                const items = ordered.filter((v) => col.status.includes(v.status));
+                return (
+                  <section key={col.title} aria-label={col.title} className="rounded-lg border border-line bg-muted/40 p-3">
+                    <h3 className="mb-3 flex items-center justify-between px-1 text-[13px] font-medium text-evergreen">
+                      {col.title}
+                      <span className="num text-grey">{items.length}</span>
+                    </h3>
+                    <ul className="flex flex-col gap-2">
+                      {items.map((v) => (
+                        <motion.li layout key={v.goal.id} className="rounded-md border border-line bg-surface p-3">
+                          <button type="button" className="w-full text-left" onClick={() => setEditing(v.goal)}>
+                            <span className="flex items-baseline justify-between gap-2">
+                              <span className="text-[14px] font-medium text-evergreen">{v.goal.name}</span>
+                              <span className="num text-xs text-grey">{v.goal.targetYear}</span>
+                            </span>
+                            <span className="mt-2 block">
+                              <FundingBar view={v} />
+                            </span>
+                            <span className="num mt-1.5 block text-[12px] text-grey">{goalStatusLabel(v, money)}</span>
+                          </button>
+                        </motion.li>
+                      ))}
+                      {items.length === 0 && <li className="px-1 text-xs text-grey">None</li>}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
+          )}
+          {view === 'timeline' && (
+            <div className="rounded-lg border border-line bg-surface p-5">
+              <GoalTimeline goals={goalViews} />
+            </div>
+          )}
         </Section>
       )}
 

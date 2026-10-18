@@ -278,3 +278,75 @@ export function homeCheck(plan: Plan, event: LifeEvent) {
     maxLoan: maxEligibleLoan(takeHome, otherEmi, event.home.loanRate, tenureMonths, HOME_DEFAULTS.foir),
   };
 }
+
+export interface Kpi {
+  key: 'netWorth' | 'surplus' | 'savingsRate' | 'fiAge' | 'health';
+  label: string;
+  value: number | null;
+  kind: 'money' | 'pct' | 'age' | 'score';
+  /** Next ten years of the projection, for the sparkline. */
+  spark: number[];
+  /** Change over the next 12 months of the projection. */
+  delta: { value: number; kind: 'money' | 'pct' | 'pts' } | null;
+  note?: string;
+}
+
+/** The Overview KPI strip, read from the projection. */
+export function kpis(plan: Plan): Kpi[] {
+  const { sim, cashflow: cf, fi, health } = plan;
+  const rows = sim.rows.slice(0, 10);
+  const rate = (r: (typeof rows)[number]) => (r.income > 0 ? r.investableSurplus / r.income : 0);
+  const nw0 = sim.points[0].netWorth;
+  const nw1 = sim.points[1].netWorth;
+  return [
+    { key: 'netWorth', label: 'Net worth', value: plan.sheet.netWorth, kind: 'money', spark: sim.points.slice(0, 11).map((p) => p.netWorth), delta: { value: nw1 - nw0, kind: 'money' }, note: 'in 12 months' },
+    { key: 'surplus', label: 'Monthly surplus', value: cf.investableSurplus, kind: 'money', spark: rows.map((r) => r.investableSurplus / 12), delta: sim.rows[1] ? { value: sim.rows[1].investableSurplus / 12 - cf.investableSurplus, kind: 'money' } : null, note: 'next year' },
+    { key: 'savingsRate', label: 'Savings rate', value: cf.savingsRate, kind: 'pct', spark: rows.map(rate), delta: sim.rows[1] ? { value: rate(sim.rows[1]) - cf.savingsRate, kind: 'pts' } : null, note: 'next year' },
+    {
+      key: 'fiAge',
+      label: 'FI age',
+      value: fi.fiAge,
+      kind: 'age',
+      spark: fi.sim.rows.slice(0, fi.yearsToTarget).map((r) => Math.min(1.2, r.financialAssetsAfterTax / r.fiTarget)),
+      delta: { value: fi.progress, kind: 'pct' },
+      note: `of target by ${fi.targetAge}`,
+    },
+    { key: 'health', label: 'Plan health', value: health.score, kind: 'score', spark: [], delta: null, note: health.score >= 80 ? 'Strong' : health.score >= 60 ? 'Solid, with gaps' : health.score >= 40 ? 'Needs attention' : 'Fragile' },
+  ];
+}
+
+/** This month as a waterfall: take-home down to what is left unassigned. */
+export function monthWaterfall(plan: Plan) {
+  const cf = plan.cashflow;
+  const invest = Math.min(cf.plannedInvestments, Math.max(0, cf.investableSurplus));
+  const save = Math.min(cf.plannedSavings, Math.max(0, cf.investableSurplus - invest));
+  const steps = [
+    { key: 'income', label: 'Take-home', value: cf.income, kind: 'total' as const },
+    { key: 'essential', label: 'Essentials', value: -cf.essential, kind: 'step' as const },
+    { key: 'lifestyle', label: 'Lifestyle', value: -cf.lifestyle, kind: 'step' as const },
+    { key: 'debt', label: 'EMIs', value: -cf.debtPayments, kind: 'step' as const },
+    { key: 'invest', label: 'SIPs', value: -invest, kind: 'step' as const },
+    { key: 'save', label: 'Savings', value: -save, kind: 'step' as const },
+  ];
+  let running = 0;
+  const bars = steps.map((s) => {
+    const start = s.kind === 'total' ? 0 : running;
+    running = s.kind === 'total' ? s.value : running + s.value;
+    return { ...s, from: Math.min(start, running), to: Math.max(start, running) };
+  });
+  bars.push({ key: 'left', label: 'Unassigned', value: running, kind: 'total', from: Math.min(0, running), to: Math.max(0, running) });
+  return bars;
+}
+
+/** Net worth year by year against a saved baseline plan, matched by calendar year. */
+export function baselineComparison(plan: Plan, baseline: { profile: FinancialProfile; assumptions: Assumptions }) {
+  const base = simulate(baseline.profile, baseline.assumptions);
+  const byYear = new Map(base.points.map((p) => [p.year, p]));
+  const points = plan.sim.points.map((p) => {
+    const b = byYear.get(p.year);
+    return { year: p.year, current: p.netWorth, baseline: b ? b.netWorth : null, diff: b ? p.netWorth - b.netWorth : null };
+  });
+  const last = points[points.length - 1];
+  const fiChange = plan.sim.fiYear !== null && base.fiYear !== null ? plan.sim.fiYear - base.fiYear : null;
+  return { points, finalDiff: last.diff, fiChange, baseFiYear: base.fiYear };
+}

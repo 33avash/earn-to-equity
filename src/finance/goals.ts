@@ -29,6 +29,25 @@ export interface GoalsSummary {
   totalShortfall: number;
 }
 
+/** The order goals receive money: priority, then the order set by dragging, then date. */
+export function fundingOrder(g1: Goal, g2: Goal): number {
+  return g1.priority - g2.priority || (g1.rank ?? 0) - (g2.rank ?? 0) || g1.targetYear - g2.targetYear;
+}
+
+/**
+ * Applies a new order from dragging: ranks follow the order, and priority labels follow position
+ * (top third High, middle Medium, bottom Low) so the two never disagree.
+ */
+export function reorderGoals(goals: Goal[], orderedIds: string[]): Goal[] {
+  const n = orderedIds.length;
+  return goals.map((g) => {
+    const i = orderedIds.indexOf(g.id);
+    if (i < 0) return g;
+    const priority = Math.min(3, Math.max(1, Math.ceil(((i + 1) / n) * 3))) as Goal['priority'];
+    return { ...g, rank: i, priority };
+  });
+}
+
 /** Expected return used to grow money set aside for a goal. */
 export function goalReturn(goal: Goal, months: number, p: FinancialProfile, a: Assumptions): number {
   if (goal.source === 'savings') return a.returns.cash;
@@ -93,7 +112,7 @@ export function analyzeGoal(goal: Goal, allocatedMonthly: number, p: FinancialPr
  */
 export function analyzeGoals(p: FinancialProfile, a: Assumptions, capacityOverride?: number): GoalsSummary {
   const capacity = Math.max(0, capacityOverride ?? monthlyCashflow(p).investableSurplus);
-  const ordered = [...p.goals].sort((g1, g2) => g1.priority - g2.priority || g1.targetYear - g2.targetYear);
+  const ordered = [...p.goals].sort(fundingOrder);
   let left = capacity;
   const byId = new Map<string, GoalAnalysis>();
   let totalRequired = 0;

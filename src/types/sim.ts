@@ -56,6 +56,8 @@ export interface YearRow {
 export interface SimOverrides {
   salaryGrowth?: number; // replaces the profile value
   inflation?: number;
+  /** Inflation for specific calendar years, overriding `inflation` in those years (e.g. a 3-year spike). */
+  inflationByYear?: Record<number, number>;
   returnShift?: number; // added to the weighted portfolio return
   sipStepUp?: number;
   extraMonthlyInvestment?: number; // invested on top of the plan, funded outside the current budget

@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type ReactNode, type SelectHTMLAttributes } from 'react';
 import { Info } from 'lucide-react';
 import { Tooltip } from './Tooltip';
+import { SliderRoot, Switch } from './shadcn/menu';
 
 interface FieldProps {
   label: string;
@@ -196,36 +197,24 @@ interface SliderProps {
   help?: string;
 }
 
-/** Labelled range slider with the current value shown; paired with an accessible native input. */
+/** Labelled slider with the current value shown (Radix slider: keyboard, touch and screen-reader support). */
 export function Slider({ label, value, min, max, step, onChange, format, help }: SliderProps) {
   const id = useId();
-  const fill = `${((value - min) / (max - min)) * 100}%`;
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor={id} className="flex items-center gap-1.5 text-[13px] font-medium text-charcoal">
+        <span id={id} className="flex items-center gap-1.5 text-[13px] font-medium text-charcoal">
           {label}
           {help && (
             <Tooltip content={help}>
               <Info size={13} className="text-grey" aria-hidden />
             </Tooltip>
           )}
-        </label>
+        </span>
         <span className="num text-sm font-semibold text-evergreen">{format(value)}</span>
       </div>
-      <input
-        id={id}
-        type="range"
-        className="range"
-        style={{ ['--fill' as string]: fill }}
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        aria-valuetext={format(value)}
-        onChange={(e) => onChange(Number(e.target.value))}
-      />
-      <div className="flex justify-between text-[11px] text-grey num">
+      <SliderRoot aria-labelledby={id} thumbLabel={label} valueText={format(value)} min={min} max={max} step={step} value={[value]} onValueChange={([v]) => onChange(v)} className="h-5" />
+      <div className="num flex justify-between text-[11px] text-grey">
         <span>{format(min)}</span>
         <span>{format(max)}</span>
       </div>
@@ -255,16 +244,7 @@ export function Toggle({ checked, onChange, label, description }: { checked: boo
         </label>
         {description && <p className="mt-0.5 text-xs text-grey">{description}</p>}
       </div>
-      <button
-        id={id}
-        role="switch"
-        type="button"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`hit relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? 'bg-forest' : 'bg-line'}`}
-      >
-        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-surface shadow-sm transition-transform ${checked ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
-      </button>
+      <Switch id={id} checked={checked} onCheckedChange={onChange} className="mt-0.5" />
     </div>
   );
 }

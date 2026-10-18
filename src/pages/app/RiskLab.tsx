@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { SimOverrides } from '@/types/sim';
 import type { LifeEvent } from '@/types/profile';
 import { usePlan, useMoney } from '@/state/selectors';
-import { useStore, defaultRiskLab } from '@/state/store';
-import { PageHeader, Section, Slider, Toggle, Stat, Segmented, Disclaimer, Button, Notice, Field, MoneyInput, NumberInput, Progress } from '@/components/ui';
+import { useStore, defaultRiskLab, type RiskLabSettings } from '@/state/store';
+import { useSearchParams } from 'react-router-dom';
+import { PageHeader, Section, Slider, Toggle, Stat, Segmented, Disclaimer, Button, Field, MoneyInput, NumberInput, Progress } from '@/components/ui';
 import { MultiLineChart, FanChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
 import { simulate } from '@/finance/simulate';
@@ -37,13 +38,38 @@ export default function RiskLab() {
       lifestyleCreep: Math.min(1, Math.max(0, a.lifestyleCreep + r.creepDelta)),
       extraEvents: extra,
       shock: r.shockOn ? { year: r.shockYear, drop: r.shockDrop, recoveryYears: r.recoveryYears } : undefined,
+      inflationByYear: r.spikeOn ? Object.fromEntries(Array.from({ length: r.spikeYears }, (_, i) => [r.spikeFrom + i, r.spikeRate])) : undefined,
     };
   }, [r, p.income.salaryGrowth, a.inflation, a.sipStepUp, a.lifestyleCreep]);
 
   const base = plan.sim;
   const mod = useMemo(() => simulate(p, a, overrides), [p, a, overrides]);
   const fiMod = useMemo(() => fiAnalysis({ ...p, about: { ...p.about, fiAge: p.about.fiAge + r.retireDelay } }, a, overrides), [p, a, overrides, r.retireDelay]);
-  const changed = Boolean(r.salaryGrowthDelta || r.inflationDelta || r.expenseCut || r.stepUpDelta || r.creepDelta || r.retireDelay || r.breakMonths || r.purchaseCost || r.shockOn);
+  const changed = Boolean(r.salaryGrowthDelta || r.inflationDelta || r.expenseCut || r.stepUpDelta || r.creepDelta || r.retireDelay || r.breakMonths || r.purchaseCost || r.shockOn || r.spikeOn);
+  const [params, setParams] = useSearchParams();
+  const presets: { key: string; label: string; apply: () => Partial<RiskLabSettings> }[] = [
+    // Nifty 50 TRI fell 51.3% in 2008 and rose 77.6% in 2009 (see the Monte Carlo data source).
+    { key: 'crash', label: '2008-style crash in year 4', apply: () => ({ shockOn: true, shockDrop: 0.5, shockYear: start + 3, recoveryYears: 2 }) },
+    { key: 'jobloss', label: 'Job loss for 6 months', apply: () => ({ breakMonths: 6, breakYear: start + 1 }) },
+    { key: 'inflation', label: 'Inflation at 8% for 3 years', apply: () => ({ spikeOn: true, spikeRate: 0.08, spikeFrom: start + 1, spikeYears: 3 }) },
+    { key: 'slowpay', label: 'Raises half as big', apply: () => ({ salaryGrowthDelta: -p.income.salaryGrowth / 2 }) },
+    { key: 'emergency', label: '₹5 L medical bill next year', apply: () => ({ purchaseCost: 500000, purchaseYear: start + 1 }) },
+  ];
+  const applyPreset = (key: string) => {
+    const pr = presets.find((x) => x.key === key);
+    if (!pr) return;
+    set({ ...defaultRiskLab(), mcModel: r.mcModel, ...pr.apply() });
+    setMc(null);
+  };
+  useEffect(() => {
+    const key = params.get('preset');
+    if (key) {
+      applyPreset(key);
+      params.delete('preset');
+      setParams(params, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once per ?preset= link
+  }, [params]);
 
   const bEnd = base.points.at(-1)!;
   const mEnd = mod.points.at(-1)!;
@@ -88,6 +114,17 @@ export default function RiskLab() {
             <Field label="In year">{(id) => <NumberInput id={id} value={r.purchaseYear} min={start} max={end} onChange={(v) => set({ purchaseYear: Math.round(v) })} />}</Field>
           </fieldset>
           <fieldset className="flex flex-col gap-5">
+            <legend className="eyebrow mb-4">Inflation spike</legend>
+            <Toggle checked={r.spikeOn} onChange={(v) => set({ spikeOn: v })} label="Apply an inflation spike" description="Prices rise faster for a few years, then return to your assumption. Costs stay at the higher level." />
+            {r.spikeOn && (
+              <>
+                <Slider label="Inflation during the spike" value={r.spikeRate} min={0.06} max={0.15} step={0.005} onChange={(v) => set({ spikeRate: v })} format={(v) => formatPct(v)} />
+                <Slider label="Starting" value={r.spikeFrom} min={start} max={end} step={1} onChange={(v) => set({ spikeFrom: v })} format={(v) => String(v)} />
+                <Slider label="Lasting" value={r.spikeYears} min={1} max={10} step={1} onChange={(v) => set({ spikeYears: v })} format={(v) => `${v} year${v === 1 ? '' : 's'}`} />
+              </>
+            )}
+          </fieldset>
+          <fieldset className="flex flex-col gap-5">
             <legend className="eyebrow mb-4">Market decline</legend>
             <Toggle checked={r.shockOn} onChange={(v) => set({ shockOn: v })} label="Apply a market decline" description="The portfolio falls once, at the start of the chosen year." />
             {r.shockOn && (
@@ -105,13 +142,20 @@ export default function RiskLab() {
         </div>
 
         <div className="lg:col-span-8">
-          {!changed && <Notice>Move any control to compare a stress test against your baseline.</Notice>}
-          <dl className="mt-6 grid grid-cols-2 gap-8 border-b border-line pb-8 sm:grid-cols-4">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Stress test presets">
+            {presets.map((pr) => (
+              <button key={pr.key} type="button" onClick={() => applyPreset(pr.key)} className="tap inline-flex items-center rounded-full border border-line bg-surface px-3 text-[13px] text-evergreen transition-colors hover:border-forest hover:bg-mint">
+                {pr.label}
+              </button>
+            ))}
+          </div>
+          {!changed && <p className="mt-4 text-sm text-grey">Pick a preset or move any control to compare a stress test against your plan.</p>}
+          <div className="mt-6 grid grid-cols-2 gap-8 border-b border-line pb-8 sm:grid-cols-4">
             <Stat size="sm" label={`Net worth ${bEnd.year}`} value={money(mEnd.netWorth)} sub={<>baseline {money(bEnd.netWorth)}<br /><span className={mEnd.netWorth < bEnd.netWorth ? 'text-danger' : 'text-forest'}>{mEnd.netWorth - bEnd.netWorth >= 0 ? '+' : ''}{money(mEnd.netWorth - bEnd.netWorth)}</span></>} />
             <Stat size="sm" label="Today’s rupees" value={money(mEnd.netWorthReal)} sub={`baseline ${money(bEnd.netWorthReal)}`} />
             <Stat size="sm" label="Goals paid for" value={`${paid(goalsM)} of ${goalsM.length}`} sub={`baseline ${paid(goalsB)}`} />
             <Stat size="sm" label="FI age estimate" value={fiMod.fiAge ? String(fiMod.fiAge) : 'Not reached'} sub={`baseline ${plan.fi.fiAge ?? 'not reached'}`} />
-          </dl>
+          </div>
           <div className="mt-8">
             <MultiLineChart
               data={base.points.map((pt, i) => ({ year: pt.year, base: pt.netWorth, mod: mod.points[i].netWorth }))}

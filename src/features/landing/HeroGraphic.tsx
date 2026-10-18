@@ -58,8 +58,8 @@ export function HeroGraphic({ series }: { series: HeroSeries }) {
           const ly = cy - (k === 0 ? 46 : 58);
           return (
             <g key={m.label}>
-              <line x1={cx} x2={cx} y1={ly + 12} y2={cy - 7} className="stroke-champagne" strokeWidth="1" />
-              <circle cx={cx} cy={cy} r="5.5" className="fill-ivory stroke-champagne" strokeWidth="2" />
+              <line x1={cx} x2={cx} y1={ly + 12} y2={cy - 7} className="stroke-sage" strokeWidth="1" />
+              <circle cx={cx} cy={cy} r="5.5" className="fill-surface stroke-forest" strokeWidth="2" />
               <text x={end ? cx + 4 : cx - 4} y={ly - 4} textAnchor={end ? 'end' : 'start'} className="fill-evergreen" fontSize="12.5" fontWeight="600">
                 {m.label}
               </text>

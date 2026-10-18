@@ -1,76 +1,86 @@
-import { createElement, useEffect, useRef, useState, type ElementType, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { animate, motion, useInView, useReducedMotion } from 'motion/react';
 
-const prefersReduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+const EASE = [0.22, 1, 0.36, 1] as const;
 
-/** Fades content up once when it first scrolls into view. CSS-only transition. */
-export function Reveal({ as = 'div', delay = 0, className = '', children, ...rest }: { as?: ElementType; delay?: number; className?: string; children: ReactNode; [k: string]: unknown }) {
-  const ref = useRef<HTMLElement>(null);
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (prefersReduced() || typeof IntersectionObserver === 'undefined') {
-      setInView(true);
-      return;
-    }
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (e.isIntersecting) {
-          setInView(true);
-          io.disconnect();
-        }
-      },
-      { rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, []);
-  return createElement(as, { ref, className: `reveal ${inView ? 'is-in' : ''} ${className}`, style: { ['--reveal-delay' as string]: `${delay}ms` }, ...rest }, children);
+/** Fades content up 10px over 250ms the first time it scrolls into view. */
+export function Reveal({ as = 'div', delay = 0, className = '', children, ...rest }: { as?: 'div' | 'li' | 'section'; delay?: number; className?: string; children: ReactNode; [k: string]: unknown }) {
+  const Tag = motion[as];
+  return (
+    <Tag
+      className={className}
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '0px 0px -8% 0px' }}
+      transition={{ duration: 0.25, delay: delay / 1000, ease: EASE }}
+      {...rest}
+    >
+      {children}
+    </Tag>
+  );
 }
 
-/** Smoothly tweens a number towards its new value (eased, ~600ms). Instant under reduced motion. */
-export function useTweened(value: number, duration = 650) {
+/** Number that tweens to its new value (a number ticker). Instant under reduced motion. */
+export function AnimatedNumber({ value, format }: { value: number; format: (v: number) => string }) {
+  const reduce = useReducedMotion();
   const [display, setDisplay] = useState(value);
   const from = useRef(value);
-  const raf = useRef(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true });
   useEffect(() => {
-    if (!Number.isFinite(value) || prefersReduced()) {
-      setDisplay(value);
+    if (!Number.isFinite(value) || reduce || !inView) {
       from.current = value;
+      setDisplay(value);
       return;
     }
-    const start = performance.now();
-    const a = from.current;
-    const step = (t: number) => {
-      const k = Math.min(1, (t - start) / duration);
-      const eased = 1 - Math.pow(1 - k, 4);
-      const v = a + (value - a) * eased;
-      setDisplay(v);
-      from.current = v;
-      if (k < 1) raf.current = requestAnimationFrame(step);
-    };
-    cancelAnimationFrame(raf.current);
-    raf.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf.current);
-  }, [value, duration]);
-  return display;
-}
-
-/** A formatted figure that eases between values when the underlying number changes. */
-export function AnimatedNumber({ value, format }: { value: number; format: (v: number) => string }) {
-  const v = useTweened(value);
+    const controls = animate(from.current, value, {
+      duration: 0.6,
+      ease: EASE,
+      onUpdate: (v) => {
+        from.current = v;
+        setDisplay(v);
+      },
+    });
+    return () => controls.stop();
+  }, [value, reduce, inView]);
   return (
-    <span className="num" aria-label={format(value)}>
-      <span aria-hidden>{format(v)}</span>
+    <span ref={ref} className="num">
+      <span className="sr-only">{format(value)}</span>
+      <span aria-hidden>{format(display)}</span>
     </span>
   );
 }
 
-/** Slowly drifting, low-saturation colour fields with optional grain. Decorative. */
-export function Aurora({ dark = false, grain = true }: { dark?: boolean; grain?: boolean }) {
+/** Route-level fade and lift when the page changes. */
+export function PageTransition({ id, children }: { id: string; children: ReactNode }) {
   return (
-    <div aria-hidden className={`aurora ${dark ? 'aurora-dark' : ''} ${grain ? 'grain' : ''}`}>
-      <div className="aurora-mid" />
+    <motion.div key={id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: EASE }}>
+      {children}
+    </motion.div>
+  );
+}
+
+/** Faint grid that fades towards the edges, with a soft accent glow. Decorative. */
+export function GridBackground() {
+  return <div aria-hidden className="grid-bg" />;
+}
+
+/** Card whose border glows where the pointer is. */
+export function Spotlight({ className = '', children }: { className?: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  return (
+    <div
+      ref={ref}
+      className={`spotlight ${className}`}
+      onPointerMove={(e) => {
+        const el = ref.current;
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        el.style.setProperty('--x', `${e.clientX - r.left}px`);
+        el.style.setProperty('--y', `${e.clientY - r.top}px`);
+      }}
+    >
+      {children}
     </div>
   );
 }

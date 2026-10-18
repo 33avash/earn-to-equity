@@ -29,7 +29,7 @@ function MoneyTip({ title, rows }: { title: string; rows: TipRow[] }) {
 /** Stacked contributions + gains (SIP growth). */
 export function ContribGainsChart({ data, height = 280, compareKey }: { data: { year: number; contributions: number; gains: number; compare?: number }[]; height?: number; compareKey?: string }) {
   const t = useChartTheme();
-  const gains = t.dark ? '#B88428' : '#C08A2E';
+  const gains = t.secondary;
   return (
     <div style={{ height }} role="img" aria-label="Contributions and estimated gains by year">
       <ResponsiveContainer width="100%" height="100%">

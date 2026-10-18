@@ -2,57 +2,94 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Brand tokens as RGB triplets so Tailwind opacity modifiers work. */
+/*
+ * Theme tokens as RGB triplets so Tailwind opacity modifiers work.
+ * Semantic names (background, foreground, card, border, muted, accent, success, warning, danger, chart-1…7)
+ * are the source of truth; the older brand names below alias them so every existing class follows the theme.
+ * Contrast (checked in tests/a11y/contrast.test.ts): text ≥ 4.5:1 and UI ≥ 3:1 on background and card.
+ */
 :root {
-  --c-ivory: 248 247 242; /* #F8F7F2 */
-  --c-surface: 255 255 255;
-  --c-forest: 24 61 50; /* #183D32 */
-  --c-evergreen: 16 42 35; /* #102A23 */
-  --c-sage: 168 185 160; /* #A8B9A0 */
-  --c-mint: 228 237 227; /* #E4EDE3 */
-  --c-charcoal: 37 42 39; /* #252A27 */
-  --c-grey: 105 108 101; /* warm grey, darkened from #777A73 for AA text contrast */
-  --c-champagne: 197 165 114; /* #C5A572 */
-  --c-line: 226 224 216;
-  --c-danger: 160 60 45;
-  --c-onbrand: 248 247 242;
+  --background: 250 250 250;
+  --card: 255 255 255;
+  --foreground: 10 10 11;
+  --body: 39 39 42;
+  --muted: 244 244 245;
+  --muted-foreground: 95 95 104;
+  --border: 228 228 231;
+  --border-strong: 134 134 143; /* control boundaries: ≥ 3:1 */
+  --accent: 15 118 110; /* peacock teal */
+  --accent-subtle: 236 246 244;
+  --accent-foreground: 250 250 250;
+  --success: 21 128 61;
+  --warning: 180 83 9;
+  --danger: 185 28 28;
+  --ring: 15 118 110;
+  --chart-1: 15 118 110;
+  --chart-2: 79 70 229;
+  --chart-3: 217 119 6;
+  --chart-4: 225 29 72;
+  --chart-5: 100 116 139;
+  --chart-6: 147 51 234;
+  --chart-7: 101 163 13;
+  --chart-grid: 228 228 231;
+  --chart-axis: 95 95 104;
+
+  /* Legacy aliases */
+  --c-ivory: var(--background);
+  --c-surface: var(--card);
+  --c-evergreen: var(--foreground);
+  --c-charcoal: var(--body);
+  --c-grey: var(--muted-foreground);
+  --c-line: var(--border);
+  --c-sage: var(--border-strong);
+  --c-forest: var(--accent);
+  --c-mint: var(--accent-subtle);
+  --c-champagne: var(--warning);
+  --c-danger: var(--danger);
+  --c-onbrand: var(--background);
 
   /* Shape, depth and motion tokens */
-  --radius-sm: 4px;
-  --radius: 6px;
-  --radius-lg: 10px;
-  --shadow-sm: 0 1px 2px rgb(16 42 35 / 0.06);
-  --shadow-float: 0 24px 48px -28px rgb(16 42 35 / 0.35), 0 2px 8px -4px rgb(16 42 35 / 0.1);
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow-sm: 0 1px 2px rgb(10 10 11 / 0.05);
+  --shadow-float: 0 16px 40px -24px rgb(10 10 11 / 0.25), 0 2px 6px -3px rgb(10 10 11 / 0.08);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --glass-bg: rgb(255 255 255 / 0.62);
-  --glass-border: rgb(255 255 255 / 0.75);
-  --glass-edge: rgb(16 42 35 / 0.08);
-  --aurora-a: rgb(168 185 160 / 0.45);
-  --aurora-b: rgb(228 237 227 / 0.9);
-  --aurora-c: rgb(197 165 114 / 0.22);
+  --glass-bg: rgb(255 255 255 / 0.78);
+  --glass-border: rgb(10 10 11 / 0.06);
+  --glass-edge: rgb(10 10 11 / 0.06);
   color-scheme: light;
 }
 
 .dark {
-  --c-ivory: 14 22 19;
-  --c-surface: 21 31 27;
-  --c-forest: 134 178 152;
-  --c-evergreen: 228 237 227;
-  --c-sage: 120 145 118;
-  --c-mint: 30 45 38;
-  --c-charcoal: 232 234 228;
-  --c-grey: 160 165 156;
-  --c-champagne: 212 184 138;
-  --c-line: 44 58 51;
-  --c-danger: 232 128 108;
-  --c-onbrand: 14 22 19;
-  --glass-bg: rgb(21 31 27 / 0.6);
+  --background: 9 9 11;
+  --card: 19 19 22;
+  --foreground: 250 250 250;
+  --body: 228 228 231;
+  --muted: 28 28 32;
+  --muted-foreground: 161 161 170;
+  --border: 39 39 42;
+  --border-strong: 113 113 122;
+  --accent: 45 212 191;
+  --accent-subtle: 17 40 38;
+  --accent-foreground: 9 9 11;
+  --success: 74 222 128;
+  --warning: 251 191 36;
+  --danger: 248 113 113;
+  --ring: 45 212 191;
+  --chart-1: 45 212 191;
+  --chart-2: 129 140 248;
+  --chart-3: 251 191 36;
+  --chart-4: 251 113 133;
+  --chart-5: 148 163 184;
+  --chart-6: 192 132 252;
+  --chart-7: 163 230 53;
+  --chart-grid: 39 39 42;
+  --chart-axis: 161 161 170;
+  --glass-bg: rgb(19 19 22 / 0.8);
   --glass-border: rgb(255 255 255 / 0.08);
-  --glass-edge: rgb(0 0 0 / 0.3);
-  --shadow-float: 0 24px 48px -24px rgb(0 0 0 / 0.6), 0 2px 8px -4px rgb(0 0 0 / 0.4);
-  --aurora-a: rgb(70 110 88 / 0.35);
-  --aurora-b: rgb(30 45 38 / 0.9);
-  --aurora-c: rgb(197 165 114 / 0.1);
+  --glass-edge: rgb(0 0 0 / 0.4);
+  --shadow-float: 0 16px 40px -20px rgb(0 0 0 / 0.7), 0 2px 6px -3px rgb(0 0 0 / 0.5);
   color-scheme: dark;
 }
 
@@ -62,7 +99,6 @@
   }
   body {
     @apply bg-ivory text-charcoal font-sans antialiased;
-    font-feature-settings: 'cv11', 'ss01';
   }
   h1,
   h2,
@@ -71,7 +107,7 @@
     @apply text-evergreen;
   }
   :focus-visible {
-    outline: 2px solid rgb(var(--c-champagne));
+    outline: 2px solid rgb(var(--ring));
     outline-offset: 2px;
   }
   /* Let grid items shrink so wide tables scroll inside their own container on small screens. */
@@ -89,15 +125,17 @@
 }
 
 @layer components {
+  /* Money and figures: Geist Mono with tabular digits. */
   .num {
+    font-family: 'Geist Mono', ui-monospace, monospace;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
   }
   .eyebrow {
-    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-grey;
+    @apply text-[12px] font-medium text-grey;
   }
   .display {
-    @apply font-display font-normal tracking-[-0.01em] text-evergreen;
+    @apply font-sans font-semibold tracking-[-0.035em] text-evergreen;
   }
   .container-x {
     @apply mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8;
@@ -112,7 +150,7 @@
     @apply text-forest underline decoration-sage underline-offset-4 hover:decoration-forest;
   }
   .input {
-    @apply h-10 w-full rounded border border-line bg-surface px-3 text-sm text-charcoal num placeholder:text-grey/70 transition-colors hover:border-sage focus:border-forest focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-forest/15;
+    @apply h-10 w-full rounded border border-sage bg-surface px-3 text-sm text-charcoal num placeholder:text-grey transition-colors hover:border-evergreen/60 focus:border-forest focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-forest/20;
   }
   .input-error {
     @apply border-danger focus:border-danger focus:ring-danger/15;
@@ -213,83 +251,51 @@ input[type='range'].range::-moz-range-thumb {
   }
 }
 
-/* ---------- Atmosphere: drifting colour fields + grain (decorative only) ---------- */
-.aurora {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 0;
-}
-.aurora::before,
-.aurora::after {
-  content: '';
-  position: absolute;
-  width: 70vmax;
-  height: 70vmax;
-  border-radius: 50%;
-  filter: blur(60px);
-  will-change: transform;
-}
-.aurora::before {
-  top: -35vmax;
-  right: -20vmax;
-  background: radial-gradient(closest-side, var(--aurora-a), transparent 70%);
-  animation: drift-a 32s ease-in-out infinite alternate;
-}
-.aurora::after {
-  bottom: -40vmax;
-  left: -25vmax;
-  background: radial-gradient(closest-side, var(--aurora-c), transparent 70%);
-  animation: drift-b 40s ease-in-out infinite alternate;
-}
-.aurora > .aurora-mid {
-  position: absolute;
-  top: 10%;
-  left: 30%;
-  width: 45vmax;
-  height: 45vmax;
-  border-radius: 50%;
-  filter: blur(70px);
-  background: radial-gradient(closest-side, var(--aurora-b), transparent 70%);
-  animation: drift-c 36s ease-in-out infinite alternate;
-}
-.aurora-dark {
-  --aurora-a: rgb(120 160 132 / 0.28);
-  --aurora-b: rgb(36 78 63 / 0.7);
-  --aurora-c: rgb(197 165 114 / 0.16);
-}
-@keyframes drift-a {
-  to {
-    transform: translate3d(-12vmax, 8vmax, 0) scale(1.08);
-  }
-}
-@keyframes drift-b {
-  to {
-    transform: translate3d(14vmax, -6vmax, 0) scale(1.12);
-  }
-}
-@keyframes drift-c {
-  to {
-    transform: translate3d(-8vmax, 6vmax, 0) scale(0.92);
-  }
-}
-.grain::before {
-  content: '';
+/* ---------- Hero background: a faint grid that fades out towards the edges (decorative only) ---------- */
+.grid-bg {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
-  opacity: 0.07;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: linear-gradient(rgb(var(--border) / 0.7) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--border) / 0.7) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%);
 }
-.dark .grain::before {
-  mix-blend-mode: screen;
-  opacity: 0.04;
+.grid-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 40% 35% at 70% 25%, rgb(var(--accent) / 0.08), transparent 70%);
 }
 
-/* ---------- Glass: reserved for floating layers, never for data surfaces ---------- */
+/* Card that lifts slightly on hover. */
+.lift {
+  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), border-color 200ms var(--ease-out);
+}
+.lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-float);
+}
+
+/* Spotlight border: a soft accent glow that follows the pointer (set --x/--y in JS). */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+}
+.spotlight::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(280px circle at var(--x, 50%) var(--y, 50%), rgb(var(--accent) / 0.55), transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  z-index: -1;
+}
+
 .glass {
   background: var(--glass-bg);
   -webkit-backdrop-filter: blur(16px) saturate(1.25);
@@ -406,6 +412,16 @@ input[type='range'].range::-moz-range-thumb {
   }
 }
 
+@keyframes sheet-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes sheet-right {
+  from {
+    transform: translateX(100%);
+  }
+}
 @keyframes tip {
   from {
     opacity: 0;

@@ -1,6 +1,8 @@
-import { useEffect, useRef, type ReactNode } from 'react';
-import { Info, AlertTriangle, X } from 'lucide-react';
-import { create } from 'zustand';
+import { type ReactNode } from 'react';
+import { Info, AlertTriangle } from 'lucide-react';
+import { Toaster as SonnerToaster, toast as sonnerToast } from 'sonner';
+import { useTheme } from '@/theme/ThemeProvider';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from './shadcn/dialog';
 import { Tooltip } from './Tooltip';
 import { Button } from './Button';
 import { DEFINITIONS, type DefinitionKey } from './definitions';
@@ -22,7 +24,8 @@ export function Stat({
   tone?: 'positive' | 'negative';
 }) {
   const definition = def ? (DEFINITIONS as Record<string, string>)[def] ?? def : undefined;
-  const sizes = { sm: 'text-lg', md: 'text-2xl', lg: 'text-[32px] leading-none', xl: 'text-[44px] sm:text-[56px] leading-none' };
+  // Large figures use Geist Sans with tabular digits; mono reads awkwardly at display sizes.
+  const sizes = { sm: 'text-lg', md: 'text-2xl', lg: 'font-sans [&_.num]:font-sans text-[32px] leading-none', xl: 'font-sans [&_.num]:font-sans text-[44px] sm:text-[52px] leading-none tracking-[-0.035em]' };
   return (
     <div className="min-w-0">
       <div className="flex items-center gap-1.5">
@@ -34,7 +37,7 @@ export function Stat({
         )}
       </div>
       <div
-        className={`num mt-1.5 font-semibold tracking-tight ${sizes[size]} ${tone === 'negative' ? 'text-danger' : 'text-evergreen'} ${size === 'xl' ? 'font-display font-normal' : ''}`}
+        className={`num mt-1.5 font-semibold tracking-tight ${sizes[size]} ${tone === 'negative' ? 'text-danger' : 'text-evergreen'} `}
       >
         {value}
       </div>
@@ -97,13 +100,69 @@ export function Notice({ tone = 'info', title, children, action }: { tone?: 'inf
   );
 }
 
-export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
+export type EmptyArt = 'goals' | 'portfolio' | 'events' | 'loans' | 'chat' | 'chart';
+
+/** Small line illustrations for empty states, drawn in theme colours. */
+function EmptyIllustration({ art }: { art: EmptyArt }) {
+  const stroke = 'rgb(var(--border-strong))';
+  const accent = 'rgb(var(--accent))';
+  const common = { fill: 'none', strokeWidth: 1.5, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  const shapes: Record<EmptyArt, JSX.Element> = {
+    goals: (
+      <>
+        <circle cx="40" cy="36" r="22" stroke={stroke} {...common} />
+        <circle cx="40" cy="36" r="13" stroke={stroke} {...common} />
+        <circle cx="40" cy="36" r="4" fill={accent} />
+        <path d="M58 18 L44 32" stroke={accent} {...common} />
+      </>
+    ),
+    portfolio: (
+      <>
+        <circle cx="40" cy="36" r="22" stroke={stroke} {...common} />
+        <path d="M40 14 A22 22 0 0 1 62 36 L40 36 Z" fill={accent} opacity="0.85" />
+      </>
+    ),
+    events: (
+      <>
+        <rect x="16" y="18" width="48" height="40" rx="6" stroke={stroke} {...common} />
+        <path d="M16 30 H64 M28 12 V22 M52 12 V22" stroke={stroke} {...common} />
+        <rect x="44" y="38" width="10" height="10" rx="2" fill={accent} />
+      </>
+    ),
+    loans: (
+      <>
+        <rect x="14" y="22" width="52" height="32" rx="6" stroke={stroke} {...common} />
+        <path d="M14 32 H66" stroke={stroke} {...common} />
+        <path d="M22 46 H36" stroke={accent} {...common} />
+      </>
+    ),
+    chat: (
+      <>
+        <path d="M16 20 H64 V48 H36 L26 58 V48 H16 Z" stroke={stroke} {...common} />
+        <path d="M26 30 H54 M26 38 H44" stroke={accent} {...common} />
+      </>
+    ),
+    chart: (
+      <>
+        <path d="M14 58 H66 M14 58 V16" stroke={stroke} {...common} />
+        <path d="M20 50 L32 40 L42 44 L60 24" stroke={accent} {...common} />
+      </>
+    ),
+  };
   return (
-    <div className="relative flex flex-col items-start gap-3 overflow-hidden rounded-md border border-line bg-[linear-gradient(135deg,rgb(var(--c-mint)/0.55),transparent_60%)] px-6 py-10 sm:px-8">
-      <span aria-hidden className="h-px w-10 bg-champagne" />
-      <p className="display text-[22px]">{title}</p>
+    <svg width="80" height="72" viewBox="0 0 80 72" aria-hidden className="shrink-0">
+      {shapes[art]}
+    </svg>
+  );
+}
+
+export function EmptyState({ title, children, action, art = 'chart' }: { title: string; children?: ReactNode; action?: ReactNode; art?: EmptyArt }) {
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line bg-surface px-6 py-10 text-center sm:px-8">
+      <EmptyIllustration art={art} />
+      <p className="text-[16px] font-semibold tracking-tight text-evergreen">{title}</p>
       {children && <p className="max-w-md text-sm text-grey">{children}</p>}
-      {action}
+      {action && <div className="mt-1">{action}</div>}
     </div>
   );
 }
@@ -113,7 +172,7 @@ export function Badge({ tone = 'neutral', children }: { tone?: BadgeTone; childr
   // Status reads as a quiet inline label (dot + text), not a pill.
   const tones: Record<BadgeTone, { text: string; dot: string }> = {
     good: { text: 'text-forest', dot: 'bg-forest' },
-    warn: { text: 'text-[#7a5b22] dark:text-champagne', dot: 'bg-champagne' },
+    warn: { text: 'text-champagne', dot: 'bg-champagne' },
     bad: { text: 'text-danger', dot: 'bg-danger' },
     neutral: { text: 'text-grey', dot: 'bg-sage' },
   };
@@ -154,76 +213,29 @@ export function ConfirmDialog({
   onCancel: () => void;
   danger?: boolean;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const d = ref.current;
-    if (!d) return;
-    if (open && !d.open) d.showModal();
-    if (!open && d.open) d.close();
-  }, [open]);
   return (
-    <dialog
-      ref={ref}
-      onCancel={(e) => {
-        e.preventDefault();
-        onCancel();
-      }}
-      className="m-auto w-[min(92vw,440px)] rounded-md border border-line bg-surface p-0 text-charcoal backdrop:bg-evergreen/40"
-      aria-labelledby="confirm-title"
-    >
-      <div className="p-6">
-        <div className="flex items-start justify-between gap-4">
-          <h2 id="confirm-title" className="text-lg font-semibold">
-            {title}
-          </h2>
-          <button type="button" onClick={onCancel} aria-label="Close" className="hit text-grey hover:text-evergreen">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="mt-2 text-sm text-grey">{children}</div>
-        <div className="mt-6 flex justify-end gap-2">
+    <Dialog open={open} onOpenChange={(o) => !o && onCancel()}>
+      <DialogContent>
+        <DialogTitle>{title}</DialogTitle>
+        <DialogDescription>{children}</DialogDescription>
+        <DialogFooter>
           <Button variant="secondary" onClick={onCancel}>
             Cancel
           </Button>
           <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm}>
             {confirmLabel}
           </Button>
-        </div>
-      </div>
-    </dialog>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-/* ---------- Toasts ---------- */
+/* ---------- Toasts (sonner) ---------- */
 
-interface ToastItem {
-  id: number;
-  text: string;
-}
-export const useToasts = create<{ items: ToastItem[]; push: (text: string) => void; dismiss: (id: number) => void }>((set) => ({
-  items: [],
-  push: (text) => {
-    const id = Date.now() + Math.random();
-    set((s) => ({ items: [...s.items, { id, text }] }));
-    setTimeout(() => set((s) => ({ items: s.items.filter((t) => t.id !== id) })), 3500);
-  },
-  dismiss: (id) => set((s) => ({ items: s.items.filter((t) => t.id !== id) })),
-}));
-export const toast = (text: string) => useToasts.getState().push(text);
+export const toast = (text: string) => sonnerToast(text);
 
 export function Toaster() {
-  const items = useToasts((s) => s.items);
-  const dismiss = useToasts((s) => s.dismiss);
-  return (
-    <div aria-live="polite" className="pointer-events-none fixed bottom-20 left-1/2 z-[60] flex -translate-x-1/2 flex-col items-center gap-2 lg:bottom-6">
-      {items.map((t) => (
-        <div key={t.id} className="pointer-events-auto flex items-center gap-3 rounded bg-evergreen px-4 py-2.5 text-sm text-onbrand shadow-lg">
-          {t.text}
-          <button type="button" aria-label="Dismiss" onClick={() => dismiss(t.id)} className="hit opacity-70 hover:opacity-100">
-            <X size={14} />
-          </button>
-        </div>
-      ))}
-    </div>
-  );
+  const { resolved } = useTheme();
+  return <SonnerToaster theme={resolved} position="bottom-center" offset={88} toastOptions={{ className: 'font-sans text-sm', duration: 3500 }} />;
 }

@@ -45,7 +45,7 @@ export default function Budget() {
           </Section>
         </div>
 
-        <aside className="xl:col-span-4">
+        <aside aria-label="Monthly summary" className="xl:col-span-4">
           <div className="panel sticky top-6 flex flex-col gap-6 p-6">
             <div>
               <p className="eyebrow mb-4">Monthly summary</p>

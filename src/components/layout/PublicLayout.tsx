@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Wordmark } from './Wordmark';
-import { Button, ButtonLink } from '@/components/ui/Button';
+import { ThemeToggle } from './ShellControls';
+import { ButtonLink } from '@/components/ui/Button';
 import { useExploreDemo } from '@/state/useDemo';
 
 const NAV = [
-  { to: '/how-it-works', label: 'How It Works' },
+  { to: '/how-it-works', label: 'How it works' },
   { to: '/features', label: 'Features' },
-  { to: '/tools', label: 'Financial Tools' },
+  { to: '/tools', label: 'Calculators' },
   { to: '/learn', label: 'Learn' },
 ];
 
+/** Sticky nav: transparent at the top, then a compact frosted bar once the page scrolls. */
 export function PublicNav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -23,41 +25,37 @@ export function PublicNav() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-  // Transparent over the hero; becomes a thin glass bar once the page scrolls.
   return (
-    <header
-      className={`sticky top-0 z-40 border-b transition-[background-color,border-color,backdrop-filter] duration-300 ${
-        scrolled || open ? 'border-line/60 bg-ivory/70 backdrop-blur-xl backdrop-saturate-150' : 'border-transparent bg-transparent'
-      }`}
-    >
-      <div className="container-x flex h-16 items-center justify-between gap-6">
+    <header className={`sticky top-0 z-40 border-b transition-[background-color,border-color] duration-300 ${scrolled || open ? 'border-line bg-ivory/80 backdrop-blur-md' : 'border-transparent bg-transparent'}`}>
+      <div className={`container-x flex items-center justify-between gap-6 transition-[height] duration-300 ${scrolled ? 'h-14' : 'h-16'}`}>
         <Wordmark />
-        <nav aria-label="Main" className="hidden items-center gap-7 lg:flex">
+        <nav aria-label="Main" className="hidden items-center gap-1 lg:flex">
           {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} className={({ isActive }) => `relative py-1 text-[14px] transition-colors after:absolute after:inset-x-0 after:-bottom-0.5 after:h-px after:origin-left after:bg-champagne after:transition-transform after:duration-300 ${isActive ? 'text-evergreen font-medium after:scale-x-100' : 'text-grey hover:text-evergreen after:scale-x-0 hover:after:scale-x-100'}`}>
+            <NavLink key={n.to} to={n.to} className={({ isActive }) => `tap inline-flex items-center rounded-md px-3 text-[14px] transition-colors ${isActive ? 'font-medium text-evergreen' : 'text-grey hover:text-evergreen'}`}>
               {n.label}
             </NavLink>
           ))}
         </nav>
-        <div className="hidden items-center gap-5 lg:flex">
-          <ButtonLink to="/start" size="md">
-            Build My Wealth Plan
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle />
+          <ButtonLink to="/start" size="sm" className="hidden lg:inline-flex">
+            Build your plan
           </ButtonLink>
+          <button type="button" className="hit inline-flex h-9 w-9 items-center justify-center rounded-md text-evergreen lg:hidden" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            {open ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
-        <button type="button" className="hit rounded p-2 text-evergreen lg:hidden" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-          {open ? <X size={22} /> : <Menu size={22} />}
-        </button>
       </div>
       {open && (
         <nav aria-label="Mobile" className="border-t border-line bg-ivory lg:hidden">
           <div className="container-x flex flex-col py-3">
             {NAV.map((n) => (
-              <NavLink key={n.to} to={n.to} className="border-b border-line/60 py-3 text-[15px] text-charcoal">
+              <NavLink key={n.to} to={n.to} className="border-b border-line py-3 text-[15px] text-charcoal">
                 {n.label}
               </NavLink>
             ))}
             <ButtonLink to="/start" className="mt-4">
-              Build My Wealth Plan
+              Build your plan
             </ButtonLink>
           </div>
         </nav>
@@ -73,7 +71,7 @@ export function Footer() {
       <div className="container-x grid gap-10 py-14 md:grid-cols-12">
         <div className="md:col-span-5">
           <Wordmark />
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-grey">From your first paycheck to your future wealth. An educational planning prototype for young Indian earners.</p>
+          <p className="mt-4 max-w-sm text-sm leading-relaxed text-grey">A 20-year financial plan for salaried professionals in India. Free, and your plan is saved only in your browser.</p>
           <p className="mt-6 text-xs text-grey">Built by Atulya Singh, Avash Srivastava, Aayushi Paul and Agustyae Gupta.</p>
         </div>
         <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3 md:col-span-7">
@@ -81,11 +79,11 @@ export function Footer() {
             <p className="eyebrow mb-3">Product</p>
             <ul className="space-y-2">
               <li><Link className="hit text-charcoal hover:text-forest" to="/features">Features</Link></li>
-              <li><Link className="hit text-charcoal hover:text-forest" to="/tools">Financial Tools</Link></li>
+              <li><Link className="hit text-charcoal hover:text-forest" to="/tools">Calculators</Link></li>
               <li>
-                <Button variant="ghost" size="sm" className="-ml-3 !h-auto !py-0 !text-sm !font-normal text-charcoal" onClick={() => explore('/app')}>
-                  Explore the demo
-                </Button>
+                <button type="button" className="hit text-charcoal hover:text-forest" onClick={() => explore('/app')}>
+                  Demo plan
+                </button>
               </li>
             </ul>
           </div>
@@ -108,7 +106,7 @@ export function Footer() {
       </div>
       <div className="border-t border-line">
         <p className="container-x py-5 text-xs leading-relaxed text-grey">
-          Earn to Equity is an educational tool, not a SEBI-registered investment adviser. Projections are illustrative estimates based on assumptions you can change, and are not guarantees of future returns. Your data stays in this browser.
+          Earn to Equity is an educational tool, not a SEBI-registered investment adviser. Projections are estimates from assumptions you can change, not guarantees of future returns.
         </p>
       </div>
     </footer>

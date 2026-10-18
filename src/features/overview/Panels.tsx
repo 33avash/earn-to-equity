@@ -63,11 +63,11 @@ export function TrajectoryPanel({ plan, height = 320, interactive = true }: { pl
             <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">
               Projected, {end.year} · age {end.age}
             </p>
-            <p className="mt-1 text-[28px] font-semibold leading-none tracking-tight text-evergreen"><AnimatedNumber value={end.netWorth} format={money} /></p>
+            <p className="mt-1 text-[28px] font-semibold leading-none tracking-tight [&_.num]:font-sans text-evergreen"><AnimatedNumber value={end.netWorth} format={money} /></p>
           </div>
           <div>
             <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">In today’s rupees</p>
-            <p className="mt-1 text-[28px] font-semibold leading-none tracking-tight text-[#8a6a33] dark:text-champagne"><AnimatedNumber value={end.netWorthReal} format={money} /></p>
+            <p className="mt-1 text-[28px] font-semibold leading-none tracking-tight [&_.num]:font-sans text-champagne"><AnimatedNumber value={end.netWorthReal} format={money} /></p>
           </div>
         </div>
         <WealthChart points={points} mode={mode} height={height + (wide ? 72 : 0)} topPad={wide ? 92 : 16} />

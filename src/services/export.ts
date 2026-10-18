@@ -48,3 +48,15 @@ export function summaryText(plan: Plan): string {
 
 export const exportSummary = (plan: Plan) => download('earn-to-equity-summary.txt', summaryText(plan), 'text/plain;charset=utf-8');
 export const exportData = (data: unknown) => download('earn-to-equity-data.json', JSON.stringify(data, null, 2), 'application/json');
+
+/** The year-by-year projection as CSV, one row per calendar year plus the closing position. */
+export function projectionCsv(plan: Plan): string {
+  const cols = ['Year', 'Age', 'Take-home', 'Income tax', 'Expenses', 'EMIs', 'Invested', 'Portfolio', 'EPF', 'Retirement total', 'Cash', 'Property', 'Liabilities', 'Net worth', "Net worth (today's rupees)", 'Events'];
+  const r = (n: number) => Math.round(n).toString();
+  const lines = plan.sim.rows.map((x) => [x.year, x.age, r(x.income), r(x.incomeTax), r(x.expenses), r(x.debtPayments), r(x.contributions), r(x.portfolio), r(x.epf), r(x.retirement), r(x.cash), r(x.property), r(x.liabilities), r(x.netWorth), r(x.netWorthReal), `"${x.events.join('; ')}"`].join(','));
+  const end = plan.sim.points.at(-1)!;
+  lines.push([`1 Jan ${end.year}`, end.age, '', '', '', '', '', '', '', '', '', '', '', r(end.netWorth), r(end.netWorthReal), '"Closing position"'].join(','));
+  return [cols.map((c) => `"${c}"`).join(','), ...lines].join('\n');
+}
+
+export const exportProjectionCsv = (plan: Plan) => download('earn-to-equity-projection.csv', projectionCsv(plan), 'text/csv;charset=utf-8');

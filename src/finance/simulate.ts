@@ -143,6 +143,8 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
   const retMonthly = monthlyRate(p.position.retirement.returnRate);
   const fullYearTakeHome = () => (ctcMode ? salaryBreakdown(salaryInputs(p, ctc)).monthlyTakeHome : salary);
   let prevTakeHome = fullYearTakeHome();
+  let priceLevel = 1; // cumulative inflation applied to costs, as of the start of the current year
+  let realLevel = 1; // cumulative inflation to the end of the current year, for today's-rupee figures
 
   // Balances
   let cash = sheet.cash;
@@ -215,13 +217,15 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
     const eventLabels: string[] = [];
     exemptionLeft = cg.equityLtcgExemption;
     capitalGainsTax = 0;
+    const inflY = o.inflationByYear?.[calYear] ?? infl;
     if (y > 1) {
+      priceLevel *= 1 + inflY;
       ctc *= 1 + salaryGrowth;
       salary *= 1 + salaryGrowth;
-      otherIncome *= 1 + infl;
-      essential *= 1 + infl;
-      lifestyle *= 1 + infl;
-      eventExpense *= 1 + infl;
+      otherIncome *= 1 + inflY;
+      essential *= 1 + inflY;
+      lifestyle *= 1 + inflY;
+      eventExpense *= 1 + inflY;
       sip *= 1 + stepUp;
       extraInvest *= 1 + stepUp;
       retContribution *= 1 + salaryGrowth;
@@ -233,7 +237,7 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
     let downPayments = 0;
     for (const ev of events.filter((e) => e.year === calYear)) {
       eventLabels.push(ev.label);
-      const priceIndex = Math.pow(1 + infl, elapsed);
+      const priceIndex = priceLevel;
       if (ev.incomeChangePct) {
         const k = Math.max(0, 1 + ev.incomeChangePct);
         ctc *= k;
@@ -281,7 +285,7 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
 
     // Lifestyle creep: part of any real rise in full-year take-home becomes permanent spending.
     const takeHomeNow = fullYearTakeHome();
-    const realRaise = takeHomeNow - prevTakeHome * (y > 1 ? 1 + infl : 1);
+    const realRaise = takeHomeNow - prevTakeHome * (y > 1 ? 1 + inflY : 1);
     if (realRaise > 0 && creep > 0) lifestyle += creep * realRaise;
     prevTakeHome = takeHomeNow;
 
@@ -291,7 +295,7 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
     let goalLoans = 0;
     const due = p.goals
       .filter((g) => g.targetYear === calYear && !NON_WITHDRAWAL_GOALS.has(g.category))
-      .sort((g1, g2) => g1.priority - g2.priority);
+      .sort((g1, g2) => g1.priority - g2.priority || (g1.rank ?? 0) - (g2.rank ?? 0));
     for (const g of due) {
       const cost = g.cost * Math.pow(1 + g.inflation, elapsed);
       const mode = goalFundingMode(g);
@@ -416,6 +420,7 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
     if (cash < 0) flags.add('borrowing');
     if (income > 0 && debtPayments > income * HOME_DEFAULTS.foir) flags.add('emi-over-limit');
 
+    realLevel *= 1 + inflY;
     const loanTotal = loans.reduce((s, l) => s + Math.max(0, l.bal), 0);
     const liabilities = loanTotal + Math.max(0, -cash);
     const property = otherAssets + homes;
@@ -460,7 +465,7 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
       totalAssets,
       liabilities,
       netWorth,
-      netWorthReal: netWorth / Math.pow(1 + infl, y),
+      netWorthReal: netWorth / realLevel,
       financialAssets,
       financialAssetsAfterTax,
       fiHealthcare,

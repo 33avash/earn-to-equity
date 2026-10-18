@@ -77,6 +77,7 @@ export interface Goal {
   targetYear: number; // calendar year
   saved: number; // existing dedicated savings (assumed to already sit inside cash/investments)
   priority: Priority;
+  rank?: number; // order within the plan (set by dragging on the Goals page); breaks ties within a priority
   inflation: number; // goal-specific cost inflation
   source: FundingSource;
   fundingMode?: FundingMode; // defaults by category, see finance/goalFunding.ts

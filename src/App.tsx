@@ -1,10 +1,9 @@
-import { Suspense, lazy, useEffect, useLayoutEffect, type ReactNode } from 'react';
+import { Suspense, lazy, useLayoutEffect, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { AppShell, NotFound } from '@/components/layout/AppShell';
 import { Toaster } from '@/components/ui/Misc';
 import { ConfirmHost } from '@/components/ui/Confirm';
-import { useStore } from '@/state/store';
 import Home from '@/pages/public/Home';
 import { documentTitle, routeMeta } from '@/routeMeta';
 
@@ -32,33 +31,24 @@ const Learn = lazy(() => import('@/pages/app/Learn'));
 const LearnModule = lazy(() => import('@/pages/app/LearnModule'));
 const Settings = lazy(() => import('@/pages/app/Settings'));
 
+/** Skeleton shaped like a page (heading, a row of figures, a chart) while a lazy route loads. */
 function Loading() {
   return (
-    <div role="status" aria-live="polite" className="container-x flex min-h-[40vh] flex-col gap-5 py-4">
+    <div role="status" aria-live="polite" className="container-x flex min-h-[40vh] flex-col gap-6 py-4">
       <span className="sr-only">Loading…</span>
-      <div className="skeleton h-3 w-28" />
-      <div className="skeleton h-10 w-2/3 max-w-md" />
-      <div className="skeleton h-4 w-1/2 max-w-sm" />
-      <div className="skeleton mt-6 h-64 w-full" />
+      <div className="skeleton h-3 w-24" />
+      <div className="skeleton h-9 w-2/3 max-w-md" />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="skeleton h-20" />
+        ))}
+      </div>
+      <div className="skeleton h-72 w-full" />
     </div>
   );
 }
 
 const S = ({ children }: { children: ReactNode }) => <Suspense fallback={<Loading />}>{children}</Suspense>;
-
-function useTheme() {
-  const theme = useStore((s) => s.settings.theme);
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = () => {
-      const dark = theme === 'dark' || (theme === 'system' && mq.matches);
-      document.documentElement.classList.toggle('dark', dark);
-    };
-    apply();
-    mq.addEventListener('change', apply);
-    return () => mq.removeEventListener('change', apply);
-  }, [theme]);
-}
 
 /**
  * Sets the document title and meta description for the current route. A layout effect, so a page
@@ -80,7 +70,6 @@ function useRouteMeta() {
 }
 
 export function App() {
-  useTheme();
   useRouteMeta();
   return (
     <>

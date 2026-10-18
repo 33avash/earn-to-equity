@@ -42,7 +42,7 @@ export default function Fi() {
           </div>
         </div>
         <div className="lg:col-span-8">
-          <dl className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
             <Stat label={`Target corpus at ${fi.targetAge}`} value={money(fi.targetCorpus)} def="fiTarget" sub={`${money(fi.targetCorpusReal)} in today’s ₹`} />
             <Stat label="Projected corpus, after tax" value={money(fi.projectedCorpus)} sub={`${money(fi.projectedCorpusPreTax)} before tax on selling, in ${fi.targetYear}`} />
             <Stat label="Funding gap" value={fi.gap > 0 ? money(fi.gap) : 'None'} tone={fi.gap > 0 ? 'negative' : undefined} def="fiGap" sub={`Target includes ${money(fi.healthcare)} a year of healthcare`} />
@@ -53,7 +53,7 @@ export default function Fi() {
               <p className="num mt-1.5 text-2xl font-semibold text-evergreen">{Math.round(fi.progress * 100)}%</p>
               <div className="mt-2"><Progress value={fi.progress} label="FI progress" /></div>
             </div>
-          </dl>
+          </div>
           <div className="mt-10">
             <WealthChart points={fi.sim.points} mode="nominal" height={300} showEvents={false} showFiTarget ariaLabel="Net worth compared with the FI target" />
             <div className="mt-3"><WealthLegend mode="nominal" fi /></div>

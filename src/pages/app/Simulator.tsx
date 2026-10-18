@@ -1,9 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ScenarioKey } from '@/types/profile';
-import { usePlan, useMoney, scenarioSet, yearInspector } from '@/state/selectors';
+import { usePlan, useMoney, scenarioSet, yearInspector, baselineComparison } from '@/state/selectors';
+import { ProjectionTable } from '@/features/simulator/ProjectionTable';
+import { exportProjectionCsv } from '@/services/export';
+import { Bookmark, Download } from 'lucide-react';
 import { useStore } from '@/state/store';
-import { PageHeader, Section, Stat, Field, PercentInput, Segmented, Disclaimer, Badge, Button } from '@/components/ui';
+import { PageHeader, Section, Stat, Field, PercentInput, Segmented, Disclaimer, Badge, Button, toast } from '@/components/ui';
 import { WealthChart, WealthLegend, type WealthMode } from '@/components/charts/WealthChart';
 import { MultiLineChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
@@ -20,6 +23,9 @@ export default function Simulator() {
   const deltas = useStore((s) => s.scenarioDeltas);
   const setDelta = useStore((s) => s.setScenarioDelta);
   const resetDeltas = useStore((s) => s.resetScenarioDeltas);
+  const baseline = useStore((s) => s.baseline);
+  const saveBaseline = useStore((s) => s.saveBaseline);
+  const clearBaseline = useStore((s) => s.clearBaseline);
   const update = useStore((s) => s.updateProfile);
   const updateA = useStore((s) => s.updateAssumptions);
   const { profile: p, assumptions: a } = plan;
@@ -27,6 +33,7 @@ export default function Simulator() {
   const [selected, setSelected] = useState<number | null>(p.planStartYear + 4);
 
   const scen = useMemo(() => scenarioSet(plan, deltas), [plan, deltas]);
+  const cmp = useMemo(() => (baseline ? baselineComparison(plan, baseline) : null), [plan, baseline]);
   const bars = useMemo(() => tornado(p, a, deltas.conservative, deltas.high), [p, a, deltas]);
   const rows = plan.sim.rows;
   const close = plan.sim.points.at(-1)!;
@@ -74,7 +81,7 @@ export default function Simulator() {
           </div>
         }>
           <div className="grid gap-10 lg:grid-cols-12">
-            <dl className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:col-span-8">
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:col-span-8">
               <Stat
                 size="sm"
                 label="Income"
@@ -89,7 +96,7 @@ export default function Simulator() {
               <Stat size="sm" label="Retirement accounts" value={money(sel.retirement)} sub={sel.epf > 0 ? `incl. EPF ${money(sel.epf)} (+${money(sel.epfInterest)} interest)` : undefined} />
               <Stat size="sm" label="Liabilities" value={money(sel.liabilities)} />
               <Stat size="sm" label="Net worth" value={money(sel.netWorth)} sub={`${money(sel.netWorthReal)} in today’s ₹`} />
-            </dl>
+            </div>
             <div className="lg:col-span-4">
               <p className="eyebrow mb-3">What happens this year</p>
               <ul className="space-y-2 text-sm">
@@ -117,44 +124,42 @@ export default function Simulator() {
         </Section>
       )}
 
-      <Section title="Year-by-year projection" description={`Flows for each calendar year and balances on 31 December, in future rupees. The last line is your position on 1 January ${close.year}, the date every headline figure uses.`}>
-        <div className="-mx-1 max-h-[480px] overflow-auto px-1">
-          <table className="table-fin w-full min-w-[1080px]">
-            <thead className="sticky top-0 z-10 bg-ivory">
-              <tr>
-                {['Year', 'Age', 'Take-home', 'Income tax', 'Expenses', 'Debt paid', 'Invested', 'Portfolio', 'EPF', 'Cash', 'Liabilities', 'Net worth', 'Today’s ₹', ''].map((h) => <th key={h} scope="col">{h}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.year} onClick={() => setSelected(r.year)} className={`cursor-pointer hover:bg-mint/40 ${selected === r.year ? 'bg-mint/60' : ''}`} aria-selected={selected === r.year}>
-                  <td><button type="button" className="hit font-semibold text-evergreen" onClick={() => setSelected(r.year)}>{r.year}</button></td>
-                  <td>{r.age}</td>
-                  <td>{money(r.income)}</td>
-                  <td className="text-grey">{r.incomeTax > 0 ? money(r.incomeTax) : '—'}</td>
-                  <td>{money(r.expenses)}</td>
-                  <td>{money(r.debtPayments)}</td>
-                  <td>{money(r.contributions)}</td>
-                  <td>{money(r.portfolio)}</td>
-                  <td>{money(r.epf)}</td>
-                  <td className={r.cash < 0 ? 'text-danger' : ''}>{money(r.cash)}</td>
-                  <td>{money(r.liabilities)}</td>
-                  <td className="font-semibold text-evergreen">{money(r.netWorth)}</td>
-                  <td>{money(r.netWorthReal)}</td>
-                  <td className="font-sans">{r.events.length > 0 && <Badge>{r.events.length} event{r.events.length > 1 ? 's' : ''}</Badge>}{r.flags.includes('goal-shortfall') && <Badge tone="bad">Goal unpaid</Badge>}</td>
-                </tr>
-              ))}
-              <tr className="border-t-2 border-evergreen/20">
-                <td className="font-semibold text-evergreen">1 Jan {close.year}</td>
-                <td>{close.age}</td>
-                <td colSpan={9} className="font-sans text-xs text-grey">Closing position, same as 31 December {close.year - 1}</td>
-                <td className="font-semibold text-evergreen">{money(close.netWorth)}</td>
-                <td>{money(close.netWorthReal)}</td>
-                <td />
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <Section
+        title="Year-by-year projection"
+        description={`Flows for each calendar year and balances on 31 December, in future rupees. The last line is your position on 1 January ${close.year}, the date every headline figure uses.`}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" size="sm" icon={<Bookmark size={14} />} onClick={() => { saveBaseline(`Saved ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`); toast('Saved as your comparison baseline'); }}>
+              {baseline ? 'Replace baseline' : 'Save as baseline'}
+            </Button>
+            <Button variant="secondary" size="sm" icon={<Download size={14} />} onClick={() => exportProjectionCsv(plan)}>
+              Export CSV
+            </Button>
+          </div>
+        }
+      >
+        {cmp && baseline && (
+          <div className="mb-5 rounded-lg border border-line bg-surface p-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <p className="text-sm text-charcoal">
+                Compared with <strong className="text-evergreen">{baseline.label}</strong>:{' '}
+                {cmp.finalDiff === null ? 'no overlap in years.' : <>net worth in {close.year} is <strong className={`num ${cmp.finalDiff < 0 ? 'text-danger' : 'text-forest'}`}>{cmp.finalDiff >= 0 ? '+' : '−'}{money(Math.abs(cmp.finalDiff))}</strong></>}
+                {cmp.fiChange !== null && cmp.fiChange !== 0 && <>, and FI comes {Math.abs(cmp.fiChange)} year{Math.abs(cmp.fiChange) === 1 ? '' : 's'} {cmp.fiChange < 0 ? 'earlier' : 'later'}</>}.
+              </p>
+              <Button variant="ghost" size="sm" onClick={clearBaseline}>Clear baseline</Button>
+            </div>
+            <div className="mt-4">
+              <MultiLineChart
+                data={cmp.points.map((x) => ({ year: x.year, current: x.current, baseline: x.baseline ?? Number.NaN }))}
+                xKey="year"
+                height={220}
+                ariaLabel="Net worth: current plan versus saved baseline"
+                series={[{ key: 'baseline', name: baseline.label, color: t.muted, dashed: true }, { key: 'current', name: 'Current plan', color: t.primary }]}
+              />
+            </div>
+          </div>
+        )}
+        <ProjectionTable rows={rows} close={close} money={money} selected={selected} onSelect={setSelected} baselineDiff={cmp ? new Map(cmp.points.map((x) => [x.year, x.diff])) : undefined} />
       </Section>
 
       <Section title="Scenario comparison" description="Three futures, built by adjusting four assumptions around your base case. Edit the adjustments below." actions={<Button variant="ghost" size="sm" onClick={resetDeltas}>Reset scenarios</Button>}>

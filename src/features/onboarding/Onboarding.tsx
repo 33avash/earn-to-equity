@@ -376,7 +376,7 @@ function StepCashflow({ p, update, errs = {} }: StepProps) {
           </div>
         </section>
       </div>
-      <aside className="xl:col-span-4">
+      <aside aria-label="Your month" className="xl:col-span-4">
         <div className="panel sticky top-28 p-5">
           <p className="eyebrow mb-4">Your month</p>
           <dl className="space-y-2 text-sm">
@@ -461,7 +461,7 @@ function StepPosition({ p, update, errs = {} }: StepProps) {
           )}
         </section>
       </div>
-      <aside className="xl:col-span-4">
+      <aside aria-label="Starting position" className="xl:col-span-4">
         <div className="panel sticky top-28 p-5">
           <p className="eyebrow mb-4">Starting position</p>
           <dl className="space-y-2 text-sm">

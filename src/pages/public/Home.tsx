@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, ArrowUpRight } from 'lucide-react';
-import { Button, ButtonLink } from '@/components/ui/Button';
+import { ArrowRight, Check, Minus } from 'lucide-react';
+import { ButtonLink } from '@/components/ui/Button';
 import { HeroGraphic } from '@/features/landing/HeroGraphic';
 import { SipPreview } from '@/features/sip/SipPreview';
 import { LifeScenarios } from '@/features/landing/LifeScenarios';
@@ -12,154 +12,167 @@ import { DEFAULT_ASSUMPTIONS, demoProfile } from '@/state/demo';
 import { formatCompact, formatPct } from '@/finance/money';
 import { useExploreDemo } from '@/state/useDemo';
 import { Mark } from '@/components/layout/Wordmark';
-import { Aurora, Reveal } from '@/components/motion/Motion';
+import { AnimatedNumber, GridBackground, Reveal, Spotlight } from '@/components/motion/Motion';
 
-const QUESTIONS = [
-  { q: 'Where do I stand today?', a: 'Income, spending, savings, investments and loans become one balance sheet, with a savings rate and an emergency buffer you can actually read.' },
-  { q: 'What am I working towards?', a: 'A degree, a first home, a wedding, time off. Each goal is priced in today’s rupees and inflated to the year you need it.' },
-  { q: 'What could I change?', a: 'Move a goal, raise a SIP, survive a 30% market fall. Every change reruns the same 20-year projection.' },
+const STEPS = [
+  { title: 'Enter your pay and spending', body: 'Your CTC, rent, EMIs and SIPs. We work out take-home under both tax regimes and your EPF contribution.' },
+  { title: 'Add goals and life events', body: 'An MBA in 2029, a flat in 2039, a wedding. Each goal is priced in today’s rupees and inflated to its year.' },
+  { title: 'See every year to 2046', body: 'One projection drives every screen. Change a number and the whole plan reruns, from this month’s surplus to your FI age.' },
 ];
 
-const FEATURES = [
-  { to: '/app/simulator', title: 'A year-by-year engine, not a single number', body: 'Twenty rows of income, spending, contributions, loans and goals. Click any year to see what happened in it.' },
-  { to: '/app/risk-lab', title: 'Stress tests you can feel', body: 'Slower raises, higher inflation, a career break, a market decline in Year 4, and 1,000 simulated paths for the honest range.' },
-  { to: '/app/coach', title: 'A coach that only quotes your numbers', body: 'Ask “can I afford a home in five years?” The engine does the maths, and the coach explains it in plain language.' },
+const COMPARE: { row: string; calc: boolean; plan: boolean }[] = [
+  { row: 'Compounding on a monthly SIP', calc: true, plan: true },
+  { row: 'Take-home recalculated as your CTC crosses tax slabs', calc: false, plan: true },
+  { row: 'EPF growing at the declared rate', calc: false, plan: true },
+  { row: 'Loans, EMIs and the 50% lender limit', calc: false, plan: true },
+  { row: 'Goals paid from savings or a loan in the year they fall due', calc: false, plan: true },
+  { row: 'Capital-gains tax when you sell', calc: false, plan: true },
+  { row: 'Market crashes and career breaks', calc: false, plan: true },
 ];
 
 export default function Home() {
   const exploreDemo = useExploreDemo();
-  const explore = () => exploreDemo('/app');
-  // The sample plan behind every figure on this page: the same engine and selectors as the dashboard.
   const sample = useMemo(() => computePlan(demoProfile(), DEFAULT_ASSUMPTIONS), []);
   const series = useMemo(() => heroSeries(sample), [sample]);
 
   return (
     <>
-      {/* HERO: sits under the transparent nav so the colour fields reach the top edge */}
+      {/* HERO */}
       <section className="relative -mt-16 overflow-hidden pt-16">
-        <Aurora />
-        <div className="container-x relative z-10 grid items-center gap-14 pb-20 pt-14 lg:min-h-[calc(100vh-4rem)] lg:grid-cols-12 lg:gap-6 lg:pb-24 lg:pt-10">
+        <GridBackground />
+        <div className="container-x relative grid items-center gap-14 pb-20 pt-16 lg:grid-cols-12 lg:gap-8 lg:pb-28 lg:pt-20">
           <div className="lg:col-span-6">
-            <p className="eyebrow page-enter">Wealth planning for India’s first-salary generation</p>
-            <h1 className="display page-enter mt-7 text-[46px] leading-[0.98] tracking-[-0.025em] [animation-delay:80ms] sm:text-[60px] lg:text-[64px] xl:text-[72px]">
-              Your salary is
-              <br />
-              where your
-              <br />
-              <em className="italic text-forest">wealth</em> story
-              <br />
-              begins.
-            </h1>
-            <p className="page-enter mt-7 max-w-[30rem] text-[17px] leading-relaxed text-charcoal/75 [animation-delay:160ms]">
-              Turn this month’s paycheck, your goals and the life you want into a 20-year plan. See where you stand today and which decisions move the line.
-            </p>
-            <div className="page-enter mt-9 flex flex-wrap items-center gap-x-6 gap-y-4 [animation-delay:240ms]">
-              <ButtonLink to="/start" size="lg">
-                Build My Wealth Plan <ArrowRight size={16} aria-hidden />
-              </ButtonLink>
-              <button type="button" onClick={explore} className="hit group inline-flex items-center gap-1.5 text-[15px] font-medium text-evergreen">
-                <span className="border-b border-evergreen/30 pb-0.5 transition-colors group-hover:border-evergreen">Explore the demo</span>
-                <ArrowUpRight size={15} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
-              </button>
-            </div>
-            <p className="page-enter mt-10 text-xs text-grey [animation-delay:320ms]">No bank logins · No sign-up · Your data stays in this browser</p>
+            <Reveal as="div">
+              <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-[12.5px] text-grey">
+                <span className="h-1.5 w-1.5 rounded-full bg-forest" aria-hidden />
+                For salaried professionals in India.
+              </p>
+            </Reveal>
+            <Reveal as="div" delay={60}>
+              <h1 className="display mt-6 text-[44px] leading-[1.02] sm:text-[56px] lg:text-[64px]">Plan the next 20 years of your salary.</h1>
+            </Reveal>
+            <Reveal as="div" delay={120}>
+              <p className="mt-6 max-w-[34rem] text-[17px] leading-relaxed text-grey">
+                Enter your CTC, spending, loans and goals. Get a year-by-year projection to {series.end.year}, with income tax, EPF, inflation and EMIs built in.
+              </p>
+            </Reveal>
+            <Reveal as="div" delay={180}>
+              <div className="mt-8 flex flex-wrap items-center gap-3">
+                <ButtonLink to="/start" size="lg">
+                  Build your plan <ArrowRight size={16} aria-hidden />
+                </ButtonLink>
+                <button type="button" onClick={() => exploreDemo('/app')} className="tap inline-flex h-12 items-center rounded-md border border-line bg-surface px-5 text-[15px] font-medium text-evergreen hover:bg-muted">
+                  See the demo plan
+                </button>
+              </div>
+            </Reveal>
           </div>
 
-          <div className="relative lg:col-span-6 lg:pl-4">
-            <HeroGraphic series={series} />
-            {/* Floating summary panels: illustrative figures for the fictional sample profile */}
-            <div className="fade-late absolute left-0 top-0 hidden sm:block lg:-left-6 lg:top-2"><div className="glass float-slow w-[210px] p-4">
-              <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">Net worth today</p>
-              <p className="num mt-1 text-[26px] font-semibold tracking-tight text-evergreen">{formatCompact(sample.sheet.netWorth)}</p>
-              <p className="mt-1 text-[11.5px] leading-snug text-grey">
-                Investing {formatCompact(sample.cashflow.plannedInvestments)} of {formatCompact(sample.cashflow.income)} a month
-              </p>
-            </div></div>
-            <div className="fade-late absolute bottom-16 right-0 hidden sm:block lg:-right-2"><div className="glass float-slower w-[230px] p-4">
-              <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">{series.end.year}, in today’s ₹</p>
-              <p className="num mt-1 text-[26px] font-semibold tracking-tight text-evergreen">{formatCompact(series.end.netWorthReal)}</p>
-              <div className="mt-2 flex items-center justify-between border-t border-line/70 pt-2 text-[11.5px]">
-                <span className="text-grey">Future rupees</span>
-                <span className="num font-semibold text-evergreen">{formatCompact(series.end.netWorth)}</span>
+          <div className="relative lg:col-span-6">
+            <div className="rounded-lg border border-line bg-surface/80 p-4 shadow-[var(--shadow-float)] backdrop-blur-sm sm:p-6">
+              <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <p className="text-[12px] text-grey">Net worth today</p>
+                  <p className="num text-[22px] font-semibold text-evergreen">
+                    <AnimatedNumber value={sample.sheet.netWorth} format={formatCompact} />
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[12px] text-grey">In {series.end.year}, in today’s ₹</p>
+                  <p className="num text-[22px] font-semibold text-forest">
+                    <AnimatedNumber value={series.end.netWorthReal} format={formatCompact} />
+                  </p>
+                </div>
               </div>
-            </div></div>
-            <p className="mt-3 text-[11px] text-grey">
-              <span className="font-semibold uppercase tracking-[0.12em] text-[#8a6a33] dark:text-champagne">Illustrative</span> · A fictional {sample.profile.about.age}-year-old in Pune. {formatPct(DEFAULT_ASSUMPTIONS.inflation, 0)} inflation, {formatPct(sample.portfolioReturn)} assumed return.
-              {series.fiBeyond && ` Work becomes optional in ${series.fiBeyond.year}, at ${series.fiBeyond.age}.`}
-            </p>
+              <HeroGraphic series={series} />
+              <p className="mt-3 text-[12px] text-grey">
+                Sample plan for a fictional {sample.profile.about.age}-year-old in Pune earning {formatCompact(sample.profile.income.ctc ?? 0)} a year, at {formatPct(DEFAULT_ASSUMPTIONS.inflation, 0)} inflation and a {formatPct(sample.portfolioReturn)} return after fund costs.
+                {series.fiBeyond && ` Work becomes optional in ${series.fiBeyond.year}, at ${series.fiBeyond.age}.`}
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* THREE QUESTIONS: how it works, compressed */}
-      <section aria-labelledby="how-h" className="border-t border-line bg-ivory">
-        <div className="container-x py-24 lg:py-28">
-          <Reveal className="grid gap-6 lg:grid-cols-12">
-            <h2 id="how-h" className="display text-[34px] leading-[1.05] tracking-[-0.015em] sm:text-[44px] lg:col-span-5">
-              One model.
-              <br />
-              Three honest questions.
+      {/* HOW IT WORKS */}
+      <section aria-labelledby="how-h" className="border-t border-line">
+        <div className="container-x py-20 lg:py-24">
+          <Reveal className="max-w-2xl">
+            <h2 id="how-h" className="display text-[32px] leading-tight sm:text-[40px]">
+              How it works
             </h2>
-            <p className="max-w-md self-end text-[15px] leading-relaxed text-grey lg:col-span-5 lg:col-start-8">
-              Every screen reads from the same profile and the same projection. Change one number, and the whole plan moves with it.{' '}
-              <Link to="/how-it-works" className="link whitespace-nowrap">See the method</Link>
+            <p className="mt-3 text-[16px] text-grey">
+              Three steps and about eight minutes. Every screen then reads from the same 20-year projection.{' '}
+              <Link to="/how-it-works" className="link">
+                Read the method
+              </Link>
             </p>
           </Reveal>
-          <ol className="mt-16 grid gap-10 md:grid-cols-3 md:gap-0">
-            {QUESTIONS.map((s, i) => (
-              <Reveal as="li" key={s.q} delay={i * 90} className="relative md:border-l md:border-line md:px-8 md:first:border-l-0 md:first:pl-0">
-                <span className="num text-xs text-[#8a6a33] dark:text-champagne">0{i + 1}</span>
-                <h3 className="mt-3 text-[19px] font-semibold tracking-tight">{s.q}</h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-grey">{s.a}</p>
+          <ol className="mt-12 grid gap-4 md:grid-cols-3">
+            {STEPS.map((s, i) => (
+              <Reveal as="li" key={s.title} delay={i * 70} className="lift rounded-lg border border-line bg-surface p-6">
+                <span className="num text-[13px] text-forest">0{i + 1}</span>
+                <h3 className="mt-3 text-[17px] font-semibold tracking-tight">{s.title}</h3>
+                <p className="mt-2 text-[14.5px] leading-relaxed text-grey">{s.body}</p>
               </Reveal>
             ))}
           </ol>
         </div>
       </section>
 
-      {/* FEATURES: one feature shown with the real component, the rest as editorial rows */}
+      {/* BENTO */}
       <section aria-labelledby="feat-h" className="border-t border-line bg-surface">
-        <div className="container-x grid gap-14 py-24 lg:grid-cols-12 lg:gap-10 lg:py-28">
-          <Reveal className="lg:col-span-7">
-            <p className="eyebrow">Goals that tell the truth</p>
-            <h2 id="feat-h" className="display mt-4 max-w-xl text-[32px] leading-[1.08] tracking-[-0.015em] sm:text-[40px]">
-              Adding a goal doesn’t make it affordable. We show you which ones are.
+        <div className="container-x py-20 lg:py-24">
+          <Reveal className="max-w-2xl">
+            <h2 id="feat-h" className="display text-[32px] leading-tight sm:text-[40px]">
+              Goals, priced for the year you need them
             </h2>
-            <div className="relative mt-10 rounded-md border border-line bg-ivory p-6 sm:p-8">
-              <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
-                <p className="text-sm font-semibold text-evergreen">Sample plan · {formatCompact(sample.goals.capacity)}/month to work with</p>
-                <p className="text-xs text-grey">Needs {formatCompact(sample.goals.totalRequired)}/month in total</p>
+            <p className="mt-3 text-[16px] text-grey">See which goals your surplus covers, and what to change for the rest.</p>
+          </Reveal>
+          <div className="mt-12 grid gap-4 lg:grid-cols-6">
+            <Reveal className="lift rounded-lg border border-line bg-ivory p-6 lg:col-span-4 lg:row-span-2">
+              <div className="mb-5 flex flex-wrap items-baseline justify-between gap-2">
+                <p className="text-sm font-semibold text-evergreen">Sample plan: {formatCompact(sample.goals.capacity)} a month to work with</p>
+                <Link to="/features" className="hit text-xs text-grey hover:text-evergreen">
+                  All features
+                </Link>
               </div>
               <GoalTimeline goals={sample.goalViews} />
-            </div>
-          </Reveal>
-          <div className="flex flex-col lg:col-span-5 lg:pt-28">
-            {FEATURES.map((f, i) => (
-              <Reveal key={f.title} delay={i * 80}>
-                <button type="button" onClick={() => exploreDemo(f.to, true)} className="group block w-full border-t border-line py-7 text-left last:border-b">
-                  <span className="flex items-start justify-between gap-4">
-                    <span className="text-lg font-semibold leading-snug tracking-tight text-evergreen">{f.title}</span>
-                    <ArrowUpRight size={18} className="mt-1 shrink-0 text-grey transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-forest" aria-hidden />
-                  </span>
-                  <span className="mt-2 block text-[15px] leading-relaxed text-grey">{f.body}</span>
-                </button>
-              </Reveal>
-            ))}
-            <Link to="/features" className="hit mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:underline">
-              All fourteen tools <ArrowRight size={14} aria-hidden />
-            </Link>
+            </Reveal>
+            <Reveal delay={60} className="lift rounded-lg border border-line bg-ivory p-6 lg:col-span-2">
+              <h3 className="text-[16px] font-semibold tracking-tight">Year-by-year projection</h3>
+              <p className="mt-2 text-sm leading-relaxed text-grey">Twenty years of take-home, tax, spending, EMIs, investments and EPF. Click any year to see what happened in it.</p>
+              <button type="button" onClick={() => exploreDemo('/app/simulator', true)} className="hit mt-4 inline-flex items-center gap-1 text-sm font-medium text-forest">
+                Open the simulator <ArrowRight size={14} aria-hidden />
+              </button>
+            </Reveal>
+            <Reveal delay={120} className="lift rounded-lg border border-line bg-ivory p-6 lg:col-span-2">
+              <h3 className="text-[16px] font-semibold tracking-tight">Stress tests</h3>
+              <p className="mt-2 text-sm leading-relaxed text-grey">A 2008-style crash in year 4, six months without a job, three years of 8% inflation, and 1,000 market paths with fat tails.</p>
+              <button type="button" onClick={() => exploreDemo('/app/risk-lab', true)} className="hit mt-4 inline-flex items-center gap-1 text-sm font-medium text-forest">
+                Open the risk lab <ArrowRight size={14} aria-hidden />
+              </button>
+            </Reveal>
+            <Reveal delay={60} className="lift rounded-lg border border-line bg-ivory p-6 lg:col-span-3">
+              <h3 className="text-[16px] font-semibold tracking-tight">Ask questions about your plan</h3>
+              <p className="mt-2 text-sm leading-relaxed text-grey">“Can I afford a ₹75 L flat in 2031?” The answer quotes your own projection: down payment, stamp duty, EMI and what a lender would approve.</p>
+            </Reveal>
+            <Reveal delay={120} className="lift rounded-lg border border-line bg-ivory p-6 lg:col-span-3">
+              <h3 className="text-[16px] font-semibold tracking-tight">Tax-year 2026-27 rules</h3>
+              <p className="mt-2 text-sm leading-relaxed text-grey">New and old regime slabs, the ₹12.75 lakh nil-tax salary, 12.5% LTCG above ₹1.25 lakh, and EPF at 8.25%. Each rate shows its date and source.</p>
+            </Reveal>
           </div>
         </div>
       </section>
 
       {/* SIP CALCULATOR */}
       <section aria-labelledby="sip-h" className="border-t border-line">
-        <div className="container-x py-24 lg:py-28">
-          <Reveal className="mb-14 grid gap-4 lg:grid-cols-12">
-            <h2 id="sip-h" className="display text-[34px] leading-[1.05] tracking-[-0.015em] sm:text-[44px] lg:col-span-6">
+        <div className="container-x py-20 lg:py-24">
+          <Reveal className="mb-12 max-w-2xl">
+            <h2 id="sip-h" className="display text-[32px] leading-tight sm:text-[40px]">
               What could ₹10,000 a month become?
             </h2>
-            <p className="max-w-sm self-end text-[15px] text-grey lg:col-span-4 lg:col-start-9">Drag the sliders. The chart separates what you put in from what compounding adds.</p>
+            <p className="mt-3 text-[16px] text-grey">Drag the sliders. The chart splits what you put in from what compounding adds.</p>
           </Reveal>
           <Reveal>
             <SipPreview />
@@ -168,60 +181,49 @@ export default function Home() {
       </section>
 
       {/* PRODUCT PREVIEW */}
-      <section aria-labelledby="preview-h" className="relative overflow-hidden bg-evergreen dark:bg-[#0b1512]">
-        <Aurora dark />
-        <div className="container-x relative z-10 py-24 lg:py-28">
-          <Reveal className="mb-14 grid gap-6 lg:grid-cols-12">
-            <h2 id="preview-h" className="display text-[34px] leading-[1.05] tracking-[-0.015em] !text-[#F8F7F2] sm:text-[44px] lg:col-span-6">
-              The dashboard answers one question at a time.
+      <section aria-labelledby="preview-h" className="border-t border-line bg-surface">
+        <div className="container-x py-20 lg:py-24">
+          <Reveal className="mb-12 max-w-2xl">
+            <h2 id="preview-h" className="display text-[32px] leading-tight sm:text-[40px]">
+              The dashboard, on the sample plan
             </h2>
-            <p className="max-w-md self-end text-[15px] leading-relaxed text-[#F8F7F2]/70 lg:col-span-5 lg:col-start-8">
-              This is the real application running on the sample profile, not a mock-up. Same charts, same engine, same next steps.
-            </p>
+            <p className="mt-3 text-[16px] text-grey">The same charts and next steps you’ll see for your own numbers.</p>
           </Reveal>
           <Reveal>
-            <div className="rounded-[14px] border border-white/10 bg-white/[0.04] p-2 shadow-[0_60px_120px_-60px_rgba(0,0,0,0.8)] backdrop-blur-sm">
-              <div className="overflow-hidden rounded-[10px] bg-ivory">
-                <div className="flex items-center gap-2 border-b border-line bg-surface px-4 py-2.5">
-                  <Mark size={16} />
-                  <span className="text-xs text-grey">Overview · sample profile</span>
+            <div className="overflow-hidden rounded-lg border border-line bg-ivory shadow-[var(--shadow-float)]">
+              <div className="flex items-center gap-2 border-b border-line bg-surface px-4 py-2.5">
+                <Mark size={16} />
+                <span className="text-xs text-grey">Overview, sample plan</span>
+              </div>
+              <div className="grid gap-10 p-5 sm:p-8 lg:grid-cols-12">
+                <div className="lg:col-span-8">
+                  <TrajectoryPanel plan={sample} height={260} interactive={false} />
                 </div>
-                <div className="grid gap-10 p-5 sm:p-8 lg:grid-cols-12">
-                  <div className="lg:col-span-8">
-                    <TrajectoryPanel plan={sample} height={260} interactive={false} />
-                  </div>
-                  <div className="flex flex-col gap-10 lg:col-span-4 lg:border-l lg:border-line lg:pl-8">
-                    <FiPanel plan={sample} />
-                    <AllocationPanel plan={sample} showTarget={false} />
-                  </div>
-                  <div className="border-t border-line pt-6 lg:col-span-12">
-                    <p className="eyebrow mb-4">Next steps</p>
-                    <div className="grid gap-x-10 md:grid-cols-2">
-                      <NextStepsPanel plan={{ ...sample, insights: sample.insights.slice(0, 2) }} linkable={false} />
-                      <NextStepsPanel plan={{ ...sample, insights: sample.insights.slice(2, 4) }} linkable={false} />
-                    </div>
-                  </div>
+                <div className="flex flex-col gap-10 lg:col-span-4 lg:border-l lg:border-line lg:pl-8">
+                  <FiPanel plan={sample} />
+                  <AllocationPanel plan={sample} showTarget={false} />
+                </div>
+                <div className="border-t border-line pt-6 lg:col-span-12">
+                  <p className="eyebrow mb-4">Next steps</p>
+                  <NextStepsPanel plan={{ ...sample, insights: sample.insights.slice(0, 4) }} linkable={false} />
                 </div>
               </div>
             </div>
           </Reveal>
-          <div className="mt-10">
-            <Button variant="inverse" size="lg" onClick={explore}>
-              Open the full demo <ArrowUpRight size={16} aria-hidden />
-            </Button>
-          </div>
+          <button type="button" onClick={() => exploreDemo('/app')} className="tap mt-8 inline-flex h-11 items-center gap-1.5 rounded-md border border-line bg-surface px-4 text-sm font-medium text-evergreen hover:bg-muted">
+            Open the demo plan <ArrowRight size={15} aria-hidden />
+          </button>
         </div>
       </section>
 
-      {/* LIFE SCENARIOS */}
-      <section aria-labelledby="scen-h">
-        <div className="container-x py-24 lg:py-28">
-          <Reveal className="mb-14 max-w-2xl">
-            <h2 id="scen-h" className="display text-[34px] leading-[1.05] tracking-[-0.015em] sm:text-[44px]">
-              Small decisions,
-              <br />
-              twenty years later.
+      {/* WHAT-IF SCENARIOS */}
+      <section aria-labelledby="scen-h" className="border-t border-line">
+        <div className="container-x py-20 lg:py-24">
+          <Reveal className="mb-12 max-w-2xl">
+            <h2 id="scen-h" className="display text-[32px] leading-tight sm:text-[40px]">
+              What-if scenarios
             </h2>
+            <p className="mt-3 text-[16px] text-grey">Three changes to the sample plan, each measured in {series.end.year} net worth in today’s rupees.</p>
           </Reveal>
           <Reveal>
             <LifeScenarios plan={sample} />
@@ -229,19 +231,56 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section className="relative overflow-hidden bg-evergreen dark:bg-[#0b1512]">
-        <Aurora dark />
-        <div className="container-x relative z-10 grid gap-10 py-24 lg:grid-cols-12 lg:items-end lg:py-32">
-          <h2 className="display text-[38px] leading-[1.04] tracking-[-0.02em] !text-[#F8F7F2] sm:text-[56px] lg:col-span-8">
-            Make your next financial decision with a clearer picture of the future.
-          </h2>
-          <div className="flex flex-col items-start gap-4 lg:col-span-4 lg:items-end">
-            <ButtonLink to="/start" size="lg" variant="inverse">
-              Build My Wealth Plan <ArrowRight size={16} aria-hidden />
-            </ButtonLink>
-            <p className="text-xs text-[#F8F7F2]/60">About eight minutes. Save and come back any time.</p>
-          </div>
+      {/* COMPARISON */}
+      <section aria-labelledby="cmp-h" className="border-t border-line bg-surface">
+        <div className="container-x py-20 lg:py-24">
+          <Reveal className="mb-10 max-w-2xl">
+            <h2 id="cmp-h" className="display text-[32px] leading-tight sm:text-[40px]">
+              Beyond a SIP calculator
+            </h2>
+            <p className="mt-3 text-[16px] text-grey">What a typical online SIP calculator models, and what your plan adds.</p>
+          </Reveal>
+          <Reveal>
+            <div className="overflow-x-auto rounded-lg border border-line bg-ivory">
+              <table className="w-full min-w-[520px] text-sm">
+                <thead>
+                  <tr className="border-b border-line text-left">
+                    <th scope="col" className="px-5 py-3 font-medium text-grey">What’s modelled</th>
+                    <th scope="col" className="w-36 px-5 py-3 text-center font-medium text-grey">SIP calculator</th>
+                    <th scope="col" className="w-36 bg-mint/60 px-5 py-3 text-center font-semibold text-evergreen">Earn to Equity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {COMPARE.map((r) => (
+                    <tr key={r.row} className="border-b border-line last:border-0">
+                      <th scope="row" className="px-5 py-3 text-left font-normal text-charcoal">{r.row}</th>
+                      <td className="px-5 py-3 text-center">{r.calc ? <Check size={16} className="mx-auto text-forest" aria-label="Yes" /> : <Minus size={16} className="mx-auto text-grey" aria-label="No" />}</td>
+                      <td className="bg-mint/60 px-5 py-3 text-center">{r.plan ? <Check size={16} className="mx-auto text-forest" aria-label="Yes" /> : <Minus size={16} className="mx-auto text-grey" aria-label="No" />}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="border-t border-line">
+        <div className="container-x py-20 lg:py-24">
+          <Spotlight className="rounded-lg border border-line bg-surface">
+            <div className="grid gap-8 p-8 sm:p-12 lg:grid-cols-12 lg:items-end">
+              <div className="lg:col-span-8">
+                <h2 className="display text-[34px] leading-tight sm:text-[44px]">Build your plan</h2>
+                <p className="mt-3 max-w-xl text-[16px] text-grey">Eight steps: pay, spending, savings, loans, protection, goals and investments, then a review.</p>
+              </div>
+              <div className="lg:col-span-4 lg:text-right">
+                <ButtonLink to="/start" size="lg">
+                  Start <ArrowRight size={16} aria-hidden />
+                </ButtonLink>
+              </div>
+            </div>
+          </Spotlight>
         </div>
       </section>
     </>

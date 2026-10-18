@@ -61,12 +61,12 @@ export default function Health() {
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-8 border-y border-line py-8 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-8 border-y border-line py-8 lg:grid-cols-4">
         <Stat label="Net worth" value={money(sheet.netWorth)} def="netWorth" />
         <Stat label="Debt-to-income" value={formatPct(cf.debtToIncome)} def="dti" sub="EMIs ÷ monthly income" />
         <Stat label="Savings rate" value={formatPct(cf.savingsRate)} def="savingsRate" />
         <Stat label="Emergency coverage" value={`${ef.coverageMonths === Infinity ? '—' : ef.coverageMonths.toFixed(1)} months`} def="emergencyCoverage" />
-      </dl>
+      </div>
 
       <div className="grid gap-14 lg:grid-cols-2">
         <Section title="Strengths">

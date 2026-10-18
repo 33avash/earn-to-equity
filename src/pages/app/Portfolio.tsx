@@ -44,12 +44,12 @@ export default function Portfolio() {
     <div className="flex flex-col gap-14">
       <PageHeader title="Portfolio Builder" description="Set a target mix across seven asset classes, edit the return assumptions, and see drift, rebalancing and projected growth." />
 
-      <dl className="grid grid-cols-2 gap-8 border-b border-line pb-8 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-8 border-b border-line pb-8 lg:grid-cols-4">
         <Stat label="Current value" value={money(total)} def="portfolio" />
         <Stat label="Return after fund costs" value={formatPct(plan.portfolioReturn)} def="weightedReturn" sub={`${formatPct(plan.portfolioReturnGross)} before costs; real ≈ ${formatPct((1 + plan.portfolioReturn) / (1 + a.inflation) - 1)} after inflation`} />
         <Stat label="Illustrative volatility" value={formatPct(plan.volatility)} def="volatility" sub={`${band.label}: ${band.note}`} />
         <Stat label="Largest drift" value={`${(drift * 100).toFixed(1)} pts`} sub={drift > 0.05 ? 'Consider rebalancing' : 'Within 5 points'} />
-      </dl>
+      </div>
 
       <Section title="Example allocations" description="Educational illustrations of different risk levels, not personalised recommendations. Applying one replaces your target weights.">
         <div className="grid gap-px overflow-hidden rounded border border-line bg-line sm:grid-cols-2 xl:grid-cols-4">

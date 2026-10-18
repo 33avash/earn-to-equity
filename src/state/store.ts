@@ -5,7 +5,6 @@ import { DEFAULT_SCENARIO_DELTAS } from '@/finance/scenarios';
 import { DEFAULT_TAX, type TaxAssumptions } from '@/features/learn/tax';
 import { DEFAULT_ASSUMPTIONS, blankProfile, demoProfile } from './demo';
 
-export type ThemePref = 'light' | 'dark' | 'system';
 
 export interface CoachMessage {
   id: string;
@@ -29,6 +28,10 @@ export interface RiskLabSettings {
   shockYear: number;
   recoveryYears: number;
   creepDelta: number; // added to the lifestyle-creep assumption
+  spikeOn: boolean; // a temporary inflation spike
+  spikeRate: number;
+  spikeFrom: number; // first calendar year
+  spikeYears: number;
   mcModel: 'student-t' | 'historical';
 }
 
@@ -38,8 +41,14 @@ export interface AppState {
   scenarioDeltas: Record<ScenarioKey, ScenarioDeltas>;
   isDemo: boolean;
   hasPlan: boolean; // the user completed onboarding (or chose the demo)
+  /** The person's own plan, kept aside while the demo is open so the plan switcher can bring it back. */
+  ownPlan: { profile: FinancialProfile; assumptions: Assumptions } | null;
+  /** Next steps ticked off on Overview, by insight id. */
+  doneSteps: Record<string, boolean>;
+  /** A saved copy of the plan to compare against in the Wealth Simulator. */
+  baseline: { profile: FinancialProfile; assumptions: Assumptions; savedAt: string; label: string } | null;
   onboarding: { step: number; draft: FinancialProfile | null };
-  settings: { theme: ThemePref; compact: boolean; showRule503020: boolean };
+  settings: { compact: boolean; showRule503020: boolean };
   riskLab: RiskLabSettings;
   tax: TaxAssumptions;
   coach: CoachMessage[];
@@ -50,6 +59,10 @@ export interface AppState {
   setScenarioDelta: (key: ScenarioKey, patch: Partial<ScenarioDeltas>) => void;
   resetScenarioDeltas: () => void;
   loadDemo: () => void;
+  switchToOwnPlan: () => void;
+  toggleStep: (id: string) => void;
+  saveBaseline: (label: string) => void;
+  clearBaseline: () => void;
   startOnboarding: (fromCurrent?: boolean) => void;
   saveDraft: (draft: FinancialProfile, step: number) => void;
   completeOnboarding: (profile: FinancialProfile) => void;
@@ -79,6 +92,10 @@ export const defaultRiskLab = (): RiskLabSettings => ({
   shockYear: thisYear() + 4,
   recoveryYears: 3,
   creepDelta: 0,
+  spikeOn: false,
+  spikeRate: 0.08,
+  spikeFrom: thisYear() + 1,
+  spikeYears: 3,
   mcModel: 'student-t',
 });
 
@@ -88,8 +105,11 @@ const initial = () => ({
   scenarioDeltas: structuredClone(DEFAULT_SCENARIO_DELTAS),
   isDemo: true,
   hasPlan: false,
+  ownPlan: null as AppState['ownPlan'],
+  doneSteps: {} as Record<string, boolean>,
+  baseline: null as AppState['baseline'],
   onboarding: { step: 0, draft: null },
-  settings: { theme: 'light' as ThemePref, compact: true, showRule503020: false },
+  settings: { compact: true, showRule503020: false },
   riskLab: defaultRiskLab(),
   tax: structuredClone(DEFAULT_TAX),
   coach: [] as CoachMessage[],
@@ -110,7 +130,8 @@ export const useStore = create<AppState>()(
       setScenarioDelta: (key, patch) => set((s) => ({ scenarioDeltas: { ...s.scenarioDeltas, [key]: { ...s.scenarioDeltas[key], ...patch } } })),
       resetScenarioDeltas: () => set({ scenarioDeltas: structuredClone(DEFAULT_SCENARIO_DELTAS) }),
       loadDemo: () =>
-        set({
+        set((s) => ({
+          ownPlan: s.hasPlan && !s.isDemo ? { profile: s.profile, assumptions: s.assumptions } : s.ownPlan,
           profile: demoProfile(),
           assumptions: structuredClone(DEFAULT_ASSUMPTIONS),
           scenarioDeltas: structuredClone(DEFAULT_SCENARIO_DELTAS),
@@ -119,7 +140,12 @@ export const useStore = create<AppState>()(
           hasPlan: true,
           onboarding: { step: 0, draft: null },
           coach: [],
-        }),
+        })),
+      switchToOwnPlan: () =>
+        set((s) => (s.ownPlan ? { profile: s.ownPlan.profile, assumptions: s.ownPlan.assumptions, ownPlan: null, isDemo: false, hasPlan: true, coach: [] } : {})),
+      toggleStep: (id) => set((s) => ({ doneSteps: { ...s.doneSteps, [id]: !s.doneSteps[id] } })),
+      saveBaseline: (label) => set((s) => ({ baseline: { profile: structuredClone(s.profile), assumptions: structuredClone(s.assumptions), savedAt: new Date().toISOString(), label } })),
+      clearBaseline: () => set({ baseline: null }),
       startOnboarding: (fromCurrent = false) =>
         set((s) => ({
           onboarding: {
@@ -129,7 +155,7 @@ export const useStore = create<AppState>()(
         })),
       saveDraft: (draft, step) => set({ onboarding: { step, draft } }),
       completeOnboarding: (profile) =>
-        set({ profile, isDemo: false, hasPlan: true, onboarding: { step: 0, draft: null }, coach: [] }),
+        set({ profile, isDemo: false, hasPlan: true, ownPlan: null, onboarding: { step: 0, draft: null }, coach: [] }),
       setSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
       setRiskLab: (patch) => set((s) => ({ riskLab: { ...s.riskLab, ...patch } })),
       setTax: (patch) => set((s) => ({ tax: { ...s.tax, ...patch } })),
@@ -163,6 +189,9 @@ export const useStore = create<AppState>()(
         scenarioDeltas: s.scenarioDeltas,
         isDemo: s.isDemo,
         hasPlan: s.hasPlan,
+        ownPlan: s.ownPlan,
+        doneSteps: s.doneSteps,
+        baseline: s.baseline,
         onboarding: s.onboarding,
         settings: s.settings,
         riskLab: s.riskLab,

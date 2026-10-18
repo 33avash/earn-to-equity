@@ -26,7 +26,7 @@ export function LoansEditor({ loans, onChange, columns = ['kind', 'label', 'bala
   return (
     <div>
       {loans.length === 0 ? (
-        <EmptyState title="No loans or card balances" action={allowAdd ? <Button variant="secondary" size="sm" icon={<Plus size={14} />} onClick={add}>Add a loan</Button> : undefined}>
+        <EmptyState art="loans" title="No loans or card balances" action={allowAdd ? <Button variant="secondary" size="sm" icon={<Plus size={14} />} onClick={add}>Add a loan</Button> : undefined}>
           If you have none, you can skip this. Revolving credit-card balances count as loans.
         </EmptyState>
       ) : (

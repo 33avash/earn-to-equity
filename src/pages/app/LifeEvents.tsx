@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Goal, LifeEvent, LifeEventKind } from '@/types/profile';
 import { homeCheck, usePlan, useMoney, type Plan } from '@/state/selectors';
@@ -136,6 +137,14 @@ export default function LifeEvents() {
   const update = useStore((s) => s.updateProfile);
   const { profile: p, assumptions: a } = plan;
   const [editing, setEditing] = useState<LifeEvent | null>(null);
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    if (params.get('new') === '1') {
+      setEditing(blank('promotion', p.planStartYear + 2));
+      params.delete('new');
+      setParams(params, { replace: true });
+    }
+  }, [params, setParams, p.planStartYear]);
   const events = [...p.lifeEvents].sort((x, y) => x.year - y.year);
 
   const cmp = useMemo(() => {
@@ -172,7 +181,7 @@ export default function LifeEvents() {
 
       <Section title="Timeline">
         {events.length === 0 ? (
-          <EmptyState title="No life events yet" action={<Button variant="secondary" icon={<Plus size={14} />} onClick={() => setEditing(blank('promotion', p.planStartYear + 2))}>Add your first event</Button>}>A promotion in two years? A career break for a degree? Add it here to see its effect.</EmptyState>
+          <EmptyState art="events" title="No life events yet" action={<Button icon={<Plus size={14} />} onClick={() => setEditing(blank('promotion', p.planStartYear + 2))}>Add your first event</Button>}>A promotion in two years? A career break for a degree? Add it here to see its effect.</EmptyState>
         ) : (
           <ol className="relative ml-2 border-l border-line">
             {events.map((e) => (
@@ -203,12 +212,12 @@ export default function LifeEvents() {
       </Section>
 
       <Section title="Before and after" description="Your roadmap with these events, compared with the same plan without any events.">
-        <dl className="grid grid-cols-2 gap-8 border-y border-line py-6 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-8 border-y border-line py-6 lg:grid-cols-4">
           <Stat label={`Net worth, ${w.year}`} value={money(w.netWorth)} sub={<>without events: {money(wo.netWorth)} · <span className={w.netWorth - wo.netWorth < 0 ? 'text-danger' : 'text-forest'}>{w.netWorth - wo.netWorth >= 0 ? '+' : ''}{money(w.netWorth - wo.netWorth)}</span></>} />
           <Stat label="Final financial corpus" value={money(w.financialAssets)} sub={`without events: ${money(wo.financialAssets)}`} />
           <Stat label="Goals funded in projection" value={`${cmp.goalsWith} of ${cmp.goalsTotal}`} sub={`without events: ${cmp.goalsWithout}`} />
           <Stat label="Estimated FI age" value={plan.fi.fiAge ? String(plan.fi.fiAge) : 'Not reached'} sub={`without events: ${cmp.fiWithout.fiAge ?? 'not reached'}`} />
-        </dl>
+        </div>
         <div className="mt-8">
           <MultiLineChart
             data={plan.sim.points.map((pt, i) => ({ year: pt.year, with: pt.netWorth, without: cmp.without.points[i].netWorth }))}
