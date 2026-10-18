@@ -30,7 +30,7 @@ export function Tooltip({ content, children, label = 'More information' }: { con
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center rounded-sm"
+        className="hit inline-flex items-center rounded-sm"
       >
         {children}
       </button>

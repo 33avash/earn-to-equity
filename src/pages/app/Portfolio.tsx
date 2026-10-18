@@ -3,14 +3,14 @@ import type { RiskProfile } from '@/types/profile';
 import { ASSET_CLASSES } from '@/types/profile';
 import { usePlan, useMoney } from '@/state/selectors';
 import { useStore } from '@/state/store';
-import { PageHeader, Section, Stat, Notice, Disclaimer, MoneyInput, Button, toast } from '@/components/ui';
+import { PageHeader, Section, Stat, Notice, Disclaimer, MoneyInput, Button, Field, toast } from '@/components/ui';
 import { AllocationEditor } from '@/features/editors/Allocation';
 import { AllocationBar } from '@/components/charts/Bars';
 import { ContribGainsChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
-import { ASSET_LABELS, PRESETS, allocationDrift, isValidAllocation, maxDrift, riskBand, DEFAULT_RETURNS } from '@/finance/portfolio';
+import { ASSET_LABELS, PRESETS, isValidAllocation, maxDrift, rebalancePlan, riskBand, DEFAULT_RETURNS } from '@/finance/portfolio';
 import { projectSip } from '@/finance/sip';
-import { formatPct } from '@/finance/money';
+import { formatMonths, formatPct } from '@/finance/money';
 
 export default function Portfolio() {
   const plan = usePlan();
@@ -21,7 +21,8 @@ export default function Portfolio() {
   const { profile: p, assumptions: a } = plan;
   const target = p.preferences.targetAllocation;
   const valid = isValidAllocation(target);
-  const rows = allocationDrift(p.position.holdings, target, plan.cashflow.plannedInvestments);
+  const rebalance = rebalancePlan(p.position.holdings, target, plan.cashflow.plannedInvestments, p.position.elssLocked ?? 0);
+  const rows = rebalance.rows;
   const drift = maxDrift(rows);
   const band = riskBand(plan.volatility);
   const total = plan.sheet.investments;
@@ -86,7 +87,7 @@ export default function Portfolio() {
         </Section>
       </div>
 
-      <Section title="Current vs target, and rebalancing" description="Edit current values to match your statements. Trades show what would restore the target mix. Monthly contributions follow the target weights.">
+      <Section title="Current vs target, and rebalancing" description="Edit current values to match your statements. Rebalancing uses new SIP money only: under-weight classes get your monthly investment until the mix is back on target. Nothing is sold.">
         {!valid && <Notice tone="error">Target weights must total 100% before drift and rebalancing are meaningful.</Notice>}
         <div className="-mx-1 mt-4 overflow-x-auto px-1">
           <table className="table-fin w-full min-w-[760px]">
@@ -98,7 +99,7 @@ export default function Portfolio() {
                 <th scope="col">Target</th>
                 <th scope="col">Drift</th>
                 <th scope="col">To rebalance</th>
-                <th scope="col">Monthly SIP split</th>
+                <th scope="col">New money each month</th>
               </tr>
             </thead>
             <tbody>
@@ -119,8 +120,14 @@ export default function Portfolio() {
                     {r.drift > 0 ? '+' : ''}
                     {(r.drift * 100).toFixed(1)} pts
                   </td>
-                  <td className={r.trade > 0 ? 'text-forest' : r.trade < 0 ? 'text-danger' : 'text-grey'}>{Math.abs(r.trade) < 1 ? '—' : `${r.trade > 0 ? 'Add' : 'Reduce'} ${money(Math.abs(r.trade))}`}</td>
-                  <td>{money(r.monthlyContribution)}</td>
+                  <td className={`font-sans text-[13px] ${r.action === 'add' ? 'text-forest' : 'text-grey'}`}>
+                    {r.action === 'add' && `Add ${money(r.trade)}`}
+                    {r.action === 'locked' && 'Locked in. Hold, and add nothing new'}
+                    {r.action === 'pause' && 'Over target. Pause new money'}
+                    {r.action === 'none' && '—'}
+                    {r.lockedValue > 0 && !r.locked && <span className="block text-xs">{money(r.lockedValue)} in ELSS still locked</span>}
+                  </td>
+                  <td>{money(r.newMoneyMonthly)}</td>
                 </tr>
               ))}
             </tbody>
@@ -129,10 +136,17 @@ export default function Portfolio() {
         <p className="mt-4 text-sm leading-relaxed text-charcoal">
           {total === 0
             ? 'Once you add current holdings, drift and rebalancing amounts will appear here.'
-            : drift > 0.05
-              ? 'Your mix has drifted more than 5 points in at least one asset class. A low-cost way to rebalance is to direct new contributions to under-weight assets before selling anything. Selling can trigger tax and exit loads.'
-              : 'Your current mix is within 5 points of target in every asset class. No rebalancing is needed now.'}
+            : drift <= 0.05
+              ? 'Your current mix is within 5 points of target in every asset class. No rebalancing is needed now.'
+              : rebalance.monthsToTarget === null
+                ? 'Your mix has drifted more than 5 points. Without a monthly SIP, new money can’t rebalance it. Start one in the Budget Planner.'
+                : `Your mix has drifted more than 5 points. Directing your ${money(plan.cashflow.plannedInvestments)} monthly SIP as shown restores the target in about ${formatMonths(rebalance.monthsToTarget)}, without selling. PPF, EPF and NPS can’t be withdrawn early, and selling other funds can trigger tax and exit loads.`}
         </p>
+        <div className="mt-6 max-w-xs">
+          <Field label="ELSS bought in the last 3 years" optional hint="Counted inside Indian equities. Still in its lock-in, so it can’t be sold.">
+            {(id, d) => <MoneyInput id={id} describedBy={d} value={p.position.elssLocked ?? 0} max={p.position.holdings.indianEquity} onChange={(v) => update((x) => void (x.position.elssLocked = v))} />}
+          </Field>
+        </div>
       </Section>
 
       <Disclaimer>Return and volatility figures are illustrative assumptions, not forecasts. Volatility uses a simplified model with a constant 0.3 correlation between asset classes. Example allocations are for education and are not recommendations to buy or sell any product.</Disclaimer>

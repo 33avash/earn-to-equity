@@ -4,15 +4,15 @@ import { simulate } from './simulate';
 
 export interface FiAnalysis {
   targetAge: number;
-  targetYear: number;
+  targetYear: number; // the year you turn the target age (balances as of 1 January)
   yearsToTarget: number;
   targetCorpus: number; // nominal, in the target year
   targetCorpusReal: number; // today's rupees
   projectedCorpus: number; // financial assets in the target year
   gap: number;
   progress: number; // projected / target, capped at 1
-  fiYear: number | null; // first year financial assets cover the target
-  fiAge: number | null;
+  fiYear: number | null; // first 1 January on which financial assets cover the target
+  fiAge: number | null; // age in that year (same convention as every other label)
   extraMonthlyNeeded: number | null; // additional monthly investment (step-up applied) to close the gap; null = not reachable
   sim: SimResult;
 }
@@ -23,7 +23,8 @@ export function fiYears(p: FinancialProfile, a: Assumptions): number {
 }
 
 /**
- * FI target = annual living expenses in the target year ÷ safe-withdrawal-rate assumption.
+ * FI target = annual living expenses in the target year ÷ safe-withdrawal-rate assumption,
+ * plus any debt still outstanding (it must be cleared, since EMIs are not living expenses).
  * Financial assets = investments + retirement accounts + cash (the home is excluded).
  */
 export function fiAnalysis(p: FinancialProfile, a: Assumptions, overrides: SimOverrides = {}): FiAnalysis {
@@ -60,18 +61,17 @@ export function fiAnalysis(p: FinancialProfile, a: Assumptions, overrides: SimOv
     }
   }
 
-  const fiRow = sim.rows.find((r) => r.fiReached);
   return {
     targetAge: p.about.fiAge,
-    targetYear: row.year,
+    targetYear: row.year + 1,
     yearsToTarget,
     targetCorpus,
     targetCorpusReal: targetCorpus / Math.pow(1 + infl, yearsToTarget),
     projectedCorpus,
     gap,
     progress: targetCorpus > 0 ? Math.min(1, projectedCorpus / targetCorpus) : 1,
-    fiYear: fiRow ? fiRow.year : null,
-    fiAge: fiRow ? fiRow.age : null,
+    fiYear: sim.fiYear,
+    fiAge: sim.fiAge,
     extraMonthlyNeeded,
     sim,
   };

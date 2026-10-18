@@ -1,4 +1,5 @@
-export type GoalYearStatus = 'funded' | 'shortfall';
+/** funded: paid from savings · financed: partly or wholly by a loan · shortfall: left unpaid */
+export type GoalYearStatus = 'funded' | 'financed' | 'shortfall';
 
 export interface GoalOutcome {
   goalId: string;
@@ -6,22 +7,25 @@ export interface GoalOutcome {
   year: number;
   cost: number; // nominal cost in that year
   status: GoalYearStatus;
-  shortfall: number;
+  fromSavings: number; // paid from cash and investments
+  loan: number; // borrowed
+  shortfall: number; // left unpaid (savings-only goals)
 }
 
 export interface YearRow {
   index: number; // 1..N
-  year: number; // calendar year
-  age: number;
+  year: number; // calendar year; flows cover the whole year, balances are at 31 December
+  age: number; // age at the start of `year` (see finance/timeline.ts)
   income: number; // annual, nominal
   expenses: number; // annual living expenses incl. event-driven recurring costs
   debtPayments: number; // annual EMIs actually paid
-  interestPaid: number;
+  interestPaid: number; // interest charged: loan interest (incl. moratorium interest added to the balance) and short-term borrowing
   investableSurplus: number; // income − expenses − debt payments
   contributions: number; // into the portfolio (planned SIP + swept cash)
   savingsToCash: number;
   oneTimeCosts: number; // life-event costs paid this year
-  goalWithdrawals: number;
+  goalWithdrawals: number; // full cost of goals paid this year, including any loan-financed part
+  goalLoans: number; // part of goalWithdrawals financed by new loans
   portfolio: number;
   retirement: number;
   cash: number; // may be negative = unfunded short-term borrowing
@@ -54,9 +58,33 @@ export interface SimOverrides {
   retireAtYear?: number; // calendar year salary stops
 }
 
+/**
+ * A balance snapshot on 1 January of `year`. Point 0 is today; point k is the end of row k.
+ * A horizon of N years gives N + 1 points.
+ */
+export interface ProjectionPoint {
+  year: number;
+  age: number;
+  netWorth: number;
+  netWorthReal: number;
+  financialAssets: number;
+  fiTarget: number | null; // null for today
+  events: string[]; // events during the year that ended at this point
+  row: YearRow | null; // the year that ended at this point (null for today)
+}
+
+export interface SkippedEvent {
+  eventId: string;
+  label: string;
+  goalId: string;
+}
+
 export interface SimResult {
   rows: YearRow[];
+  points: ProjectionPoint[];
   startNetWorth: number;
-  fiYear: number | null;
+  fiYear: number | null; // first 1 January on which financial assets cover the FI target
+  fiAge: number | null;
   portfolioReturn: number;
+  skippedEvents: SkippedEvent[]; // events left out because the goal they depend on is unfunded
 }

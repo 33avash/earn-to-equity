@@ -11,7 +11,7 @@ export const DEFINITIONS = {
   portfolio: 'Current value of your investments across all asset classes (excluding EPF/PPF/NPS, which are shown as retirement savings).',
   projected: 'Projected net worth at the end of the 20-year plan in future (nominal) rupees. An estimate based on your assumptions, not a promise.',
   real: 'The projected figure converted into today’s purchasing power by removing assumed inflation.',
-  fiTarget: 'Illustrative corpus needed to cover annual living expenses with the withdrawal-rate assumption: expenses ÷ withdrawal rate.',
+  fiTarget: 'Illustrative corpus needed to cover annual living expenses with the withdrawal-rate assumption, and clear any remaining debt: expenses ÷ withdrawal rate + outstanding loans.',
   fiGap: 'Difference between the FI target and the financial assets projected for your chosen FI age.',
   dti: 'Monthly loan repayments as a share of monthly income (EMI-to-income ratio).',
   weightedReturn: 'Average of the assumed returns for each asset class, weighted by your target allocation.',

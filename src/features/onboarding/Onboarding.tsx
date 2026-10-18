@@ -16,7 +16,8 @@ import { monthlyCashflow } from '@/finance/cashflow';
 import { balanceSheet } from '@/finance/networth';
 import { emergencyPlan } from '@/finance/emergency';
 import { ASSET_LABELS, PRESETS, isValidAllocation } from '@/finance/portfolio';
-import { validateProfile } from '@/finance/validate';
+import { AGE_MAX, AGE_MIN, ageError, fiAgeBounds, fiAgeError, validateProfile } from '@/finance/validate';
+import { familySupportMonthly, hasDependents } from '@/finance/household';
 import { formatINR, formatPct } from '@/finance/money';
 import { useMoney } from '@/state/selectors';
 
@@ -33,18 +34,39 @@ const STEPS = [
 
 type StepErrors = Record<string, string | null>;
 
+/** Inline errors for each step. You cannot move forward while any of these is set. */
 function stepErrors(step: number, p: FinancialProfile): StepErrors {
   switch (step) {
-    case 0:
+    case 0: {
+      const age = ageError(p.about.age);
       return {
-        age: p.about.age < 16 || p.about.age > 80 ? 'Enter an age between 16 and 80.' : null,
-        fiAge: p.about.fiAge <= p.about.age ? 'Choose an age later than your current age.' : p.about.fiAge - p.about.age > 50 ? 'Keep this within 50 years of today.' : null,
+        age,
+        fiAge: age ? null : fiAgeError(p.about.fiAge, p.about.age),
+        dependents: !Number.isInteger(p.about.dependents) || p.about.dependents < 0 || p.about.dependents > 15 ? 'Enter a whole number from 0 to 15.' : null,
       };
+    }
     case 1:
       return {
         income: p.income.monthlyTakeHome <= 0 && p.income.otherMonthlyIncome <= 0 ? 'Enter your monthly take-home pay (or other income) so the plan has something to project.' : null,
         growth: p.income.salaryGrowth < -0.2 || p.income.salaryGrowth > 0.5 ? 'Use a growth rate between −20% and 50%.' : null,
       };
+    case 2:
+      return {
+        items: [...p.cashflow.essential, ...p.cashflow.lifestyle].some((l) => l.amount > 0 && !l.label.trim()) ? 'Name every expense that has an amount.' : null,
+        loans: p.liabilities.some((l) => !l.label.trim()) ? 'Name every loan.' : null,
+        parents: familySupportMonthly(p) > 0 && p.about.dependents === 0 && p.about.parentsAsDependents === undefined ? 'Answer the question about your parents to continue.' : null,
+      };
+    case 3: {
+      const badRate = p.liabilities.find((l) => l.balance > 0 && (l.rate < 0 || l.rate > 0.6));
+      const noEmi = p.liabilities.find((l) => l.balance > 0 && l.emi <= 0);
+      return {
+        loans: badRate
+          ? `“${badRate.label}” needs an interest rate between 0% and 60%.`
+          : noEmi
+            ? `“${noEmi.label}” has a balance but no monthly payment. Add the payment in the previous step.`
+            : null,
+      };
+    }
     case 6:
       return { alloc: !isValidAllocation(p.preferences.targetAllocation) ? 'Your target allocation must add up to exactly 100%.' : null };
     default:
@@ -144,7 +166,7 @@ export default function Onboarding() {
                   onClick={() => (i < step ? go(i) : undefined)}
                   disabled={i > step}
                   aria-current={i === step ? 'step' : undefined}
-                  className={`flex w-full items-center gap-3 rounded px-2 py-2 text-left text-[13.5px] transition-colors ${i === step ? 'font-semibold text-evergreen' : i < step ? 'text-charcoal hover:bg-mint/60' : 'text-grey/70'}`}
+                  className={`tap flex w-full items-center gap-3 rounded px-2 py-2 text-left text-[13.5px] transition-colors ${i === step ? 'font-semibold text-evergreen' : i < step ? 'text-charcoal hover:bg-mint/60' : 'text-grey/70'}`}
                 >
                   <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] num ${i < step ? 'border-forest bg-forest text-onbrand' : i === step ? 'border-evergreen text-evergreen' : 'border-line'}`}>
                     {i < step ? <Check size={12} /> : i + 1}
@@ -166,10 +188,10 @@ export default function Onboarding() {
           <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-grey">{STEPS[step].why}</p>
 
           <div className="mt-10">
-            {step === 0 && <StepAbout p={p} update={update} errs={tried ? errs : {}} />}
+            {step === 0 && <StepAbout p={p} update={update} errs={errs} />}
             {step === 1 && <StepIncome p={p} update={update} errs={tried ? errs : {}} />}
-            {step === 2 && <StepCashflow p={p} update={update} />}
-            {step === 3 && <StepPosition p={p} update={update} />}
+            {step === 2 && <StepCashflow p={p} update={update} errs={tried ? errs : {}} />}
+            {step === 3 && <StepPosition p={p} update={update} errs={tried ? errs : {}} />}
             {step === 4 && <StepProtection p={p} update={update} />}
             {step === 5 && <StepGoals p={p} update={update} />}
             {step === 6 && <StepPreferences p={p} update={update} errs={tried ? errs : {}} />}
@@ -182,7 +204,7 @@ export default function Onboarding() {
             </Button>
             <div className="flex items-center gap-3">
               {step >= 4 && step < 7 && (
-                <button type="button" className="text-sm text-grey underline-offset-4 hover:text-evergreen hover:underline" onClick={() => go(step + 1)}>
+                <button type="button" className="hit text-sm text-grey underline-offset-4 hover:text-evergreen hover:underline" onClick={() => go(step + 1)}>
                   Skip for now
                 </button>
               )}
@@ -207,7 +229,7 @@ export default function Onboarding() {
           </div>
           {tried && hasErr && (
             <p role="alert" className="mt-3 text-right text-sm text-danger">
-              Please fix the highlighted fields to continue.
+              Fix the fields marked in red to continue.
             </p>
           )}
         </main>
@@ -224,8 +246,8 @@ function StepAbout({ p, update, errs = {} }: StepProps) {
       <Field label="First name" optional hint="Only used to greet you. Never leaves this browser.">
         {(id, d) => <TextInput id={id} aria-describedby={d} value={p.about.name} maxLength={40} autoComplete="given-name" onChange={(e) => update((x) => void (x.about.name = e.target.value))} />}
       </Field>
-      <Field label="Age" error={errs.age}>
-        {(id, d) => <NumberInput id={id} describedBy={d} value={p.about.age} min={16} max={80} onChange={(v) => update((x) => void (x.about.age = Math.round(v)))} />}
+      <Field label="Age" hint={`Your age on 1 January, ${AGE_MIN} to ${AGE_MAX}.`} error={errs.age}>
+        {(id, d, invalid) => <NumberInput native id={id} describedBy={d} invalid={invalid} value={p.about.age} min={AGE_MIN} max={AGE_MAX} onChange={(v) => update((x) => void (x.about.age = v))} />}
       </Field>
       <Field label="Employment status">
         {(id) => (
@@ -238,11 +260,16 @@ function StepAbout({ p, update, errs = {} }: StepProps) {
           </Select>
         )}
       </Field>
-      <Field label="Target age for financial independence" help="The age at which you’d like work to be optional. It sets your FI target year. It is not a fixed retirement date." error={errs.fiAge}>
-        {(id, d) => <NumberInput id={id} describedBy={d} value={p.about.fiAge} min={p.about.age + 1} max={p.about.age + 50} onChange={(v) => update((x) => void (x.about.fiAge = Math.round(v)))} />}
+      <Field
+        label="Target age for financial independence"
+        help="The age at which you’d like work to be optional. It sets your FI target year. It is not a fixed retirement date."
+        hint={ageError(p.about.age) ? undefined : `${fiAgeBounds(p.about.age).min} to ${fiAgeBounds(p.about.age).max}.`}
+        error={errs.fiAge}
+      >
+        {(id, d, invalid) => <NumberInput native id={id} describedBy={d} invalid={invalid} value={p.about.fiAge} min={fiAgeBounds(p.about.age).min} max={fiAgeBounds(p.about.age).max} onChange={(v) => update((x) => void (x.about.fiAge = v))} />}
       </Field>
-      <Field label="Financial dependents" optional hint="People who rely on your income, such as parents, a partner or children.">
-        {(id, d) => <NumberInput id={id} describedBy={d} value={p.about.dependents} min={0} max={15} onChange={(v) => update((x) => void (x.about.dependents = Math.round(v)))} />}
+      <Field label="Financial dependents" optional hint="People who rely on your income, such as parents, a partner or children." error={errs.dependents}>
+        {(id, d, invalid) => <NumberInput native id={id} describedBy={d} invalid={invalid} value={p.about.dependents} min={0} max={15} onChange={(v) => update((x) => void (x.about.dependents = v))} />}
       </Field>
     </div>
   );
@@ -252,10 +279,10 @@ function StepIncome({ p, update, errs = {} }: StepProps) {
   return (
     <div className="grid max-w-2xl gap-6 sm:grid-cols-2">
       <Field label="Monthly take-home salary" hint="After tax, PF and other payroll deductions: what reaches your bank account." error={errs.income}>
-        {(id, d) => <MoneyInput id={id} describedBy={d} value={p.income.monthlyTakeHome} max={1e8} onChange={(v) => update((x) => void (x.income.monthlyTakeHome = v))} />}
+        {(id, d, invalid) => <MoneyInput id={id} describedBy={d} invalid={invalid} value={p.income.monthlyTakeHome} max={1e8} onChange={(v) => update((x) => void (x.income.monthlyTakeHome = v))} />}
       </Field>
       <Field label="Expected annual salary growth" help="Average yearly increase including raises and promotions. 6–10% is common early in a career, but it varies widely." error={errs.growth}>
-        {(id, d) => <PercentInput id={id} describedBy={d} value={p.income.salaryGrowth} min={-20} max={50} onChange={(v) => update((x) => void (x.income.salaryGrowth = v))} />}
+        {(id, d, invalid) => <PercentInput id={id} describedBy={d} invalid={invalid} value={p.income.salaryGrowth} min={-20} max={50} onChange={(v) => update((x) => void (x.income.salaryGrowth = v))} />}
       </Field>
       <Field label="Other monthly income" optional hint="Freelance, rent received or interest. Assumed to rise with inflation.">
         {(id, d) => <MoneyInput id={id} describedBy={d} value={p.income.otherMonthlyIncome} max={1e8} onChange={(v) => update((x) => void (x.income.otherMonthlyIncome = v))} />}
@@ -269,12 +296,52 @@ function StepIncome({ p, update, errs = {} }: StepProps) {
   );
 }
 
-function StepCashflow({ p, update }: StepProps) {
+function ParentsQuestion({ p, update, error }: StepProps & { error?: string | null }) {
+  const money = useMoney();
+  const support = familySupportMonthly(p);
+  if (support <= 0 || p.about.dependents > 0) return null;
+  const answer = p.about.parentsAsDependents;
+  const set = (v: boolean) => update((x) => void (x.about.parentsAsDependents = v));
+  return (
+    <div className={`rounded border-l-2 px-4 py-3 ${error ? 'border-danger bg-danger/5' : 'border-champagne bg-champagne/10'}`}>
+      <p id="parents-q" className="text-sm font-semibold text-evergreen">
+        You send {money(support)} home every month. Should we count your parents as dependents?
+      </p>
+      <p className="mt-1 text-[13px] text-grey">If they rely on this money, your plan should include term cover for them. You can change this later in Settings.</p>
+      <div className="mt-3 flex gap-2" role="radiogroup" aria-labelledby="parents-q" aria-describedby={error ? 'parents-err' : undefined}>
+        <Button size="sm" variant={answer === true ? 'primary' : 'secondary'} role="radio" aria-checked={answer === true} onClick={() => set(true)}>
+          Yes, count them
+        </Button>
+        <Button size="sm" variant={answer === false ? 'primary' : 'secondary'} role="radio" aria-checked={answer === false} onClick={() => set(false)}>
+          No
+        </Button>
+      </div>
+      {error && (
+        <p id="parents-err" role="alert" className="mt-2 text-xs text-danger">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function StepCashflow({ p, update, errs = {} }: StepProps) {
   const money = useMoney();
   const cf = monthlyCashflow(p);
   return (
     <div className="grid gap-10 xl:grid-cols-12">
       <div className="space-y-10 xl:col-span-8">
+        <ParentsQuestion p={p} update={update} error={errs.parents} />
+        {errs.items && (
+          <p role="alert" className="text-sm text-danger">
+            {errs.items}
+          </p>
+        )}
+        {errs.loans && (
+          <p role="alert" className="text-sm text-danger">
+            {errs.loans}
+          </p>
+        )}
         <section>
           <h2 className="text-[15px] font-semibold">Essential expenses</h2>
           <p className="mb-3 text-[13px] text-grey">Costs you would still pay if your income stopped.</p>
@@ -339,7 +406,7 @@ function StepCashflow({ p, update }: StepProps) {
   );
 }
 
-function StepPosition({ p, update }: StepProps) {
+function StepPosition({ p, update, errs = {} }: StepProps) {
   const money = useMoney();
   const bs = balanceSheet(p);
   return (
@@ -381,6 +448,11 @@ function StepPosition({ p, update }: StepProps) {
           <h2 className="text-[15px] font-semibold">Outstanding loans</h2>
           <p className="mb-3 text-[13px] text-grey">The same loans as the previous step. Add outstanding balances and interest rates.</p>
           <LoansEditor loans={p.liabilities} columns={['label', 'balance', 'rate']} onChange={(l) => update((x) => void (x.liabilities = l))} />
+          {errs.loans && (
+            <p role="alert" className="mt-2 text-sm text-danger">
+              {errs.loans}
+            </p>
+          )}
         </section>
       </div>
       <aside className="xl:col-span-4">
@@ -411,7 +483,11 @@ function StepProtection({ p, update }: StepProps) {
         <Field label="Health insurance cover" optional hint="Total sum insured, including any employer policy.">
           {(id, d) => <MoneyInput id={id} describedBy={d} value={p.protection.healthCover} max={1e9} onChange={(v) => update((x) => void (x.protection.healthCover = v))} />}
         </Field>
-        <Field label="Term life cover" optional hint="Sum assured on term insurance. Most relevant if others depend on your income.">
+        <Field
+          label="Term life cover"
+          optional
+          hint={hasDependents(p) ? 'Sum assured on term insurance. People rely on your income, so a common benchmark is 10× your annual income.' : 'Sum assured on term insurance. Most relevant if others depend on your income.'}
+        >
           {(id, d) => <MoneyInput id={id} describedBy={d} value={p.protection.lifeCover} max={1e10} onChange={(v) => update((x) => void (x.protection.lifeCover = v))} />}
         </Field>
       </section>
@@ -558,7 +634,7 @@ function StepReview({ p, goTo }: { p: FinancialProfile; goTo: (n: number) => voi
           ))}
         </div>
       )}
-      <ReviewBlock title="About you" step={0} goTo={goTo} rows={[['Name', p.about.name || '—'], ['Age', String(p.about.age)], ['Employment', p.about.employment], ['FI target age', String(p.about.fiAge)], ['Dependents', String(p.about.dependents)]]} />
+      <ReviewBlock title="About you" step={0} goTo={goTo} rows={[['Name', p.about.name || '—'], ['Age', String(p.about.age)], ['Employment', p.about.employment], ['FI target age', String(p.about.fiAge)], ['Dependents', p.about.dependents === 0 && hasDependents(p) ? 'Parents (you send money home)' : String(p.about.dependents)]]} />
       <ReviewBlock title="Income" step={1} goTo={goTo} rows={[['Take-home', money(p.income.monthlyTakeHome)], ['Salary growth', formatPct(p.income.salaryGrowth)], ['Other income', money(p.income.otherMonthlyIncome)]]} />
       <ReviewBlock title="Monthly cash flow" step={2} goTo={goTo} rows={[['Essential', money(cf.essential)], ['Lifestyle', money(cf.lifestyle)], ['Debt repayments', money(cf.debtPayments)], ['Investable surplus', money(cf.investableSurplus)], ['Investments', money(cf.plannedInvestments)], ['Savings', money(cf.plannedSavings)]]} />
       <ReviewBlock title="Current position" step={3} goTo={goTo} rows={[['Cash & reserve', money(bs.cash)], ['Investments', money(bs.investments)], ['Retirement', money(bs.retirement)], ['Other assets', money(bs.otherAssets)], ['Liabilities', money(bs.liabilities)], ['Net worth', money(bs.netWorth)]]} />

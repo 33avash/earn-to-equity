@@ -40,21 +40,18 @@ export function PublicNav() {
           ))}
         </nav>
         <div className="hidden items-center gap-5 lg:flex">
-          <NavLink to="/sign-in" className="text-[14px] text-grey hover:text-evergreen">
-            Sign In
-          </NavLink>
           <ButtonLink to="/start" size="md">
             Build My Wealth Plan
           </ButtonLink>
         </div>
-        <button type="button" className="rounded p-2 text-evergreen lg:hidden" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <button type="button" className="hit rounded p-2 text-evergreen lg:hidden" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
       {open && (
         <nav aria-label="Mobile" className="border-t border-line bg-ivory lg:hidden">
           <div className="container-x flex flex-col py-3">
-            {[...NAV, { to: '/sign-in', label: 'Sign In' }].map((n) => (
+            {NAV.map((n) => (
               <NavLink key={n.to} to={n.to} className="border-b border-line/60 py-3 text-[15px] text-charcoal">
                 {n.label}
               </NavLink>
@@ -83,8 +80,8 @@ export function Footer() {
           <div>
             <p className="eyebrow mb-3">Product</p>
             <ul className="space-y-2">
-              <li><Link className="text-charcoal hover:text-forest" to="/features">Features</Link></li>
-              <li><Link className="text-charcoal hover:text-forest" to="/tools">Financial Tools</Link></li>
+              <li><Link className="hit text-charcoal hover:text-forest" to="/features">Features</Link></li>
+              <li><Link className="hit text-charcoal hover:text-forest" to="/tools">Financial Tools</Link></li>
               <li>
                 <Button variant="ghost" size="sm" className="-ml-3 !h-auto !py-0 !text-sm !font-normal text-charcoal" onClick={() => explore('/app')}>
                   Explore the demo
@@ -95,16 +92,16 @@ export function Footer() {
           <div>
             <p className="eyebrow mb-3">Company</p>
             <ul className="space-y-2">
-              <li><Link className="text-charcoal hover:text-forest" to="/about">About</Link></li>
-              <li><Link className="text-charcoal hover:text-forest" to="/learn">Learning</Link></li>
+              <li><Link className="hit text-charcoal hover:text-forest" to="/about">About</Link></li>
+              <li><Link className="hit text-charcoal hover:text-forest" to="/learn">Learning</Link></li>
             </ul>
           </div>
           <div>
             <p className="eyebrow mb-3">Legal</p>
             <ul className="space-y-2">
-              <li><Link className="text-charcoal hover:text-forest" to="/legal#privacy">Privacy</Link></li>
-              <li><Link className="text-charcoal hover:text-forest" to="/legal#terms">Terms</Link></li>
-              <li><Link className="text-charcoal hover:text-forest" to="/legal#disclaimers">Disclaimers</Link></li>
+              <li><Link className="hit text-charcoal hover:text-forest" to="/legal#privacy">Privacy</Link></li>
+              <li><Link className="hit text-charcoal hover:text-forest" to="/legal#terms">Terms</Link></li>
+              <li><Link className="hit text-charcoal hover:text-forest" to="/legal#disclaimers">Disclaimers</Link></li>
             </ul>
           </div>
         </div>

@@ -1,9 +1,11 @@
 import type { Assumptions, FinancialProfile, LifeEvent } from '@/types/profile';
-import type { GoalOutcome, SimOverrides, SimResult, YearRow } from '@/types/sim';
+import type { GoalOutcome, ProjectionPoint, SimOverrides, SimResult, SkippedEvent, YearRow } from '@/types/sim';
 import { monthlyCashflow } from './cashflow';
+import { goalFundingMode, goalLoanTerms } from './goalFunding';
 import { balanceSheet, portfolioValue } from './networth';
 import { weightedReturn } from './portfolio';
 import { emi as emiFor, loanMonthlyRate, monthlyRate } from './rates';
+import { ageInYear } from './timeline';
 
 /** Assumed cost of unplanned short-term borrowing when liquid assets run out. */
 export const BORROWING_RATE = 0.14;
@@ -16,6 +18,8 @@ interface Loan {
   bal: number;
   apr: number;
   emi: number;
+  moratorium: number; // months left in which interest is added to the balance and nothing is paid
+  tenureMonths: number; // repayment period once the moratorium ends
 }
 
 /**
@@ -34,12 +38,33 @@ interface Loan {
  *  - Transfers to savings and investments are not expenses.
  *  - Only loan interest reduces net worth. Principal repayment moves money from cash to a lower liability.
  *  - Goal-dedicated savings are assumed to already be part of cash or investments.
- *  - A goal withdrawal leaves the portfolio once, in its target year. Retirement and FI goals are never withdrawn.
+ *  - A goal is paid once, in its target year, according to its funding mode: from liquid assets
+ *    ('savings'), by a new loan ('loan'), or liquid assets first and a loan for the rest ('mixed').
+ *    A savings-only goal that cannot be afforded is left unpaid and reported as a shortfall.
+ *    Retirement and FI goals are never withdrawn.
+ *    A 'mixed' goal keeps back enough savings to cover living costs and EMIs through any career
+ *    break linked to it, so the loan pays the fees and savings pay the rent.
+ *  - Life events linked to a goal (`goalId`) are dropped when that goal is left unpaid, unless the
+ *    goal has `keepEventsIfUnfunded`. The projection is then rerun without them.
  *  - A purchase (e.g. a home) converts liquid assets into a property asset and may add a loan.
  *  - When there is a deficit, cash above the emergency reserve is used first, then investments, then the
  *    reserve. Anything still unfunded becomes short-term borrowing (negative cash, charged BORROWING_RATE).
  */
 export function simulate(p: FinancialProfile, a: Assumptions, o: SimOverrides = {}): SimResult {
+  const first = run(p, a, o, new Set());
+  const unpaid = new Set(
+    first.rows
+      .flatMap((r) => r.goals)
+      .filter((g) => g.status === 'shortfall' && !p.goals.find((x) => x.id === g.goalId)?.keepEventsIfUnfunded)
+      .map((g) => g.goalId),
+  );
+  const dependent = [...(o.excludeEvents ? [] : p.lifeEvents), ...(o.extraEvents ?? [])].filter((e) => e.goalId && unpaid.has(e.goalId));
+  if (!dependent.length) return first;
+  const skippedEvents: SkippedEvent[] = dependent.map((e) => ({ eventId: e.id, label: e.label, goalId: e.goalId! }));
+  return { ...run(p, a, o, new Set(dependent.map((e) => e.id))), skippedEvents };
+}
+
+function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<string>): SimResult {
   const years = Math.max(1, Math.min(50, Math.round(o.years ?? a.horizonYears)));
   const startYear = p.planStartYear;
   const infl = o.inflation ?? a.inflation;
@@ -71,9 +96,11 @@ export function simulate(p: FinancialProfile, a: Assumptions, o: SimOverrides = 
   let homes = 0;
   const loans: Loan[] = p.liabilities
     .filter((l) => l.balance > 0)
-    .map((l) => ({ label: l.label, bal: l.balance, apr: l.rate, emi: Math.max(0, l.emi) }));
+    .map((l) => ({ label: l.label, bal: l.balance, apr: l.rate, emi: Math.max(0, l.emi), moratorium: 0, tenureMonths: 0 }));
 
-  const events: LifeEvent[] = [...(o.excludeEvents ? [] : p.lifeEvents), ...(o.extraEvents ?? [])].sort((x, y) => x.year - y.year);
+  const events: LifeEvent[] = [...(o.excludeEvents ? [] : p.lifeEvents), ...(o.extraEvents ?? [])]
+    .filter((e) => !skip.has(e.id))
+    .sort((x, y) => x.year - y.year);
   let retired = false;
   let breakMonths = 0;
   let recovery: { untilIndex: number; monthlyBoost: number } | null = null;
@@ -116,7 +143,11 @@ export function simulate(p: FinancialProfile, a: Assumptions, o: SimOverrides = 
     for (const ev of events.filter((e) => e.year === calYear)) {
       eventLabels.push(ev.label);
       const priceIndex = Math.pow(1 + infl, elapsed);
-      if (ev.incomeChangePct) salary *= Math.max(0, 1 + ev.incomeChangePct);
+      if (ev.incomeChangePct) {
+        // Retirement contributions (e.g. EPF) are a share of salary, so they move with it.
+        salary *= Math.max(0, 1 + ev.incomeChangePct);
+        retContribution *= Math.max(0, 1 + ev.incomeChangePct);
+      }
       if (ev.monthlyExpenseChange) eventExpense += ev.monthlyExpenseChange * priceIndex;
       if (ev.breakMonths > 0) breakMonths += Math.round(ev.breakMonths);
       if (ev.kind === 'retirement') retired = true;
@@ -133,28 +164,45 @@ export function simulate(p: FinancialProfile, a: Assumptions, o: SimOverrides = 
         oneTimeCosts += down;
         homes += value;
         if (loan > 0) {
-          loans.push({ label: `${ev.label} loan`, bal: loan, apr: ev.home.loanRate, emi: emiFor(loan, ev.home.loanRate, Math.max(1, ev.home.tenureYears) * 12) });
+          const tenureMonths = Math.max(1, ev.home.tenureYears) * 12;
+          loans.push({ label: `${ev.label} loan`, bal: loan, apr: ev.home.loanRate, emi: emiFor(loan, ev.home.loanRate, tenureMonths), moratorium: 0, tenureMonths });
         }
       }
     }
 
-    // Goals due this year, in priority order. Discretionary: funded only when affordable.
+    // Goals due this year, in priority order, paid according to each goal's funding mode.
     const goalOutcomes: GoalOutcome[] = [];
     let goalWithdrawals = 0;
+    let goalLoans = 0;
     const due = p.goals
       .filter((g) => g.targetYear === calYear && !NON_WITHDRAWAL_GOALS.has(g.category))
       .sort((g1, g2) => g1.priority - g2.priority);
     for (const g of due) {
       const cost = g.cost * Math.pow(1 + g.inflation, elapsed);
-      const available = Math.max(0, portfolio) + Math.max(0, cash - reserveFor());
-      if (available >= cost) {
-        payLump(cost);
-        goalWithdrawals += cost;
-        goalOutcomes.push({ goalId: g.id, name: g.name, year: calYear, cost, status: 'funded', shortfall: 0 });
-      } else {
-        goalOutcomes.push({ goalId: g.id, name: g.name, year: calYear, cost, status: 'shortfall', shortfall: cost - available });
+      const mode = goalFundingMode(g);
+      const breakMonthsLinked = events.filter((e) => e.goalId === g.id && e.year >= calYear).reduce((s, e) => s + Math.max(0, e.breakMonths), 0);
+      const monthlyOutgoings = essential + lifestyle + eventExpense + loans.reduce((s, l) => (l.bal > 0 ? s + l.emi : s), 0);
+      const keepBack = mode === 'mixed' ? breakMonthsLinked * monthlyOutgoings : 0;
+      const available = Math.max(0, Math.max(0, portfolio) + Math.max(0, cash - reserveFor()) - keepBack);
+      const base = { goalId: g.id, name: g.name, year: calYear, cost };
+      if (mode === 'savings' && available < cost) {
+        goalOutcomes.push({ ...base, status: 'shortfall', fromSavings: 0, loan: 0, shortfall: cost - available });
         flags.add('goal-shortfall');
+        continue;
       }
+      const fromSavings = mode === 'loan' ? 0 : Math.min(cost, available);
+      const borrowed = cost - fromSavings;
+      payLump(fromSavings);
+      if (borrowed > 0) {
+        const terms = goalLoanTerms(g);
+        const tenureMonths = Math.max(1, Math.round(terms.tenureYears * 12));
+        const moratorium = Math.max(0, Math.round(terms.moratoriumMonths));
+        loans.push({ label: `${g.name} loan`, bal: borrowed, apr: terms.rate, emi: moratorium > 0 ? 0 : emiFor(borrowed, terms.rate, tenureMonths), moratorium, tenureMonths });
+        flags.add('goal-loan');
+      }
+      goalWithdrawals += cost;
+      goalLoans += borrowed;
+      goalOutcomes.push({ ...base, status: borrowed > 0 ? 'financed' : 'funded', fromSavings, loan: borrowed, shortfall: 0 });
     }
 
     if (o.shock && o.shock.year === calYear && o.shock.drop > 0) {
@@ -182,6 +230,13 @@ export function simulate(p: FinancialProfile, a: Assumptions, o: SimOverrides = 
       for (const l of loans) {
         if (l.bal <= 0) continue;
         const interest = l.bal * loanMonthlyRate(l.apr);
+        if (l.moratorium > 0) {
+          // Interest is added to the balance; repayments start when the moratorium ends.
+          l.bal += interest;
+          interestPaid += interest;
+          if (--l.moratorium === 0) l.emi = emiFor(l.bal, l.apr, l.tenureMonths);
+          continue;
+        }
         const pay = Math.min(l.emi, l.bal + interest);
         l.bal = l.bal + interest - pay;
         if (l.bal < 0.01) l.bal = 0;
@@ -195,22 +250,21 @@ export function simulate(p: FinancialProfile, a: Assumptions, o: SimOverrides = 
       const toCash = surplus - fromBudget;
       if (toCash < 0) {
         flags.add('deficit');
-        // Draw down: cash first (keeping it ≥ 0), then investments, then borrowing.
-        let need = -toCash;
-        const fromCash = Math.min(Math.max(0, cash), need);
-        cash -= fromCash;
-        need -= fromCash;
-        const fromPortfolio = Math.min(Math.max(0, portfolio), need);
-        portfolio -= fromPortfolio;
-        need -= fromPortfolio;
-        cash -= need;
+        // Same documented order as lump sums: excess cash, then investments, then the reserve, then borrowing.
+        payLump(-toCash);
       } else {
         cash += toCash;
         savingsToCash += toCash;
       }
       if (a.contributionTiming === 'start') portfolio = (portfolio + invest) * (1 + pm);
       else portfolio = portfolio * (1 + pm) + invest;
-      cash = cash >= 0 ? cash * (1 + cashMonthly) : cash * (1 + borrowMonthly);
+      if (cash >= 0) cash *= 1 + cashMonthly;
+      else {
+        // Short-term borrowing: interest is charged on the overdrawn amount.
+        const charge = -cash * borrowMonthly;
+        cash -= charge;
+        interestPaid += charge;
+      }
       const retIn = monthSalary > 0 ? retContribution : 0;
       retirement = retirement * (1 + retMonthly) + retIn;
 
@@ -236,12 +290,13 @@ export function simulate(p: FinancialProfile, a: Assumptions, o: SimOverrides = 
     const totalAssets = Math.max(0, portfolio) + retirement + Math.max(0, cash) + property;
     const netWorth = totalAssets - liabilities;
     const financialAssets = Math.max(0, portfolio) + retirement + Math.max(0, cash);
-    const fiTarget = a.withdrawalRate > 0 ? expenses / a.withdrawalRate : Infinity;
+    // Independence means covering living costs from the corpus with no debt left to service.
+    const fiTarget = a.withdrawalRate > 0 ? expenses / a.withdrawalRate + liabilities : Infinity;
 
     rows.push({
       index: y,
       year: calYear,
-      age: p.about.age + y,
+      age: ageInYear(p, calYear),
       income,
       expenses,
       debtPayments,
@@ -251,6 +306,7 @@ export function simulate(p: FinancialProfile, a: Assumptions, o: SimOverrides = 
       savingsToCash,
       oneTimeCosts,
       goalWithdrawals,
+      goalLoans,
       portfolio: Math.max(0, portfolio),
       retirement,
       cash,
@@ -268,8 +324,13 @@ export function simulate(p: FinancialProfile, a: Assumptions, o: SimOverrides = 
     });
   }
 
+  const points: ProjectionPoint[] = [
+    { year: startYear, age: ageInYear(p, startYear), netWorth: sheet.netWorth, netWorthReal: sheet.netWorth, financialAssets: sheet.cash + sheet.investments + sheet.retirement, fiTarget: null, events: [], row: null },
+    ...rows.map((r) => ({ year: r.year + 1, age: ageInYear(p, r.year + 1), netWorth: r.netWorth, netWorthReal: r.netWorthReal, financialAssets: r.financialAssets, fiTarget: r.fiTarget, events: r.events, row: r })),
+  ];
   const fiRow = rows.find((r) => r.fiReached);
-  return { rows, startNetWorth: sheet.netWorth, fiYear: fiRow ? fiRow.year : null, portfolioReturn: baseReturn };
+  const fiYear = fiRow ? fiRow.year + 1 : null;
+  return { rows, points, startNetWorth: sheet.netWorth, fiYear, fiAge: fiYear === null ? null : ageInYear(p, fiYear), portfolioReturn: baseReturn, skippedEvents: [] };
 }
 
 export const finalRow = (r: SimResult) => r.rows[r.rows.length - 1];

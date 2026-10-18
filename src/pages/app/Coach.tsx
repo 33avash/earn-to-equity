@@ -108,7 +108,7 @@ export default function Coach() {
         {messages.length > 0 && (
           <div className="flex flex-wrap gap-2 border-t border-line px-5 py-3 sm:px-8">
             {SUGGESTED.slice(0, 4).map((s) => (
-              <button key={s} type="button" disabled={busy} onClick={() => ask(s)} className="rounded-sm border border-line px-2.5 py-1 text-xs text-grey hover:border-forest hover:text-evergreen">
+              <button key={s} type="button" disabled={busy} onClick={() => ask(s)} className="tap rounded-sm border border-line px-2.5 py-1 text-xs text-grey hover:border-forest hover:text-evergreen">
                 {s}
               </button>
             ))}

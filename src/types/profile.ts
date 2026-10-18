@@ -26,6 +26,7 @@ export interface LineItem {
   id: string;
   label: string;
   amount: number; // monthly INR
+  familySupport?: boolean; // money sent to parents or family (counts towards dependents for protection)
 }
 
 export type LiabilityKind = 'personal' | 'education' | 'car' | 'creditCard' | 'home' | 'other';
@@ -51,6 +52,19 @@ export type GoalCategory =
   | 'other';
 export type Priority = 1 | 2 | 3; // 1 = high
 export type FundingSource = 'investments' | 'savings';
+/**
+ * How the whole-plan projection pays for a goal in its target year:
+ *  - savings: liquid assets only; any shortfall leaves the goal unfunded
+ *  - loan: the full cost is borrowed
+ *  - mixed: liquid assets first, a loan for the rest
+ */
+export type FundingMode = 'savings' | 'loan' | 'mixed';
+
+export interface LoanTerms {
+  rate: number; // APR, decimal
+  tenureYears: number;
+  moratoriumMonths: number; // interest accrues and is added to the balance; EMIs start afterwards
+}
 
 export interface Goal {
   id: string;
@@ -62,6 +76,9 @@ export interface Goal {
   priority: Priority;
   inflation: number; // goal-specific cost inflation
   source: FundingSource;
+  fundingMode?: FundingMode; // defaults by category, see finance/goalFunding.ts
+  loan?: LoanTerms; // defaults by category
+  keepEventsIfUnfunded?: boolean; // keep life events linked to this goal even when it can't be paid for
 }
 
 export type LifeEventKind =
@@ -85,6 +102,7 @@ export interface LifeEvent {
   incomeChangePct: number; // permanent change to salary from this year, decimal (+0.2 = +20%)
   monthlyExpenseChange: number; // today's INR, recurring from this year (negative = saving)
   breakMonths: number; // career break: months without salary
+  goalId?: string; // the goal this event depends on (e.g. an MBA break and the post-MBA raise)
   home?: {
     propertyValue: number; // today's INR
     downPaymentPct: number; // decimal
@@ -101,6 +119,8 @@ export interface FinancialProfile {
     employment: Employment;
     fiAge: number;
     dependents: number;
+    /** Answer to "Should we count your parents as dependents?" when family support is paid. Unset = yes. */
+    parentsAsDependents?: boolean;
   };
   income: {
     monthlyTakeHome: number;
@@ -124,6 +144,7 @@ export interface FinancialProfile {
       returnRate: number;
     };
     otherAssets: number; // e.g. vehicle, property already owned (not invested)
+    elssLocked?: number; // ELSS units bought in the last 3 years, inside Indian equity; cannot be sold yet
   };
   liabilities: Liability[];
   protection: {

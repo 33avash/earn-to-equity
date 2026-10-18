@@ -1,17 +1,17 @@
-import { Suspense, lazy, useEffect, type ReactNode } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Suspense, lazy, useEffect, useLayoutEffect, type ReactNode } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { AppShell, NotFound } from '@/components/layout/AppShell';
 import { Toaster } from '@/components/ui/Misc';
 import { ConfirmHost } from '@/components/ui/Confirm';
 import { useStore } from '@/state/store';
 import Home from '@/pages/public/Home';
+import { documentTitle, routeMeta } from '@/routeMeta';
 
 const HowItWorks = lazy(() => import('@/pages/public/HowItWorks'));
 const Features = lazy(() => import('@/pages/public/Features'));
 const Tools = lazy(() => import('@/pages/public/Tools'));
 const LearnPublic = lazy(() => import('@/pages/public/LearnPublic'));
-const SignIn = lazy(() => import('@/pages/public/SignIn'));
 const Legal = lazy(() => import('@/pages/public/Legal'));
 const About = lazy(() => import('@/pages/public/About'));
 const Onboarding = lazy(() => import('@/features/onboarding/Onboarding'));
@@ -60,8 +60,28 @@ function useTheme() {
   }, [theme]);
 }
 
+/**
+ * Sets the document title and meta description for the current route. A layout effect, so a page
+ * that sets a more specific title in an ordinary effect (e.g. a lesson) runs after it and wins.
+ */
+function useRouteMeta() {
+  const { pathname } = useLocation();
+  useLayoutEffect(() => {
+    const meta = routeMeta(pathname);
+    document.title = documentTitle(meta, pathname);
+    let tag = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+    if (!tag) {
+      tag = document.createElement('meta');
+      tag.name = 'description';
+      document.head.appendChild(tag);
+    }
+    tag.content = meta.description;
+  }, [pathname]);
+}
+
 export function App() {
   useTheme();
+  useRouteMeta();
   return (
     <>
       <Routes>
@@ -71,7 +91,8 @@ export function App() {
           <Route path="features" element={<S><Features /></S>} />
           <Route path="tools" element={<S><Tools /></S>} />
           <Route path="learn" element={<S><LearnPublic /></S>} />
-          <Route path="sign-in" element={<S><SignIn /></S>} />
+          {/* No accounts yet: keep old links working without a dead-end page. */}
+          <Route path="sign-in" element={<Navigate to="/" replace />} />
           <Route path="legal" element={<S><Legal /></S>} />
           <Route path="about" element={<S><About /></S>} />
           <Route path="*" element={<NotFound />} />

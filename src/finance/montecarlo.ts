@@ -25,11 +25,11 @@ export interface MonteCarloResult {
   paths: number;
   meanReturn: number;
   volatility: number;
-  percentiles: { year: number; p10: number; p50: number; p90: number }[]; // net worth, nominal
+  percentiles: { year: number; p10: number; p50: number; p90: number }[]; // net worth on 1 January of `year`, nominal
   finalP10: number;
   finalP50: number;
   finalP90: number;
-  goalProbabilities: { goalId: string; name: string; year: number; probability: number }[];
+  goalProbabilities: { goalId: string; name: string; year: number; probability: number }[]; // paid from savings, without a loan
   fiProbability: number; // reaching FI within the horizon
 }
 
@@ -73,7 +73,8 @@ export function monteCarlo(p: FinancialProfile, a: Assumptions, opts: { paths?: 
   }
   const percentiles = byYear.map((vals, i) => {
     const s = [...vals].sort((x, y) => x - y);
-    return { year: p.planStartYear + i, p10: pct(s, 0.1), p50: pct(s, 0.5), p90: pct(s, 0.9) };
+    // Row i holds 31 December balances, i.e. the point on 1 January of the following year.
+    return { year: p.planStartYear + i + 1, p10: pct(s, 0.1), p50: pct(s, 0.5), p90: pct(s, 0.9) };
   });
   const last = percentiles[percentiles.length - 1];
   return {

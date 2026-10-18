@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
 import { MODULES, type LearnModule as LM } from '@/features/learn/modules';
@@ -126,10 +126,14 @@ function TaxAwareness() {
 
 export default function LearnModule() {
   const { id } = useParams();
+  const lessonTitle = id === 'tax-awareness' ? 'Tax Awareness' : MODULES.find((x) => x.id === id)?.title;
+  useEffect(() => {
+    if (lessonTitle) document.title = `${lessonTitle} · Learning centre · Earn to Equity`;
+  }, [lessonTitle]);
   if (id === 'tax-awareness') {
     return (
       <article className="flex flex-col gap-8">
-        <Link to="/app/learn" className="inline-flex items-center gap-1 text-sm text-grey hover:text-evergreen"><ArrowLeft size={14} /> Learning Centre</Link>
+        <Link to="/app/learn" className="hit inline-flex items-center gap-1 text-sm text-grey hover:text-evergreen"><ArrowLeft size={14} /> Learning Centre</Link>
         <h1 className="display text-[40px] leading-tight">Tax Awareness</h1>
         <TaxAwareness />
       </article>
@@ -142,7 +146,7 @@ export default function LearnModule() {
   return (
     <article className="mx-auto flex max-w-3xl flex-col gap-10">
       <div>
-        <Link to="/app/learn" className="inline-flex items-center gap-1 text-sm text-grey hover:text-evergreen"><ArrowLeft size={14} /> Learning Centre</Link>
+        <Link to="/app/learn" className="hit inline-flex items-center gap-1 text-sm text-grey hover:text-evergreen"><ArrowLeft size={14} /> Learning Centre</Link>
         <p className="eyebrow mt-6">Module {i + 1} · {m.minutes} min</p>
         <h1 className="display mt-2 text-[40px] leading-tight">{m.title}</h1>
         <p className="mt-3 text-lg leading-relaxed text-grey">{m.summary}</p>

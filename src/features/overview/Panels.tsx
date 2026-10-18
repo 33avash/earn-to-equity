@@ -23,8 +23,9 @@ import { AnimatedNumber } from '@/components/motion/Motion';
 export function TrajectoryPanel({ plan, height = 320, interactive = true }: { plan: Plan; height?: number; interactive?: boolean }) {
   const [mode, setMode] = useState<WealthMode>('both');
   const [range, setRange] = useState<'5' | '10' | '20'>('20');
-  const rows = plan.sim.rows.slice(0, Number(range));
-  const end = rows[rows.length - 1];
+  // Range N shows today plus N annual points, so 20Y ends on the plan's headline year.
+  const points = plan.sim.points.slice(0, Number(range) + 1);
+  const end = points[points.length - 1];
   const money = useMoney();
   const wide = useWide();
   return (
@@ -59,7 +60,9 @@ export function TrajectoryPanel({ plan, height = 320, interactive = true }: { pl
         {/* Projection read-out floats over the empty upper-left of the chart */}
         <div className="glass relative z-10 mb-4 inline-flex flex-wrap gap-x-8 gap-y-3 px-5 py-4 md:absolute md:left-14 md:top-0 md:mb-0">
           <div>
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">Projected, {end.year + 1}</p>
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">
+              Projected, {end.year} · age {end.age}
+            </p>
             <p className="mt-1 text-[28px] font-semibold leading-none tracking-tight text-evergreen"><AnimatedNumber value={end.netWorth} format={money} /></p>
           </div>
           <div>
@@ -67,7 +70,7 @@ export function TrajectoryPanel({ plan, height = 320, interactive = true }: { pl
             <p className="mt-1 text-[28px] font-semibold leading-none tracking-tight text-[#8a6a33] dark:text-champagne"><AnimatedNumber value={end.netWorthReal} format={money} /></p>
           </div>
         </div>
-        <WealthChart rows={rows} startNetWorth={plan.sim.startNetWorth} startYear={plan.profile.planStartYear} mode={mode} height={height + (wide ? 72 : 0)} topPad={wide ? 92 : 16} />
+        <WealthChart points={points} mode={mode} height={height + (wide ? 72 : 0)} topPad={wide ? 92 : 16} />
       </div>
       <div className="mt-3">
         <WealthLegend mode={mode} />
@@ -101,7 +104,7 @@ export function FiPanel({ plan }: { plan: Plan }) {
         </div>
         <div>
           <dt className="text-xs text-grey">Estimated FI age</dt>
-          <dd className="num font-semibold text-evergreen">{fi.fiAge ? `${fi.fiAge} (${fi.fiYear})` : 'Beyond projection'}</dd>
+          <dd className="num font-semibold text-evergreen">{fi.fiAge ? `${fi.fiAge} (${fi.fiYear})` : 'Not reached'}</dd>
         </div>
       </dl>
     </div>
@@ -150,7 +153,7 @@ export function NextStepsPanel({ plan, limit = 4, linkable = true }: { plan: Pla
               <p className="text-[14px] font-semibold text-evergreen">{i.title}</p>
               <p className="mt-1 text-[13px] leading-relaxed text-grey">{i.detail}</p>
               {linkable && (
-                <Link to={i.link} className="mt-2 inline-flex items-center gap-1 text-[13px] font-medium text-forest hover:underline">
+                <Link to={i.link} className="hit mt-2 inline-flex items-center gap-1 text-[13px] font-medium text-forest hover:underline">
                   Open <ArrowRight size={13} aria-hidden />
                 </Link>
               )}

@@ -25,14 +25,41 @@ export function checkRate(rate: number, label: string, min = 0, max = 1): string
   return null;
 }
 
+/** Ages are whole years on 1 January. FI must be at least five years away and no later than 75. */
+export const AGE_MIN = 18;
+export const AGE_MAX = 70;
+export const FI_MIN_GAP = 5;
+export const FI_AGE_MAX = 75;
+
+export function fiAgeBounds(age: number): { min: number; max: number } {
+  return { min: age + FI_MIN_GAP, max: Math.min(FI_AGE_MAX, age + 50) };
+}
+
+export function ageError(age: number): string | null {
+  if (!Number.isFinite(age)) return 'Enter your age.';
+  if (!Number.isInteger(age)) return 'Enter your age in whole years.';
+  if (age < AGE_MIN || age > AGE_MAX) return `Age must be between ${AGE_MIN} and ${AGE_MAX}.`;
+  return null;
+}
+
+export function fiAgeError(fiAge: number, age: number): string | null {
+  const { min, max } = fiAgeBounds(age);
+  if (!Number.isFinite(fiAge)) return 'Enter a target age.';
+  if (fiAge < min) return `Choose an age of at least ${min}, five years from now.`;
+  if (fiAge > max) return `Choose an age of ${max} or younger.`;
+  return null;
+}
+
 /** Whole-profile validation used on the onboarding review step and in Settings. */
 export function validateProfile(p: FinancialProfile, a: Assumptions): Issue[] {
   const issues: Issue[] = [];
   const add = (field: string, message: string, severity: Severity = 'error') => issues.push({ field, message, severity });
 
-  if (p.about.age < 16 || p.about.age > 80) add('about.age', 'Age should be between 16 and 80.');
-  if (p.about.fiAge <= p.about.age) add('about.fiAge', 'Your financial independence age must be later than your current age.');
-  if (p.about.fiAge - p.about.age > 50) add('about.fiAge', 'Projections are limited to 50 years.', 'warning');
+  const ageErr = ageError(p.about.age);
+  if (ageErr) add('about.age', ageErr);
+  const fiErr = ageErr ? null : fiAgeError(p.about.fiAge, p.about.age);
+  if (fiErr) add('about.fiAge', `Financial independence age: ${fiErr.charAt(0).toLowerCase()}${fiErr.slice(1)}`);
+  if (!Number.isInteger(p.about.dependents) || p.about.dependents < 0 || p.about.dependents > 15) add('about.dependents', 'Dependents must be a whole number from 0 to 15.');
   if (p.income.monthlyTakeHome < 0) add('income.monthlyTakeHome', 'Take-home salary cannot be negative.');
   if (p.income.monthlyTakeHome === 0 && p.income.otherMonthlyIncome === 0) add('income.monthlyTakeHome', 'Add at least one source of income so the plan has something to project.', 'warning');
   const r = checkRate(p.income.salaryGrowth, 'Salary growth', -0.2, 0.5);

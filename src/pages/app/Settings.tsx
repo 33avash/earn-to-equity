@@ -3,7 +3,8 @@ import { Download, FileText, RotateCcw, Trash2 } from 'lucide-react';
 import { usePlan } from '@/state/selectors';
 import { useStore, type ThemePref } from '@/state/store';
 import { PageHeader, Section, Field, TextInput, NumberInput, MoneyInput, PercentInput, Segmented, Toggle, Button, ButtonLink, Notice, Disclaimer, confirmAction, toast } from '@/components/ui';
-import { validateProfile } from '@/finance/validate';
+import { AGE_MAX, AGE_MIN, ageError, fiAgeBounds, fiAgeError, validateProfile } from '@/finance/validate';
+import { familySupportMonthly } from '@/finance/household';
 import { exportData, exportSummary } from '@/services/export';
 import { DISCLAIMER_TEXT } from '@/pages/public/Legal';
 import { DEFAULT_ASSUMPTIONS } from '@/state/demo';
@@ -38,14 +39,30 @@ export default function Settings() {
       <Section title="Personal profile" description="Re-run the guided setup any time, or edit the essentials here.">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <Field label="First name" optional>{(id) => <TextInput id={id} value={p.about.name} maxLength={40} onChange={(e) => s.updateProfile((x) => void (x.about.name = e.target.value))} />}</Field>
-          <Field label="Age">{(id) => <NumberInput id={id} value={p.about.age} min={16} max={80} onChange={(v) => s.updateProfile((x) => void (x.about.age = Math.round(v)))} />}</Field>
-          <Field label="FI target age">{(id) => <NumberInput id={id} value={p.about.fiAge} min={p.about.age + 1} max={p.about.age + 50} onChange={(v) => s.updateProfile((x) => void (x.about.fiAge = Math.round(v)))} />}</Field>
-          <Field label="Dependents">{(id) => <NumberInput id={id} value={p.about.dependents} min={0} max={15} onChange={(v) => s.updateProfile((x) => void (x.about.dependents = Math.round(v)))} />}</Field>
+          <Field label="Age" hint={`${AGE_MIN} to ${AGE_MAX}, on 1 January.`} error={ageError(p.about.age)}>
+            {(id, d, invalid) => <NumberInput native id={id} describedBy={d} invalid={invalid} value={p.about.age} min={AGE_MIN} max={AGE_MAX} onChange={(v) => Number.isFinite(v) && s.updateProfile((x) => void (x.about.age = v))} />}
+          </Field>
+          <Field label="FI target age" error={ageError(p.about.age) ? null : fiAgeError(p.about.fiAge, p.about.age)}>
+            {(id, d, invalid) => <NumberInput native id={id} describedBy={d} invalid={invalid} value={p.about.fiAge} min={fiAgeBounds(p.about.age).min} max={fiAgeBounds(p.about.age).max} onChange={(v) => Number.isFinite(v) && s.updateProfile((x) => void (x.about.fiAge = v))} />}
+          </Field>
+          <Field label="Dependents" error={!Number.isInteger(p.about.dependents) || p.about.dependents < 0 || p.about.dependents > 15 ? 'Enter a whole number from 0 to 15.' : null}>
+            {(id, d, invalid) => <NumberInput native id={id} describedBy={d} invalid={invalid} value={p.about.dependents} min={0} max={15} onChange={(v) => Number.isFinite(v) && s.updateProfile((x) => void (x.about.dependents = v))} />}
+          </Field>
           <Field label="Health cover">{(id) => <MoneyInput id={id} value={p.protection.healthCover} max={1e9} onChange={(v) => s.updateProfile((x) => void (x.protection.healthCover = v))} />}</Field>
           <Field label="Term life cover">{(id) => <MoneyInput id={id} value={p.protection.lifeCover} max={1e10} onChange={(v) => s.updateProfile((x) => void (x.protection.lifeCover = v))} />}</Field>
           <Field label="Retirement balance (EPF/PPF/NPS)">{(id) => <MoneyInput id={id} value={p.position.retirement.balance} max={1e10} onChange={(v) => s.updateProfile((x) => void (x.position.retirement.balance = v))} />}</Field>
           <Field label="Monthly retirement contribution">{(id) => <MoneyInput id={id} value={p.position.retirement.monthlyContribution} max={1e7} onChange={(v) => s.updateProfile((x) => void (x.position.retirement.monthlyContribution = v))} />}</Field>
         </div>
+        {familySupportMonthly(p) > 0 && p.about.dependents === 0 && (
+          <div className="mt-6 max-w-xl">
+            <Toggle
+              checked={p.about.parentsAsDependents !== false}
+              onChange={(v) => s.updateProfile((x) => void (x.about.parentsAsDependents = v))}
+              label="Count my parents as dependents"
+              description="You send money home every month. When this is on, the health score and next steps include term cover for them."
+            />
+          </div>
+        )}
         <ButtonLink to="/start" variant="secondary" className="mt-6" onClick={() => s.startOnboarding(true)}>Re-run guided setup</ButtonLink>
       </Section>
 

@@ -1,8 +1,10 @@
 import type { FinancialProfile } from '@/types/profile';
+import type { SimResult } from '@/types/sim';
 import type { MonthlyCashflow } from './cashflow';
 import type { EmergencyPlan } from './emergency';
 import type { FiAnalysis } from './fi';
 import type { GoalsSummary } from './goals';
+import { hasDependents } from './household';
 import { formatCompact, formatMonths, formatPct } from './money';
 import { allocationDrift, maxDrift } from './portfolio';
 
@@ -21,6 +23,7 @@ export function nextSteps(
   ef: EmergencyPlan,
   goals: GoalsSummary,
   fi: FiAnalysis,
+  sim: SimResult,
 ): Insight[] {
   const out: Insight[] = [];
   if (cf.investableSurplus < 0) {
@@ -60,28 +63,40 @@ export function nextSteps(
       link: '/app/settings',
     });
   }
-  if (p.about.dependents > 0 && p.protection.lifeCover < cf.income * 12 * 10) {
+  if (hasDependents(p) && p.protection.lifeCover < cf.income * 12 * 10) {
     out.push({
       id: 'life-cover',
       priority: 3,
-      title: 'Consider term life cover for your dependents',
+      title: p.about.dependents > 0 ? 'Consider term life cover for your dependents' : 'Consider term cover for the parents you support',
       detail: `Your current cover is ${formatCompact(p.protection.lifeCover)}. A common rule of thumb is 10× annual income (${formatCompact(cf.income * 120)}).`,
       link: '/app/settings',
     });
   }
-  const behind = goals.goals.filter((g) => g.status === 'shortfall' || g.status === 'at-risk' || g.status === 'overdue');
-  if (behind.length) {
-    const g = behind.sort((a, b) => a.goal.priority - b.goal.priority)[0];
+  // Goal warnings follow the whole-plan projection, which is what every other figure is built on.
+  const outcomes = sim.rows.flatMap((r) => r.goals);
+  const unpaid = outcomes.filter((o) => o.status === 'shortfall');
+  if (unpaid.length) {
+    const o = unpaid[0];
     out.push({
       id: 'goal-gap',
-      priority: 4,
-      title: `${g.goal.name} is not fully funded`,
-      detail: Number.isFinite(g.requiredMonthly)
-        ? `It needs about ${formatCompact(g.requiredMonthly)}/month, and your current capacity covers ${formatCompact(g.allocatedMonthly)}. Explore delaying it, reducing the cost, or adding to contributions.`
-        : 'Its target year has arrived and it is not covered by dedicated savings. Choose a new date or a smaller amount.',
+      priority: 1,
+      title: `${o.name} can’t be paid for in ${o.year}`,
+      detail: `It will cost ${formatCompact(o.cost)} then, and the projection has ${formatCompact(o.cost - o.shortfall)} to spare, ${formatCompact(o.shortfall)} short. Delay it, lower the cost, or allow a loan for the gap.`,
       link: '/app/goals',
     });
   }
+  const financed = outcomes.filter((o) => o.status === 'financed');
+  if (financed.length) {
+    const o = financed[0];
+    out.push({
+      id: 'goal-loan',
+      priority: 4,
+      title: `${o.name} needs a ${formatCompact(o.loan)} loan in ${o.year}`,
+      detail: `${o.fromSavings > 0 ? `Savings cover ${formatCompact(o.fromSavings)} of the ${formatCompact(o.cost)} cost.` : `Savings cover none of the ${formatCompact(o.cost)} cost.`} The EMIs are already in your projection. Saving more before then shrinks the loan.`,
+      link: '/app/goals',
+    });
+  }
+  const behind = goals.goals.filter((g) => g.status === 'shortfall' || g.status === 'at-risk' || g.status === 'overdue');
   if (goals.totalShortfall > 0 && behind.length > 1) {
     out.push({
       id: 'goals-total',
@@ -105,7 +120,7 @@ export function nextSteps(
     out.push({
       id: 'unallocated',
       priority: 7,
-      title: 'Give your spare cash a job',
+      title: 'Decide where your spare cash goes',
       detail: `${formatCompact(cf.unallocated)} a month is left after your planned savings and investments. Directing it to a goal or your SIP would speed up your plan.`,
       link: '/app/budget',
     });

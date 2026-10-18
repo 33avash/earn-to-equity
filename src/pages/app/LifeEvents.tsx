@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
-import type { LifeEvent, LifeEventKind } from '@/types/profile';
+import type { Goal, LifeEvent, LifeEventKind } from '@/types/profile';
 import { usePlan, useMoney } from '@/state/selectors';
 import { useStore } from '@/state/store';
 import { PageHeader, Section, Stat, Button, Field, Select, TextInput, MoneyInput, NumberInput, PercentInput, EmptyState, Disclaimer, Badge, confirmAction, toast } from '@/components/ui';
@@ -10,6 +10,7 @@ import { simulate } from '@/finance/simulate';
 import { fiAnalysis } from '@/finance/fi';
 import { uid } from '@/state/demo';
 import { formatPct } from '@/finance/money';
+import { yearAgeLabel } from '@/finance/timeline';
 
 export const EVENT_KINDS: Record<LifeEventKind, { label: string; defaults: Partial<LifeEvent> }> = {
   promotion: { label: 'Promotion', defaults: { incomeChangePct: 0.2 } },
@@ -28,10 +29,10 @@ function blank(kind: LifeEventKind, year: number): LifeEvent {
   return { id: uid(), kind, label: EVENT_KINDS[kind].label, year, oneTimeCost: 0, incomeChangePct: 0, monthlyExpenseChange: 0, breakMonths: 0, ...structuredClone(EVENT_KINDS[kind].defaults) };
 }
 
-function EventForm({ initial, start, onSave, onCancel }: { initial: LifeEvent; start: number; onSave: (e: LifeEvent) => void; onCancel: () => void }) {
+function EventForm({ initial, start, goals, onSave, onCancel }: { initial: LifeEvent; start: number; goals: Goal[]; onSave: (e: LifeEvent) => void; onCancel: () => void }) {
   const [e, setE] = useState(initial);
   const set = (patch: Partial<LifeEvent>) => setE((x) => ({ ...x, ...patch }));
-  const yearErr = e.year < start || e.year > start + 49 ? `Choose a year between ${start} and ${start + 49}.` : null;
+  const yearErr = !Number.isInteger(e.year) || e.year < start || e.year > start + 49 ? `Choose a year between ${start} and ${start + 49}.` : null;
   const labelErr = !e.label.trim() ? 'Give the event a name.' : null;
   return (
     <form className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" noValidate onSubmit={(ev) => { ev.preventDefault(); if (!yearErr && !labelErr) onSave(e); }}>
@@ -41,7 +42,21 @@ function EventForm({ initial, start, onSave, onCancel }: { initial: LifeEvent; s
         </Select>
       )}</Field>
       <Field label="Name" error={labelErr}>{(id) => <TextInput id={id} value={e.label} maxLength={40} onChange={(x) => set({ label: x.target.value })} />}</Field>
-      <Field label="Year" error={yearErr}>{(id) => <NumberInput id={id} value={e.year} min={start} max={start + 49} onChange={(v) => set({ year: Math.round(v) })} />}</Field>
+      <Field label="Year" error={yearErr}>{(id, d, invalid) => <NumberInput native id={id} describedBy={d} invalid={invalid} value={e.year} min={start} max={start + 49} onChange={(v) => set({ year: v })} />}</Field>
+      {goals.length > 0 && (
+        <Field label="Depends on a goal" optional help="If the plan can’t pay for that goal, this event is left out of the projection. For example, an MBA break and the raise after it depend on the MBA being paid for.">
+          {(id) => (
+            <Select id={id} value={e.goalId ?? ''} onChange={(x) => set({ goalId: x.target.value || undefined })}>
+              <option value="">No</option>
+              {goals.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.name} ({g.targetYear})
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+      )}
       <Field label="One-time cost (today’s ₹)" hint="Inflated to the event year.">{(id, d) => <MoneyInput id={id} describedBy={d} value={e.oneTimeCost} max={1e10} onChange={(v) => set({ oneTimeCost: v })} />}</Field>
       <Field label="Permanent salary change" hint="e.g. +20% for a promotion, −30% for a lower-paid role.">{(id, d) => <PercentInput id={id} describedBy={d} value={e.incomeChangePct} min={-100} max={300} onChange={(v) => set({ incomeChangePct: v })} />}</Field>
       <Field label="Recurring monthly expense change" hint="Today’s ₹. Negative for savings, such as rent no longer paid.">{(id, d) => <NumberInput id={id} describedBy={d} prefix="₹" value={e.monthlyExpenseChange} min={-1e7} max={1e7} onChange={(v) => set({ monthlyExpenseChange: v })} />}</Field>
@@ -89,8 +104,9 @@ export default function LifeEvents() {
     const goalsFunded = (rows: typeof without.rows) => rows.flatMap((r) => r.goals).filter((g) => g.status === 'funded').length;
     return { without, fiWithout, goalsWithout: goalsFunded(without.rows), goalsWith: goalsFunded(plan.sim.rows), goalsTotal: plan.sim.rows.flatMap((r) => r.goals).length };
   }, [p, a, plan.sim]);
-  const w = plan.sim.rows.at(-1)!;
-  const wo = cmp.without.rows.at(-1)!;
+  const w = plan.sim.points.at(-1)!;
+  const wo = cmp.without.points.at(-1)!;
+  const skipped = new Map(plan.sim.skippedEvents.map((s) => [s.eventId, s]));
 
   const save = (e: LifeEvent) => {
     update((x) => { const i = x.lifeEvents.findIndex((y) => y.id === e.id); if (i >= 0) x.lifeEvents[i] = e; else x.lifeEvents.push(e); });
@@ -110,7 +126,7 @@ export default function LifeEvents() {
       {editing && (
         <div className="panel p-5 sm:p-6">
           <h2 className="mb-5 text-[15px] font-semibold">{p.lifeEvents.some((x) => x.id === editing.id) ? 'Edit event' : 'New event'}</h2>
-          <EventForm initial={editing} start={p.planStartYear} onSave={save} onCancel={() => setEditing(null)} />
+          <EventForm initial={editing} start={p.planStartYear} goals={p.goals} onSave={save} onCancel={() => setEditing(null)} />
         </div>
       )}
 
@@ -124,10 +140,15 @@ export default function LifeEvents() {
                 <span className="absolute -left-[6px] top-1.5 h-[11px] w-[11px] rounded-full border-2 border-champagne bg-surface" />
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <p className="num text-xs font-semibold text-champagne">{e.year} · age {p.about.age + (e.year - p.planStartYear)}</p>
+                    <p className="num text-xs font-semibold text-champagne">{yearAgeLabel(p, e.year)}</p>
                     <p className="mt-0.5 flex items-center gap-2 text-lg font-semibold text-evergreen">{e.label} <Badge>{EVENT_KINDS[e.kind].label}</Badge></p>
                     <p className="mt-1 text-[13px] text-grey">{describe(e, money)}</p>
                     {e.year >= p.planStartYear + a.horizonYears && <p className="mt-1 text-xs text-danger">Outside the {a.horizonYears}-year projection.</p>}
+                    {skipped.has(e.id) && (
+                      <p className="mt-1 text-xs text-danger">
+                        Left out of the projection: it depends on “{p.goals.find((g) => g.id === skipped.get(e.id)!.goalId)?.name}”, which your plan can’t pay for. Change the goal’s funding, or tick “Keep these events anyway” on it.
+                      </p>
+                    )}
                   </div>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="sm" icon={<Pencil size={14} />} onClick={() => setEditing(e)}>Edit</Button>
@@ -142,14 +163,14 @@ export default function LifeEvents() {
 
       <Section title="Before and after" description="Your roadmap with these events, compared with the same plan without any events.">
         <dl className="grid grid-cols-2 gap-8 border-y border-line py-6 lg:grid-cols-4">
-          <Stat label={`Net worth, ${w.year + 1}`} value={money(w.netWorth)} sub={<>without events: {money(wo.netWorth)} · <span className={w.netWorth - wo.netWorth < 0 ? 'text-danger' : 'text-forest'}>{w.netWorth - wo.netWorth >= 0 ? '+' : ''}{money(w.netWorth - wo.netWorth)}</span></>} />
+          <Stat label={`Net worth, ${w.year}`} value={money(w.netWorth)} sub={<>without events: {money(wo.netWorth)} · <span className={w.netWorth - wo.netWorth < 0 ? 'text-danger' : 'text-forest'}>{w.netWorth - wo.netWorth >= 0 ? '+' : ''}{money(w.netWorth - wo.netWorth)}</span></>} />
           <Stat label="Final financial corpus" value={money(w.financialAssets)} sub={`without events: ${money(wo.financialAssets)}`} />
           <Stat label="Goals funded in projection" value={`${cmp.goalsWith} of ${cmp.goalsTotal}`} sub={`without events: ${cmp.goalsWithout}`} />
-          <Stat label="Estimated FI age" value={plan.fi.fiAge ? String(plan.fi.fiAge) : 'Beyond projection'} sub={`without events: ${cmp.fiWithout.fiAge ?? 'beyond projection'}`} />
+          <Stat label="Estimated FI age" value={plan.fi.fiAge ? String(plan.fi.fiAge) : 'Not reached'} sub={`without events: ${cmp.fiWithout.fiAge ?? 'not reached'}`} />
         </dl>
         <div className="mt-8">
           <MultiLineChart
-            data={plan.sim.rows.map((r, i) => ({ year: r.year, with: r.netWorth, without: cmp.without.rows[i].netWorth }))}
+            data={plan.sim.points.map((pt, i) => ({ year: pt.year, with: pt.netWorth, without: cmp.without.points[i].netWorth }))}
             xKey="year"
             height={280}
             ariaLabel="Net worth with and without life events"

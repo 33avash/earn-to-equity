@@ -11,7 +11,7 @@ export function Mark({ size = 22, inverse = false }: { size?: number; inverse?: 
 
 export function Wordmark({ to = '/', compact = false, inverse = false }: { to?: string; compact?: boolean; inverse?: boolean }) {
   return (
-    <Link to={to} className="flex items-center gap-2.5 rounded-sm" aria-label="Earn to Equity home">
+    <Link to={to} className="hit flex items-center gap-2.5 rounded-sm" aria-label="Earn to Equity home">
       <Mark inverse={inverse} />
       {!compact && <span className={`font-display text-[21px] leading-none tracking-[-0.01em] ${inverse ? 'text-ivory dark:text-evergreen' : 'text-evergreen'}`}>Earn to Equity</span>}
     </Link>

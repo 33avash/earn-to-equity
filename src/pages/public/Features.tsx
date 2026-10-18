@@ -57,7 +57,7 @@ export default function Features() {
         <Button size="lg" onClick={() => navigate('/start')}>
           Build My Wealth Plan
         </Button>
-        <Link to="/how-it-works" className="inline-flex h-12 items-center px-2 text-sm font-medium text-forest hover:underline">
+        <Link to="/how-it-works" className="hit inline-flex h-12 items-center px-2 text-sm font-medium text-forest hover:underline">
           How the model works
         </Link>
       </div>

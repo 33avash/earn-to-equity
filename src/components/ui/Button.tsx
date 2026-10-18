@@ -5,7 +5,7 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'inverse';
 type Size = 'sm' | 'md' | 'lg';
 
 const base =
-  'inline-flex items-center justify-center gap-2 rounded font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-[cubic-bezier(.22,1,.36,1)] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap select-none [&_svg]:transition-transform [&:hover_svg.lucide-arrow-right]:translate-x-0.5 [&:hover_svg.lucide-arrow-up-right]:-translate-y-0.5 [&:hover_svg.lucide-arrow-up-right]:translate-x-0.5';
+  'tap inline-flex items-center justify-center gap-2 rounded font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-[cubic-bezier(.22,1,.36,1)] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap select-none [&_svg]:transition-transform [&:hover_svg.lucide-arrow-right]:translate-x-0.5 [&:hover_svg.lucide-arrow-up-right]:-translate-y-0.5 [&:hover_svg.lucide-arrow-up-right]:translate-x-0.5';
 const variants: Record<Variant, string> = {
   primary: 'bg-evergreen text-onbrand shadow-[0_1px_0_rgb(255_255_255/0.08)_inset,0_1px_2px_rgb(16_42_35/0.2)] hover:bg-forest hover:shadow-[0_1px_0_rgb(255_255_255/0.08)_inset,0_8px_20px_-10px_rgb(16_42_35/0.6)]',
   secondary: 'border border-evergreen/20 bg-surface/60 text-evergreen hover:border-evergreen/60 hover:bg-surface',

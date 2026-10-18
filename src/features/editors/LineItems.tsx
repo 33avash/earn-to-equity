@@ -35,7 +35,7 @@ export function LineItemsEditor({ items, onChange, addLabel, title }: { items: L
                 <MoneyInput size="sm" ariaLabel={`${i.label || 'Item'} per month`} value={i.amount} onChange={(v) => set(i.id, { amount: v })} max={1e8} />
               </td>
               <td className="text-right">
-                <button type="button" onClick={() => onChange(items.filter((x) => x.id !== i.id))} aria-label={`Remove ${i.label || 'item'}`} className="rounded p-1.5 text-grey hover:bg-danger/10 hover:text-danger">
+                <button type="button" onClick={() => onChange(items.filter((x) => x.id !== i.id))} aria-label={`Remove ${i.label || 'item'}`} className="hit rounded p-1.5 text-grey hover:bg-danger/10 hover:text-danger">
                   <Trash2 size={15} />
                 </button>
               </td>

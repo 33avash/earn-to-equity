@@ -1,5 +1,5 @@
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import type { YearRow } from '@/types/sim';
+import type { ProjectionPoint } from '@/types/sim';
 import { formatAxis } from '@/finance/money';
 import { useMoney } from '@/state/selectors';
 import { axisProps, useChartTheme } from './theme';
@@ -7,12 +7,10 @@ import { axisProps, useChartTheme } from './theme';
 export type WealthMode = 'nominal' | 'real' | 'both';
 
 interface Props {
-  rows: YearRow[];
-  startNetWorth: number;
-  startYear: number;
+  points: ProjectionPoint[]; // today, then 1 January of each following year
   mode?: WealthMode;
   height?: number;
-  selectedYear?: number | null;
+  selectedYear?: number | null; // a calendar year of the projection (its flows end at point year + 1)
   onSelectYear?: (year: number) => void;
   showEvents?: boolean;
   showFiTarget?: boolean;
@@ -22,15 +20,15 @@ interface Props {
 
 /**
  * The dominant wealth-trajectory chart. Net worth in future rupees (area) and in today's
- * rupees (dashed line). Life events are marked; clicking a year selects it.
+ * rupees (dashed line), one point per 1 January. Life events are marked at the start of the year
+ * they happen; clicking a point selects the year that ended there.
  */
-export function WealthChart({ rows, startNetWorth, startYear, mode = 'both', height = 320, selectedYear, onSelectYear, showEvents = true, showFiTarget = false, ariaLabel, topPad = 16 }: Props) {
+export function WealthChart({ points, mode = 'both', height = 320, selectedYear, onSelectYear, showEvents = true, showFiTarget = false, ariaLabel, topPad = 16 }: Props) {
   const t = useChartTheme();
   const money = useMoney();
-  const data = [
-    { year: startYear, label: 'Today', netWorth: startNetWorth, real: startNetWorth, fiTarget: null as number | null, events: [] as string[] },
-    ...rows.map((r) => ({ year: r.year + 1, label: `End ${r.year}`, netWorth: r.netWorth, real: r.netWorthReal, fiTarget: r.fiTarget, events: r.events, row: r })),
-  ];
+  const data = points.map((pt, i) => ({ year: pt.year, age: pt.age, today: i === 0, netWorth: pt.netWorth, real: pt.netWorthReal, fiTarget: pt.fiTarget, events: pt.events, row: pt.row }));
+  const rows = points.flatMap((pt) => (pt.row ? [pt.row] : []));
+  const startYear = points[0].year;
   const showNominal = mode !== 'real';
   const showReal = mode !== 'nominal';
   const gid = `wg-${t.dark ? 'd' : 'l'}`;
@@ -45,13 +43,14 @@ export function WealthChart({ rows, startNetWorth, startYear, mode = 'both', hei
     });
 
   return (
-    <div role="img" aria-label={ariaLabel ?? `Projected net worth from ${startYear} to ${startYear + rows.length}`} style={{ height }} className="w-full">
+    <div role="img" aria-label={ariaLabel ?? `Projected net worth from ${startYear} to ${points[points.length - 1].year}`} style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
           data={data}
           margin={{ top: topPad, right: 12, bottom: 0, left: 0 }}
           onClick={(e) => {
-            const y = (e?.activePayload?.[0]?.payload as { row?: YearRow } | undefined)?.row?.year;
+            const i = e?.activeTooltipIndex;
+            const y = i === undefined || i === null ? undefined : data[Number(i)]?.row?.year;
             if (y && onSelectYear) onSelectYear(y);
           }}
           style={{ cursor: onSelectYear ? 'pointer' : undefined }}
@@ -72,7 +71,7 @@ export function WealthChart({ rows, startNetWorth, startYear, mode = 'both', hei
               const d = payload[0].payload as (typeof data)[number];
               return (
                 <div className="glass min-w-[180px] px-3.5 py-2.5 text-xs">
-                  <p className="mb-1 font-semibold text-evergreen">{d.label === 'Today' ? 'Today' : `Start of ${d.year}`}</p>
+                  <p className="mb-1 font-semibold text-evergreen">{d.today ? `Today · age ${d.age}` : `1 January ${d.year} · age ${d.age}`}</p>
                   {showNominal && (
                     <p className="num flex justify-between gap-6">
                       <span className="text-grey">Net worth</span>
@@ -92,7 +91,7 @@ export function WealthChart({ rows, startNetWorth, startYear, mode = 'both', hei
                     </p>
                   )}
                   {d.events.length > 0 && <p className="mt-1 text-grey">During {d.year - 1}: {d.events.join(', ')}</p>}
-                  {onSelectYear && d.label !== 'Today' && <p className="mt-1 text-[11px] text-grey">Click to inspect this year</p>}
+                  {onSelectYear && !d.today && <p className="mt-1 text-[11px] text-grey">Click to inspect {d.year - 1}</p>}
                 </div>
               );
             }}

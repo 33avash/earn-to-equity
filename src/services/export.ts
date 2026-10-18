@@ -1,4 +1,4 @@
-import type { Plan } from '@/state/selectors';
+import { goalStatusLabel, type Plan } from '@/state/plan';
 import { formatINR, formatPct } from '@/finance/money';
 
 function download(name: string, content: string, type: string) {
@@ -15,7 +15,7 @@ function download(name: string, content: string, type: string) {
 
 /** Plain-text financial summary built from engine outputs. */
 export function summaryText(plan: Plan): string {
-  const { profile: p, cashflow: cf, sheet, final, fi } = plan;
+  const { profile: p, cashflow: cf, sheet, headline, fi } = plan;
   const lines = [
     `EARN TO EQUITY — FINANCIAL SUMMARY`,
     `Generated ${new Date().toLocaleDateString('en-IN')} · Illustrative projection, not financial advice`,
@@ -30,15 +30,15 @@ export function summaryText(plan: Plan): string {
     `ASSUMPTIONS`,
     `Inflation ${formatPct(plan.assumptions.inflation)} · salary growth ${formatPct(p.income.salaryGrowth)} · portfolio return ${formatPct(plan.portfolioReturn)} · SIP step-up ${formatPct(plan.assumptions.sipStepUp)} · withdrawal rate ${formatPct(plan.assumptions.withdrawalRate)}`,
     ``,
-    `PROJECTION (year-end)`,
-    ...plan.sim.rows.filter((r) => r.index % 5 === 0).map((r) => `${r.year} (age ${r.age}): net worth ${formatINR(r.netWorth)} · today's rupees ${formatINR(r.netWorthReal)}`),
-    `Final: ${formatINR(final.netWorth)} (${formatINR(final.netWorthReal)} in today's rupees)`,
+    `PROJECTION (1 January, age on that date)`,
+    ...plan.sim.points.filter((_, i) => i > 0 && i % 5 === 0).map((pt) => `${pt.year} (age ${pt.age}): net worth ${formatINR(pt.netWorth)} · today's rupees ${formatINR(pt.netWorthReal)}`),
+    `Final, ${headline.year}: ${formatINR(headline.netWorth)} (${formatINR(headline.netWorthReal)} in today's rupees)`,
     ``,
     `FINANCIAL INDEPENDENCE`,
     `Target at age ${fi.targetAge}: ${formatINR(fi.targetCorpus)} · projected ${formatINR(fi.projectedCorpus)} · gap ${formatINR(fi.gap)} · estimated FI age ${fi.fiAge ?? 'beyond projection'}`,
     ``,
     `GOALS`,
-    ...(plan.goals.goals.length ? plan.goals.goals.map((g) => `${g.goal.name} (${g.goal.targetYear}): ${formatINR(g.goal.cost)} today → ${formatINR(g.futureCost)} · needs ${Number.isFinite(g.requiredMonthly) ? formatINR(g.requiredMonthly) : 'n/a'}/mo · ${g.status}`) : ['None']),
+    ...(plan.goalViews.length ? plan.goalViews.map((v) => `${v.goal.name} (${v.goal.targetYear}): ${formatINR(v.goal.cost)} today → ${formatINR(v.outcome?.cost ?? v.analysis.futureCost)} · ${goalStatusLabel(v, formatINR)}`) : ['None']),
     ``,
     `NEXT STEPS`,
     ...plan.insights.slice(0, 5).map((i, k) => `${k + 1}. ${i.title}`),

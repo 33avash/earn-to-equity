@@ -1,92 +1,37 @@
 import { useMemo, useState } from 'react';
-import { simulate } from '@/finance/simulate';
-import { formatCompact } from '@/finance/money';
-import { DEFAULT_ASSUMPTIONS, demoProfile } from '@/state/demo';
+import { formatCompact, formatPct } from '@/finance/money';
+import { landingScenarios, type LandingScenarioKey, type Plan } from '@/state/plan';
 import { MultiLineChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
 import { Disclaimer } from '@/components/ui/Misc';
 import { AnimatedNumber } from '@/components/motion/Motion';
-import type { SimOverrides } from '@/types/sim';
 
-type Key = 'salary' | 'house' | 'stepup';
-
-/** Three illustrative what-ifs on a simplified sample profile, all run through the real engine. */
-export function LifeScenarios() {
+/** Three what-ifs on the sample plan. The baseline is the same plan the hero and dashboard show. */
+export function LifeScenarios({ plan }: { plan: Plan }) {
   const t = useChartTheme();
-  const [key, setKey] = useState<Key>('salary');
-  const base = useMemo(() => {
-    const p = demoProfile();
-    p.lifeEvents = [];
-    p.goals = [];
-    return p;
-  }, []);
-  const a = useMemo(() => ({ ...DEFAULT_ASSUMPTIONS, sipStepUp: 0.05 }), []);
-
-  const scenarios: Record<Key, { q: string; summary: string; overrides: SimOverrides; label: string }> = {
-    salary: {
-      q: 'What if my salary grows more slowly?',
-      summary: 'Salary growth of 4% a year instead of 8%. Spending is unchanged, so there is less left over to invest.',
-      overrides: { salaryGrowth: 0.04 },
-      label: '4% salary growth',
-    },
-    house: {
-      q: 'What if I buy a house in five years?',
-      summary: 'A ₹60 lakh flat (today’s prices) bought in Year 5 with 20% down, an 8.5% loan over 20 years, and rent of ₹20,000 a month no longer paid.',
-      overrides: {
-        extraEvents: [
-          {
-            id: 'h',
-            kind: 'homePurchase',
-            label: 'Home',
-            year: base.planStartYear + 5,
-            oneTimeCost: 250000,
-            incomeChangePct: 0,
-            monthlyExpenseChange: -20000,
-            breakMonths: 0,
-            home: { propertyValue: 6000000, downPaymentPct: 0.2, loanRate: 0.085, tenureYears: 20 },
-          },
-        ],
-      },
-      label: 'Buy a home in Year 5',
-    },
-    stepup: {
-      q: 'What if I increase my investments every year?',
-      summary: 'Monthly investments rise 15% each year instead of 5%, and any surplus not invested stays in cash.',
-      overrides: { sipStepUp: 0.15 },
-      label: '15% annual step-up',
-    },
-  };
-
-  const s = scenarios[key];
-  const { data, baseFinal, altFinal } = useMemo(() => {
-    const ax = { ...a, sweepExcessCash: key !== 'stepup' };
-    const b = simulate(base, ax);
-    const v = simulate(base, ax, s.overrides);
-    return {
-      data: b.rows.map((r, i) => ({ year: r.year, base: r.netWorthReal, alt: v.rows[i].netWorthReal })),
-      baseFinal: b.rows.at(-1)!.netWorthReal,
-      altFinal: v.rows.at(-1)!.netWorthReal,
-    };
-  }, [base, a, key, s.overrides]);
-  const diff = altFinal - baseFinal;
+  const [key, setKey] = useState<LandingScenarioKey>('salary');
+  const scenarios = useMemo(() => landingScenarios(plan), [plan]);
+  const s = scenarios.find((x) => x.key === key)!;
+  const diff = s.altFinal - s.baseFinal;
+  const { profile: p } = plan;
 
   return (
     <div className="grid gap-10 lg:grid-cols-12">
       <div role="tablist" aria-label="Life scenarios" className="flex flex-col lg:col-span-5">
-        {(Object.keys(scenarios) as Key[]).map((k, i) => (
+        {scenarios.map((x, i) => (
           <button
-            key={k}
+            key={x.key}
             role="tab"
             type="button"
-            aria-selected={key === k}
+            aria-selected={key === x.key}
             aria-controls="scenario-panel"
-            onClick={() => setKey(k)}
-            className={`group flex items-baseline gap-4 border-t border-line py-5 text-left transition-colors last:border-b ${key === k ? '' : 'opacity-60 hover:opacity-100'}`}
+            onClick={() => setKey(x.key)}
+            className={`group flex items-baseline gap-4 border-t border-line py-5 text-left transition-colors last:border-b ${key === x.key ? '' : 'opacity-60 hover:opacity-100'}`}
           >
             <span className="num text-xs text-grey">0{i + 1}</span>
             <span>
-              <span className="display block text-[22px] leading-snug sm:text-2xl">{scenarios[k].q}</span>
-              {key === k && <span className="mt-2 block text-sm leading-relaxed text-grey">{scenarios[k].summary}</span>}
+              <span className="display block text-[22px] leading-snug sm:text-2xl">{x.q}</span>
+              {key === x.key && <span className="mt-2 block text-sm leading-relaxed text-grey">{x.summary}</span>}
             </span>
           </button>
         ))}
@@ -94,30 +39,32 @@ export function LifeScenarios() {
       <div id="scenario-panel" role="tabpanel" className="lg:col-span-7">
         <div className="relative">
           <div className="glass relative z-10 mb-4 inline-block px-5 py-4 md:absolute md:left-16 md:top-2 md:mb-0">
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">After 20 years · today’s ₹</p>
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">{plan.headline.year} · today’s ₹</p>
             <p className="num mt-1 text-[28px] font-semibold tracking-tight text-evergreen">
-              <AnimatedNumber value={altFinal} format={formatCompact} />
+              <AnimatedNumber value={s.altFinal} format={formatCompact} />
             </p>
             <p className="num mt-0.5 text-[13px] text-grey">
               <span className={`font-semibold ${diff < 0 ? 'text-danger' : 'text-forest'}`}>
                 {diff >= 0 ? '+' : '−'}
                 <AnimatedNumber value={Math.abs(diff)} format={formatCompact} />
               </span>{' '}
-              vs {formatCompact(baseFinal)} base case
+              vs {formatCompact(s.baseFinal)} base case
             </p>
           </div>
           <MultiLineChart
-            data={data}
+            data={s.data}
             xKey="year"
             height={320}
-            ariaLabel={`Net worth over 20 years: base case versus ${s.label}`}
+            ariaLabel={`Net worth in today’s rupees to ${plan.headline.year}: base case versus ${s.label}`}
             series={[
               { key: 'base', name: 'Base case', color: t.muted, dashed: true },
               { key: 'alt', name: s.label, color: t.primary },
             ]}
           />
         </div>
-        <Disclaimer className="mt-4">Illustrative. Uses a fictional 26-year-old earning ₹85,000 a month, 8% salary growth, 6% inflation and a growth-oriented portfolio assumed to return about 9.5% a year.</Disclaimer>
+        <Disclaimer className="mt-4">
+          Illustrative. The fictional sample plan: a {p.about.age}-year-old earning {formatCompact(p.income.monthlyTakeHome)} a month, {formatPct(p.income.salaryGrowth, 0)} salary growth, {formatPct(plan.assumptions.inflation, 0)} inflation and a portfolio assumed to return {formatPct(plan.portfolioReturn)} a year, with an MBA, a wedding and a flat along the way.
+        </Disclaimer>
       </div>
     </div>
   );

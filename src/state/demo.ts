@@ -32,7 +32,7 @@ export function demoProfile(startYear = new Date().getFullYear()): FinancialProf
         { id: 'utilities', label: 'Utilities & phone', amount: 3000 },
         { id: 'transport', label: 'Transport', amount: 4000 },
         { id: 'insurance', label: 'Insurance premiums', amount: 1500 },
-        { id: 'family', label: 'Support to parents', amount: 5000 },
+        { id: 'family', label: 'Support to parents', amount: 5000, familySupport: true },
       ],
       lifestyle: [
         { id: 'dining', label: 'Dining & entertainment', amount: 6000 },
@@ -57,13 +57,13 @@ export function demoProfile(startYear = new Date().getFullYear()): FinancialProf
     protection: { emergencyTargetMonths: 6, healthCover: 500000, lifeCover: 0 },
     goals: [
       { id: 'travel', name: 'Trip to Japan', category: 'travel', cost: 250000, targetYear: Y + 1, saved: 50000, priority: 3, inflation: 0.06, source: 'savings' },
-      { id: 'mba', name: 'MBA', category: 'education', cost: 1800000, targetYear: Y + 3, saved: 100000, priority: 1, inflation: 0.08, source: 'investments' },
+      { id: 'mba', name: 'MBA', category: 'education', cost: 1800000, targetYear: Y + 3, saved: 100000, priority: 1, inflation: 0.08, source: 'investments', fundingMode: 'mixed' },
       { id: 'car', name: 'First car', category: 'car', cost: 800000, targetYear: Y + 6, saved: 0, priority: 3, inflation: 0.05, source: 'investments' },
     ],
     preferences: { risk: 'growth', horizonYears: 20, targetAllocation: { ...PRESETS.growth.weights } },
     lifeEvents: [
-      { id: 'promo', kind: 'promotion', label: 'Post-MBA role', year: Y + 5, oneTimeCost: 0, incomeChangePct: 0.35, monthlyExpenseChange: 0, breakMonths: 0 },
-      { id: 'mbabreak', kind: 'careerBreak', label: 'Full-time MBA', year: Y + 3, oneTimeCost: 0, incomeChangePct: 0, monthlyExpenseChange: 0, breakMonths: 21 },
+      { id: 'promo', kind: 'promotion', label: 'Post-MBA role', year: Y + 5, oneTimeCost: 0, incomeChangePct: 0.35, monthlyExpenseChange: 0, breakMonths: 0, goalId: 'mba' },
+      { id: 'mbabreak', kind: 'careerBreak', label: 'Full-time MBA', year: Y + 3, oneTimeCost: 0, incomeChangePct: 0, monthlyExpenseChange: 0, breakMonths: 21, goalId: 'mba' },
       { id: 'wed', kind: 'marriage', label: 'Wedding', year: Y + 7, oneTimeCost: 800000, incomeChangePct: 0, monthlyExpenseChange: 8000, breakMonths: 0 },
       {
         id: 'home', kind: 'homePurchase', label: 'Buy a flat', year: Y + 9, oneTimeCost: 300000, incomeChangePct: 0, monthlyExpenseChange: -20000, breakMonths: 0,
@@ -85,6 +85,7 @@ export function blankProfile(startYear = new Date().getFullYear()): FinancialPro
         { id: uid(), label: 'Groceries & household', amount: 0 },
         { id: uid(), label: 'Utilities & phone', amount: 0 },
         { id: uid(), label: 'Transport', amount: 0 },
+        { id: uid(), label: 'Money sent to family', amount: 0, familySupport: true },
       ],
       lifestyle: [
         { id: uid(), label: 'Dining & entertainment', amount: 0 },

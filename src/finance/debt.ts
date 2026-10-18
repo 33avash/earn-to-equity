@@ -87,3 +87,20 @@ export function compareStrategies(loans: Liability[], extraMonthly: number) {
     snowball: simulatePayoff(loans, extraMonthly, 'snowball'),
   };
 }
+
+/**
+ * Why the two strategies agree or differ, in one sentence. When both pay loans in the same order,
+ * the cheapest-to-clear loan is also the costliest, so there is nothing to choose between them.
+ */
+export function strategyNote(loans: Liability[], r: { avalanche: PayoffResult; snowball: PayoffResult }): string | null {
+  const active = loans.filter((l) => l.balance > 0);
+  if (active.length === 0 || r.avalanche.error || r.snowball.error) return null;
+  if (active.length === 1) return `You have one loan, so both methods are the same: pay extra on ${active[0].label}.`;
+  const byRate = [...active].sort((a, b) => b.rate - a.rate || a.balance - b.balance).map((l) => l.id);
+  const byBalance = [...active].sort((a, b) => a.balance - b.balance || b.rate - a.rate).map((l) => l.id);
+  if (byRate.join() === byBalance.join()) {
+    const first = active.find((l) => l.id === byRate[0])!;
+    return `Your ${first.label.toLowerCase()} is both the smallest balance and the highest rate, so both methods pay it first${active.length > 2 ? ', and the rest line up the same way too' : ''}.`;
+  }
+  return null;
+}

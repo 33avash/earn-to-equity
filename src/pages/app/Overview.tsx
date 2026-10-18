@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { usePlan, useMoney } from '@/state/selectors';
 import { useStore } from '@/state/store';
-import { Stat, Section, Disclaimer, EmptyState, ButtonLink } from '@/components/ui';
+import { Stat, Section, Disclaimer, EmptyState, ButtonLink, Notice } from '@/components/ui';
 import { TrajectoryPanel, AllocationPanel, FiPanel, NextStepsPanel } from '@/features/overview/Panels';
 import { CashflowBar } from '@/components/charts/Bars';
 import { useChartTheme } from '@/components/charts/theme';
@@ -20,7 +20,7 @@ export default function Overview() {
   const money = useMoney();
   const t = useChartTheme();
   const isDemo = useStore((s) => s.isDemo);
-  const { profile, cashflow: cf, sheet, emergency: ef, final, health } = plan;
+  const { profile, cashflow: cf, sheet, emergency: ef, headline, health, unfundedGoals } = plan;
 
   const parts = [
     { key: 'ess', label: 'Essential', value: cf.essential, color: t.dark ? '#5A8BD0' : '#3F6FA8' },
@@ -42,7 +42,7 @@ export default function Overview() {
           </h1>
           <p className="mt-4 max-w-xl text-[15.5px] leading-relaxed text-grey">
             You keep <strong className="num font-semibold text-evergreen">{formatPct(cf.savingsRate, 0)}</strong> of what you earn after spending and repayments. On today’s assumptions, that grows to{' '}
-            <strong className="num font-semibold text-evergreen">{money(final.netWorthReal)}</strong> in today’s rupees by {final.year + 1}.
+            <strong className="num font-semibold text-evergreen">{money(headline.netWorthReal)}</strong> in today’s rupees by {headline.year}, when you’ll be {headline.age}.
           </p>
         </div>
         <div className="lg:col-span-5 lg:border-l lg:border-line lg:pl-10">
@@ -53,7 +53,23 @@ export default function Overview() {
         </div>
       </header>
 
-      <Section title="Wealth trajectory" description="Net worth, year by year, from the engine every page shares." actions={<Link to="/app/simulator" className="inline-flex items-center gap-1 text-sm font-medium text-forest hover:underline">Inspect any year <ArrowRight size={14} /></Link>}>
+      {unfundedGoals.map((u) => (
+        <Notice
+          key={u.goalId}
+          tone="error"
+          title={u.droppedEvents.length || u.keptEvents.length ? `Your plan assumes the ${u.name} happens but doesn’t pay for it.` : `Your plan can’t pay for ${u.name} in ${u.year}.`}
+          action={<ButtonLink to="/app/goals" size="sm" variant="secondary">Fix in Goals</ButtonLink>}
+        >
+          {money(u.shortfall)} short in {u.year}.{' '}
+          {u.keptEvents.length > 0
+            ? `${u.keptEvents.join(' and ')} ${u.keptEvents.length === 1 ? 'is' : 'are'} still in the projection because you chose to keep ${u.keptEvents.length === 1 ? 'it' : 'them'}.`
+            : u.droppedEvents.length > 0
+              ? `${u.droppedEvents.join(' and ')} ${u.droppedEvents.length === 1 ? 'has' : 'have'} been left out of the projection until the goal is paid for.`
+              : 'Allow a loan for the gap, move the date, or lower the cost.'}
+        </Notice>
+      ))}
+
+      <Section title="Wealth trajectory" description="Net worth, year by year, from the engine every page shares." actions={<Link to="/app/simulator" className="hit inline-flex items-center gap-1 text-sm font-medium text-forest hover:underline">Inspect any year <ArrowRight size={14} /></Link>}>
         <TrajectoryPanel plan={plan} height={320} />
       </Section>
 
@@ -75,7 +91,7 @@ export default function Overview() {
           <p className="mt-5 max-w-xl text-[13px] leading-relaxed text-grey">
             {cf.investableSurplus < 0
               ? 'You are spending more than you earn. The projection covers the gap from savings, so start with the Budget Planner.'
-              : `${money(cf.plannedInvestments)} goes to SIPs and ${money(cf.plannedSavings)} to savings${cf.unallocated > 0 ? `, which leaves ${money(cf.unallocated)} without a job` : ''}.`}{' '}
+              : `${money(cf.plannedInvestments)} goes to SIPs and ${money(cf.plannedSavings)} to savings${cf.unallocated > 0 ? `, which leaves ${money(cf.unallocated)} left unassigned` : ''}.`}{' '}
             <Link to="/app/budget" className="link">Adjust budget</Link>
           </p>
         </div>
@@ -91,14 +107,14 @@ export default function Overview() {
           <div>
             <dt className="text-xs text-grey">Health score</dt>
             <dd className="num mt-0.5 text-lg font-semibold text-evergreen">
-              {Math.round(health.score)} <Link to="/app/health" className="text-sm font-normal text-forest hover:underline">breakdown</Link>
+              {Math.round(health.score)} <Link to="/app/health" className="hit text-sm font-normal text-forest hover:underline">breakdown</Link>
             </dd>
           </div>
         </dl>
       </section>
 
       <div className="grid gap-14 lg:grid-cols-2">
-        <Section title="Asset allocation" actions={<Link to="/app/portfolio" className="text-sm font-medium text-forest hover:underline">Portfolio Builder</Link>}>
+        <Section title="Asset allocation" actions={<Link to="/app/portfolio" className="hit text-sm font-medium text-forest hover:underline">Portfolio Builder</Link>}>
           {sheet.investments > 0 ? (
             <AllocationPanel plan={plan} />
           ) : (
@@ -107,23 +123,23 @@ export default function Overview() {
             </EmptyState>
           )}
         </Section>
-        <Section title="Monthly cash flow" actions={<Link to="/app/budget" className="text-sm font-medium text-forest hover:underline">Budget Planner</Link>}>
+        <Section title="Monthly cash flow" actions={<Link to="/app/budget" className="hit text-sm font-medium text-forest hover:underline">Budget Planner</Link>}>
           <CashflowBar parts={parts} total={cf.income} />
           <p className="mt-4 text-xs text-grey">Investments and savings are transfers to your future self, not expenses.</p>
         </Section>
       </div>
 
       <div className="grid gap-14 lg:grid-cols-2">
-        <Section title="Goals" actions={<Link to="/app/goals" className="text-sm font-medium text-forest hover:underline">Goals Planner</Link>}>
+        <Section title="Goals" actions={<Link to="/app/goals" className="hit text-sm font-medium text-forest hover:underline">Goals Planner</Link>}>
           {plan.goals.goals.length ? (
-            <GoalTimeline goals={plan.goals.goals} compact />
+            <GoalTimeline goals={plan.goalViews} />
           ) : (
             <EmptyState title="No goals yet" action={<ButtonLink to="/app/goals" size="sm" variant="secondary">Add a goal</ButtonLink>}>
-              Add what you’re working towards to see the true future cost and what it takes to fund it.
+              Add what you’re working towards to see its cost in the year you need it and how your plan pays for it.
             </EmptyState>
           )}
         </Section>
-        <Section title="Financial independence" actions={<Link to="/app/fi" className="text-sm font-medium text-forest hover:underline">Details</Link>}>
+        <Section title="Financial independence" actions={<Link to="/app/fi" className="hit text-sm font-medium text-forest hover:underline">Details</Link>}>
           <FiPanel plan={plan} />
         </Section>
       </div>

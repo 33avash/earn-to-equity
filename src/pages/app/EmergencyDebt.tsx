@@ -3,7 +3,7 @@ import { usePlan, useMoney } from '@/state/selectors';
 import { useStore } from '@/state/store';
 import { PageHeader, Section, Slider, Field, MoneyInput, Toggle, Stat, Progress, Notice, Disclaimer, Badge } from '@/components/ui';
 import { emergencyPlan } from '@/finance/emergency';
-import { compareStrategies } from '@/finance/debt';
+import { compareStrategies, strategyNote } from '@/finance/debt';
 import { formatMonths } from '@/finance/money';
 import { LoansEditor } from '@/features/editors/Loans';
 import { MultiLineChart } from '@/components/charts/SeriesCharts';
@@ -32,6 +32,7 @@ export default function EmergencyDebt() {
   const hasDebt = p.liabilities.some((l) => l.balance > 0);
   const error = av.error || sb.error;
   const saving = sb.totalInterest - av.totalInterest;
+  const note = strategyNote(p.liabilities, result);
 
   return (
     <div className="flex flex-col gap-16">
@@ -81,7 +82,7 @@ export default function EmergencyDebt() {
                   {sb.months !== av.months ? <> and finishes {Math.abs(sb.months - av.months)} month{Math.abs(sb.months - av.months) === 1 ? '' : 's'} {av.months < sb.months ? 'sooner' : 'later'}</> : null}. Snowball clears individual loans sooner, which some people find motivating.
                 </p>
               )}
-              {!error && saving <= 1 && <p className="mt-6 text-sm text-grey">Both strategies cost about the same for your loans.</p>}
+              {!error && saving <= 1 && <p className="mt-6 text-sm text-charcoal">{note ?? 'Both strategies cost about the same for your loans.'}</p>}
             </div>
             <div className="lg:col-span-8">
               {error ? (

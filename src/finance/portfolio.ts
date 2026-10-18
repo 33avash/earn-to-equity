@@ -145,3 +145,62 @@ export function riskBand(vol: number): { label: string; note: string } {
   if (vol < 0.14) return { label: 'Elevated', note: 'Declines of 15–25% in a bad year are plausible.' };
   return { label: 'High', note: 'Declines of 30% or more in a bad year are plausible.' };
 }
+
+/**
+ * Asset classes that can't be sold on demand. Government-backed savings here means PPF, EPF,
+ * NPS Tier 1 and similar schemes, which are locked in for years.
+ */
+export const LOCKED_CLASSES: ReadonlySet<AssetClass> = new Set<AssetClass>(['govtSchemes']);
+
+export type RebalanceAction = 'add' | 'locked' | 'pause' | 'none';
+
+export interface RebalanceRow extends DriftRow {
+  locked: boolean;
+  /** Part of the class that can't be sold: the whole class if locked, or ELSS units still in their 3-year lock-in. */
+  lockedValue: number;
+  action: RebalanceAction;
+  /** Share of each month's new investment to direct here until the mix is back on target. */
+  newMoneyMonthly: number;
+}
+
+export interface RebalancePlan {
+  rows: RebalanceRow[];
+  /** Months of new investment needed to restore the target mix without selling; null if never (no SIP). */
+  monthsToTarget: number | null;
+}
+
+/**
+ * Rebalancing with new money only. Nothing is ever sold: under-weight classes receive the monthly
+ * investment in proportion to how far below target they are; over-weight classes receive nothing
+ * until the rest catch up. Locked classes and ELSS units under 3 years are flagged so the interface
+ * never suggests selling them.
+ */
+export function rebalancePlan(holdings: AssetMap, target: AssetMap, monthlyInvestment: number, elssLocked = 0): RebalancePlan {
+  const drift = allocationDrift(holdings, target, monthlyInvestment);
+  const total = drift.reduce((s, r) => s + r.currentValue, 0);
+  const m = Math.max(0, monthlyInvestment);
+  const neededAfter = (months: number) => drift.map((r) => Math.max(0, r.target * (total + months * m) - r.currentValue));
+  let monthsToTarget: number | null = null;
+  if (drift.every((r) => r.currentValue >= r.target * total - 0.5)) monthsToTarget = 0;
+  else if (m > 0) {
+    for (let n = 1; n <= 600; n++) {
+      if (neededAfter(n).reduce((s, x) => s + x, 0) <= n * m + 0.5) {
+        monthsToTarget = n;
+        break;
+      }
+    }
+  }
+  const horizon = monthsToTarget && monthsToTarget > 0 ? monthsToTarget : 1;
+  // New money goes only to classes below target today; over-weight classes wait.
+  const needed = neededAfter(horizon).map((x, i) => (drift[i].trade > 0.5 ? x : 0));
+  const neededTotal = needed.reduce((s, x) => s + x, 0);
+  const rows = drift.map((r, i): RebalanceRow => {
+    const locked = LOCKED_CLASSES.has(r.asset);
+    const lockedValue = locked ? r.currentValue : r.asset === 'indianEquity' ? Math.min(r.currentValue, Math.max(0, elssLocked)) : 0;
+    const under = r.trade > 0.5;
+    const newMoneyMonthly = monthsToTarget === 0 ? m * r.target : neededTotal > 0 ? (m * needed[i]) / neededTotal : 0;
+    const action: RebalanceAction = under ? 'add' : r.trade < -0.5 ? (locked ? 'locked' : 'pause') : 'none';
+    return { ...r, locked, lockedValue, action, newMoneyMonthly };
+  });
+  return { rows, monthsToTarget };
+}

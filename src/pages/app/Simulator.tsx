@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ScenarioKey } from '@/types/profile';
-import { usePlan, useMoney } from '@/state/selectors';
+import { usePlan, useMoney, scenarioSet, yearInspector } from '@/state/selectors';
 import { useStore } from '@/state/store';
 import { PageHeader, Section, Stat, Field, PercentInput, Segmented, Disclaimer, Badge, Button } from '@/components/ui';
 import { WealthChart, WealthLegend, type WealthMode } from '@/components/charts/WealthChart';
 import { MultiLineChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
-import { runScenario, attributeScenario, SCENARIO_LABELS, DRIVER_LABELS, type DriverKey } from '@/finance/scenarios';
+import { attributeScenario, SCENARIO_LABELS, DRIVER_LABELS, type DriverKey } from '@/finance/scenarios';
 import { formatPct } from '@/finance/money';
 
 const KEYS: ScenarioKey[] = ['conservative', 'base', 'high'];
@@ -25,12 +25,14 @@ export default function Simulator() {
   const [mode, setMode] = useState<WealthMode>('both');
   const [selected, setSelected] = useState<number | null>(p.planStartYear + 4);
 
-  const scen = useMemo(() => Object.fromEntries(KEYS.map((k) => [k, runScenario(p, a, deltas[k])])) as Record<ScenarioKey, ReturnType<typeof runScenario>>, [p, a, deltas]);
+  const scen = useMemo(() => scenarioSet(plan, deltas), [plan, deltas]);
   const attribution = useMemo(() => ({ conservative: attributeScenario(p, a, deltas.conservative), high: attributeScenario(p, a, deltas.high) }), [p, a, deltas]);
   const rows = plan.sim.rows;
-  const sel = rows.find((r) => r.year === selected) ?? null;
-  const prev = sel ? rows[sel.index - 2] : null;
-  const goalsInYear = sel ? p.goals.filter((g) => g.targetYear === sel.year) : [];
+  const close = plan.sim.points.at(-1)!;
+  const inspect = selected === null ? null : yearInspector(plan, selected);
+  const sel = inspect?.row ?? null;
+  const goalsInYear = inspect?.goalsTracked ?? [];
+  const change = inspect?.incomeChange;
 
   const effective = (k: ScenarioKey) => ({
     salaryGrowth: p.income.salaryGrowth + deltas[k].salaryGrowth,
@@ -49,7 +51,7 @@ export default function Simulator() {
           <Field label="Inflation">{(id) => <PercentInput id={id} value={a.inflation} max={20} onChange={(v) => updateA({ inflation: v })} />}</Field>
           <Field label="Annual SIP step-up">{(id) => <PercentInput id={id} value={a.sipStepUp} max={50} onChange={(v) => updateA({ sipStepUp: v })} />}</Field>
           <Field label="Portfolio return" help="Weighted from your target allocation. Edit asset-class returns in the Portfolio Builder.">
-            {() => <p className="num flex h-10 items-center text-sm font-semibold text-evergreen">{formatPct(plan.portfolioReturn)} <Link to="/app/portfolio" className="ml-2 text-xs font-normal text-forest hover:underline">edit</Link></p>}
+            {() => <p className="num flex h-10 items-center text-sm font-semibold text-evergreen">{formatPct(plan.portfolioReturn)} <Link to="/app/portfolio" className="hit ml-2 text-xs font-normal text-forest hover:underline">edit</Link></p>}
           </Field>
         </div>
       </Section>
@@ -59,12 +61,12 @@ export default function Simulator() {
         description="Click any year on the chart or in the table to inspect it."
         actions={<Segmented label="Values shown" size="sm" value={mode} onChange={setMode} options={[{ value: 'both', label: 'Both' }, { value: 'nominal', label: 'Future ₹' }, { value: 'real', label: 'Today’s ₹' }]} />}
       >
-        <WealthChart rows={rows} startNetWorth={plan.sim.startNetWorth} startYear={p.planStartYear} mode={mode} height={360} selectedYear={selected} onSelectYear={setSelected} showFiTarget />
+        <WealthChart points={plan.sim.points} mode={mode} height={360} selectedYear={selected} onSelectYear={setSelected} showFiTarget />
         <div className="mt-3"><WealthLegend mode={mode} fi /></div>
       </Section>
 
-      {sel && (
-        <Section title={`Inside ${sel.year}`} description={`Age ${sel.age - 1} → ${sel.age}. Year ${sel.index} of ${rows.length}.`} actions={
+      {sel && inspect && (
+        <Section title={`Inside ${inspect.label}`} description={`Year ${inspect.index} of ${inspect.count}. Flows for the whole year, balances on 31 December.`} actions={
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" disabled={sel.index === 1} onClick={() => setSelected(sel.year - 1)}>← Previous</Button>
             <Button variant="secondary" size="sm" disabled={sel.index === rows.length} onClick={() => setSelected(sel.year + 1)}>Next →</Button>
@@ -72,7 +74,12 @@ export default function Simulator() {
         }>
           <div className="grid gap-10 lg:grid-cols-12">
             <dl className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:col-span-8">
-              <Stat size="sm" label="Income" value={money(sel.income)} sub={prev ? `${sel.income >= prev.income ? '+' : ''}${formatPct(prev.income ? sel.income / prev.income - 1 : 0)} vs prior year` : undefined} />
+              <Stat
+                size="sm"
+                label="Income"
+                value={money(sel.income)}
+                sub={change?.kind === 'pct' ? `${change.value >= 0 ? '+' : ''}${formatPct(change.value)} vs ${sel.year - 1}` : change?.kind === 'resumed' ? 'Resumes after break' : sel.index > 1 ? 'n/a vs prior year' : undefined}
+              />
               <Stat size="sm" label="Living expenses" value={money(sel.expenses)} />
               <Stat size="sm" label="Debt payments" value={money(sel.debtPayments)} sub={`${money(sel.interestPaid)} interest`} />
               <Stat size="sm" label="Invested" value={money(sel.contributions)} />
@@ -86,20 +93,27 @@ export default function Simulator() {
               <p className="eyebrow mb-3">What happens this year</p>
               <ul className="space-y-2 text-sm">
                 {sel.events.map((e) => <li key={e} className="flex gap-2"><Badge>Event</Badge>{e}</li>)}
-                {sel.goals.map((g) => <li key={g.goalId} className="flex flex-wrap gap-2"><Badge tone={g.status === 'funded' ? 'good' : 'bad'}>{g.status === 'funded' ? 'Goal funded' : 'Goal short'}</Badge>{g.name} · {money(g.cost)}{g.shortfall > 0 && <span className="text-danger">(short {money(g.shortfall)})</span>}</li>)}
+                {sel.goals.map((g) => (
+                  <li key={g.goalId} className="flex flex-wrap gap-2">
+                    <Badge tone={g.status === 'shortfall' ? 'bad' : g.status === 'financed' ? 'warn' : 'good'}>{g.status === 'shortfall' ? 'Goal unpaid' : g.status === 'financed' ? 'Goal + loan' : 'Goal paid'}</Badge>
+                    {g.name} · {money(g.cost)}
+                    {g.loan > 0 && <span className="text-grey">({money(g.loan)} loan)</span>}
+                    {g.shortfall > 0 && <span className="text-danger">(short {money(g.shortfall)})</span>}
+                  </li>
+                ))}
                 {goalsInYear.filter((g) => !sel.goals.some((o) => o.goalId === g.id)).map((g) => <li key={g.id} className="text-grey">{g.name}: tracked against your corpus</li>)}
                 {sel.flags.includes('deficit') && <li className="text-danger">Spending exceeds income for part of the year. Savings cover the gap.</li>}
                 {sel.flags.includes('borrowing') && <li className="text-danger">Liquid assets run out. Unfunded costs are shown as borrowing at 14%.</li>}
                 {sel.fiReached && <li className="text-forest">Financial assets exceed the FI target ({money(sel.fiTarget)}).</li>}
                 {!sel.events.length && !sel.goals.length && !sel.flags.length && !sel.fiReached && <li className="text-grey">No events or goals this year.</li>}
               </ul>
-              <Link to="/app/life-events" className="mt-4 inline-block text-sm font-medium text-forest hover:underline">Add or edit life events</Link>
+              <Link to="/app/life-events" className="hit mt-4 inline-block text-sm font-medium text-forest hover:underline">Add or edit life events</Link>
             </div>
           </div>
         </Section>
       )}
 
-      <Section title="Year-by-year projection" description="Year-end balances and full-year flows, in future rupees.">
+      <Section title="Year-by-year projection" description={`Flows for each calendar year and balances on 31 December, in future rupees. The last line is your position on 1 January ${close.year}, the date every headline figure uses.`}>
         <div className="-mx-1 max-h-[480px] overflow-auto px-1">
           <table className="table-fin w-full min-w-[900px]">
             <thead className="sticky top-0 z-10 bg-ivory">
@@ -110,7 +124,7 @@ export default function Simulator() {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.year} onClick={() => setSelected(r.year)} className={`cursor-pointer hover:bg-mint/40 ${selected === r.year ? 'bg-mint/60' : ''}`} aria-selected={selected === r.year}>
-                  <td><button type="button" className="font-semibold text-evergreen" onClick={() => setSelected(r.year)}>{r.year}</button></td>
+                  <td><button type="button" className="hit font-semibold text-evergreen" onClick={() => setSelected(r.year)}>{r.year}</button></td>
                   <td>{r.age}</td>
                   <td>{money(r.income)}</td>
                   <td>{money(r.expenses)}</td>
@@ -121,9 +135,17 @@ export default function Simulator() {
                   <td>{money(r.liabilities)}</td>
                   <td className="font-semibold text-evergreen">{money(r.netWorth)}</td>
                   <td>{money(r.netWorthReal)}</td>
-                  <td className="font-sans">{r.events.length > 0 && <Badge>{r.events.length} event{r.events.length > 1 ? 's' : ''}</Badge>}{r.flags.includes('goal-shortfall') && <Badge tone="bad">Goal short</Badge>}</td>
+                  <td className="font-sans">{r.events.length > 0 && <Badge>{r.events.length} event{r.events.length > 1 ? 's' : ''}</Badge>}{r.flags.includes('goal-shortfall') && <Badge tone="bad">Goal unpaid</Badge>}</td>
                 </tr>
               ))}
+              <tr className="border-t-2 border-evergreen/20">
+                <td className="font-semibold text-evergreen">1 Jan {close.year}</td>
+                <td>{close.age}</td>
+                <td colSpan={7} className="font-sans text-xs text-grey">Closing position, same as 31 December {close.year - 1}</td>
+                <td className="font-semibold text-evergreen">{money(close.netWorth)}</td>
+                <td>{money(close.netWorthReal)}</td>
+                <td />
+              </tr>
             </tbody>
           </table>
         </div>
@@ -131,7 +153,7 @@ export default function Simulator() {
 
       <Section title="Scenario comparison" description="Three futures, built by adjusting four assumptions around your base case. Edit the adjustments below." actions={<Button variant="ghost" size="sm" onClick={resetDeltas}>Reset scenarios</Button>}>
         <MultiLineChart
-          data={rows.map((r, i) => ({ year: r.year, conservative: scen.conservative.rows[i].netWorth, base: scen.base.rows[i].netWorth, high: scen.high.rows[i].netWorth }))}
+          data={plan.sim.points.map((pt, i) => ({ year: pt.year, conservative: scen.conservative.points[i].netWorth, base: scen.base.points[i].netWorth, high: scen.high.points[i].netWorth }))}
           xKey="year"
           height={280}
           ariaLabel="Net worth under conservative, base and high-growth scenarios"
@@ -163,16 +185,16 @@ export default function Simulator() {
                 </tr>
               ))}
               <tr>
-                <td className="font-sans font-semibold text-evergreen">Net worth, {rows.at(-1)!.year + 1}</td>
-                {KEYS.map((k) => <td key={k} className="font-semibold text-evergreen">{money(scen[k].rows.at(-1)!.netWorth)}</td>)}
+                <td className="font-sans font-semibold text-evergreen">Net worth, {close.year}</td>
+                {KEYS.map((k) => <td key={k} className="font-semibold text-evergreen">{money(scen[k].points.at(-1)!.netWorth)}</td>)}
               </tr>
               <tr>
                 <td className="font-sans text-evergreen">In today’s rupees</td>
-                {KEYS.map((k) => <td key={k}>{money(scen[k].rows.at(-1)!.netWorthReal)}</td>)}
+                {KEYS.map((k) => <td key={k}>{money(scen[k].points.at(-1)!.netWorthReal)}</td>)}
               </tr>
               <tr>
                 <td className="font-sans text-evergreen">FI reached</td>
-                {KEYS.map((k) => <td key={k}>{scen[k].fiYear ?? 'Beyond horizon'}</td>)}
+                {KEYS.map((k) => <td key={k}>{scen[k].fiYear ? `${scen[k].fiYear} · age ${scen[k].fiAge}` : `Not by ${close.year}`}</td>)}
               </tr>
             </tbody>
           </table>

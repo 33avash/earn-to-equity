@@ -44,13 +44,14 @@ export default function RiskLab() {
   const fiMod = useMemo(() => fiAnalysis({ ...p, about: { ...p.about, fiAge: p.about.fiAge + r.retireDelay } }, a, overrides), [p, a, overrides, r.retireDelay]);
   const changed = Boolean(r.salaryGrowthDelta || r.inflationDelta || r.expenseCut || r.stepUpDelta || r.retireDelay || r.breakMonths || r.purchaseCost || r.shockOn);
 
-  const bEnd = base.rows.at(-1)!;
-  const mEnd = mod.rows.at(-1)!;
+  const bEnd = base.points.at(-1)!;
+  const mEnd = mod.points.at(-1)!;
   const shockIdx = r.shockYear - start;
   const shockImpact = r.shockOn && shockIdx >= 0 && shockIdx < mod.rows.length ? (shockIdx > 0 ? mod.rows[shockIdx - 1].portfolio : plan.sheet.investments) * r.shockDrop : 0;
   const recoveredRow = r.shockOn ? mod.rows.find((row) => row.year >= r.shockYear && row.netWorth >= (base.rows[row.index - 1]?.netWorth ?? Infinity) * 0.98) : undefined;
   const goalsB = base.rows.flatMap((x) => x.goals);
   const goalsM = mod.rows.flatMap((x) => x.goals);
+  const paid = (gs: typeof goalsB) => gs.filter((g) => g.status !== 'shortfall').length;
 
   const runMc = () => {
     setRunning(true);
@@ -104,14 +105,14 @@ export default function RiskLab() {
         <div className="lg:col-span-8">
           {!changed && <Notice>Move any control to compare a stress test against your baseline.</Notice>}
           <dl className="mt-6 grid grid-cols-2 gap-8 border-b border-line pb-8 sm:grid-cols-4">
-            <Stat size="sm" label={`Net worth ${bEnd.year + 1}`} value={money(mEnd.netWorth)} sub={<>baseline {money(bEnd.netWorth)}<br /><span className={mEnd.netWorth < bEnd.netWorth ? 'text-danger' : 'text-forest'}>{mEnd.netWorth - bEnd.netWorth >= 0 ? '+' : ''}{money(mEnd.netWorth - bEnd.netWorth)}</span></>} />
+            <Stat size="sm" label={`Net worth ${bEnd.year}`} value={money(mEnd.netWorth)} sub={<>baseline {money(bEnd.netWorth)}<br /><span className={mEnd.netWorth < bEnd.netWorth ? 'text-danger' : 'text-forest'}>{mEnd.netWorth - bEnd.netWorth >= 0 ? '+' : ''}{money(mEnd.netWorth - bEnd.netWorth)}</span></>} />
             <Stat size="sm" label="Today’s rupees" value={money(mEnd.netWorthReal)} sub={`baseline ${money(bEnd.netWorthReal)}`} />
-            <Stat size="sm" label="Goals funded" value={`${goalsM.filter((g) => g.status === 'funded').length} of ${goalsM.length}`} sub={`baseline ${goalsB.filter((g) => g.status === 'funded').length}`} />
-            <Stat size="sm" label="FI age estimate" value={fiMod.fiAge ? String(fiMod.fiAge) : 'Beyond'} sub={`baseline ${plan.fi.fiAge ?? 'beyond projection'}`} />
+            <Stat size="sm" label="Goals paid for" value={`${paid(goalsM)} of ${goalsM.length}`} sub={`baseline ${paid(goalsB)}`} />
+            <Stat size="sm" label="FI age estimate" value={fiMod.fiAge ? String(fiMod.fiAge) : 'Not reached'} sub={`baseline ${plan.fi.fiAge ?? 'not reached'}`} />
           </dl>
           <div className="mt-8">
             <MultiLineChart
-              data={base.rows.map((row, i) => ({ year: row.year, base: row.netWorth, mod: mod.rows[i].netWorth }))}
+              data={base.points.map((pt, i) => ({ year: pt.year, base: pt.netWorth, mod: mod.points[i].netWorth }))}
               xKey="year"
               height={320}
               ariaLabel="Net worth: baseline versus stress test"
@@ -152,7 +153,7 @@ export default function RiskLab() {
                 <Stat size="sm" label="90th pct" value={money(mc.mod.finalP90)} />
               </div>
               <div>
-                <p className="eyebrow mb-3">Estimated probability of funding</p>
+                <p className="eyebrow mb-3">Chance of paying from savings, without a loan</p>
                 <ul className="space-y-3">
                   {mc.mod.goalProbabilities.map((g) => (
                     <li key={g.goalId}>

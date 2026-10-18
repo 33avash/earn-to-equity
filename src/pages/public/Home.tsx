@@ -2,12 +2,12 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { Button, ButtonLink } from '@/components/ui/Button';
-import { HeroGraphic, useHeroSeries } from '@/features/landing/HeroGraphic';
+import { HeroGraphic } from '@/features/landing/HeroGraphic';
 import { SipPreview } from '@/features/sip/SipPreview';
 import { LifeScenarios } from '@/features/landing/LifeScenarios';
 import { AllocationPanel, FiPanel, NextStepsPanel, TrajectoryPanel } from '@/features/overview/Panels';
 import { GoalTimeline } from '@/features/goals/GoalTimeline';
-import { computePlan } from '@/state/selectors';
+import { computePlan, heroSeries } from '@/state/selectors';
 import { DEFAULT_ASSUMPTIONS, demoProfile } from '@/state/demo';
 import { formatCompact, formatPct } from '@/finance/money';
 import { useExploreDemo } from '@/state/useDemo';
@@ -29,9 +29,9 @@ const FEATURES = [
 export default function Home() {
   const exploreDemo = useExploreDemo();
   const explore = () => exploreDemo('/app');
+  // The sample plan behind every figure on this page: the same engine and selectors as the dashboard.
   const sample = useMemo(() => computePlan(demoProfile(), DEFAULT_ASSUMPTIONS), []);
-  const series = useHeroSeries();
-  const endReal = series.points[20] ?? series.points.at(-1)!;
+  const series = useMemo(() => heroSeries(sample), [sample]);
 
   return (
     <>
@@ -57,7 +57,7 @@ export default function Home() {
               <ButtonLink to="/start" size="lg">
                 Build My Wealth Plan <ArrowRight size={16} aria-hidden />
               </ButtonLink>
-              <button type="button" onClick={explore} className="group inline-flex items-center gap-1.5 text-[15px] font-medium text-evergreen">
+              <button type="button" onClick={explore} className="hit group inline-flex items-center gap-1.5 text-[15px] font-medium text-evergreen">
                 <span className="border-b border-evergreen/30 pb-0.5 transition-colors group-hover:border-evergreen">Explore the demo</span>
                 <ArrowUpRight size={15} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
               </button>
@@ -76,15 +76,16 @@ export default function Home() {
               </p>
             </div></div>
             <div className="fade-late absolute bottom-16 right-0 hidden sm:block lg:-right-2"><div className="glass float-slower w-[230px] p-4">
-              <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">In 20 years · today’s ₹</p>
-              <p className="num mt-1 text-[26px] font-semibold tracking-tight text-evergreen">{formatCompact(endReal)}</p>
+              <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">{series.end.year}, in today’s ₹</p>
+              <p className="num mt-1 text-[26px] font-semibold tracking-tight text-evergreen">{formatCompact(series.end.netWorthReal)}</p>
               <div className="mt-2 flex items-center justify-between border-t border-line/70 pt-2 text-[11.5px]">
                 <span className="text-grey">Future rupees</span>
-                <span className="num font-semibold text-evergreen">{formatCompact(sample.final.netWorth)}</span>
+                <span className="num font-semibold text-evergreen">{formatCompact(series.end.netWorth)}</span>
               </div>
             </div></div>
             <p className="mt-3 text-[11px] text-grey">
-              <span className="font-semibold uppercase tracking-[0.12em] text-[#8a6a33] dark:text-champagne">Illustrative</span> · A fictional 26-year-old in Pune. {formatPct(DEFAULT_ASSUMPTIONS.inflation, 0)} inflation, {formatPct(sample.portfolioReturn)} assumed return.
+              <span className="font-semibold uppercase tracking-[0.12em] text-[#8a6a33] dark:text-champagne">Illustrative</span> · A fictional {sample.profile.about.age}-year-old in Pune. {formatPct(DEFAULT_ASSUMPTIONS.inflation, 0)} inflation, {formatPct(sample.portfolioReturn)} assumed return.
+              {series.fiBeyond && ` Work becomes optional in ${series.fiBeyond.year}, at ${series.fiBeyond.age}.`}
             </p>
           </div>
         </div>
@@ -129,7 +130,7 @@ export default function Home() {
                 <p className="text-sm font-semibold text-evergreen">Sample plan · {formatCompact(sample.goals.capacity)}/month to work with</p>
                 <p className="text-xs text-grey">Needs {formatCompact(sample.goals.totalRequired)}/month in total</p>
               </div>
-              <GoalTimeline goals={sample.goals.goals} />
+              <GoalTimeline goals={sample.goalViews} />
             </div>
           </Reveal>
           <div className="flex flex-col lg:col-span-5 lg:pt-28">
@@ -144,7 +145,7 @@ export default function Home() {
                 </button>
               </Reveal>
             ))}
-            <Link to="/features" className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:underline">
+            <Link to="/features" className="hit mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-forest hover:underline">
               All fourteen tools <ArrowRight size={14} aria-hidden />
             </Link>
           </div>
@@ -223,7 +224,7 @@ export default function Home() {
             </h2>
           </Reveal>
           <Reveal>
-            <LifeScenarios />
+            <LifeScenarios plan={sample} />
           </Reveal>
         </div>
       </section>

@@ -65,7 +65,7 @@ export function LoansEditor({ loans, onChange, columns = ['kind', 'label', 'bala
                   )}
                   {has('label') && (
                     <td>
-                      <input aria-label="Loan name" className="input h-8 text-[13px]" value={l.label} onChange={(e) => set(l.id, { label: e.target.value })} />
+                      <input aria-label="Loan name" className="input h-8 min-w-[8rem] text-[13px]" value={l.label} onChange={(e) => set(l.id, { label: e.target.value })} />
                     </td>
                   )}
                   {has('balance') && (
@@ -84,7 +84,7 @@ export function LoansEditor({ loans, onChange, columns = ['kind', 'label', 'bala
                     </td>
                   )}
                   <td className="text-right">
-                    <button type="button" onClick={() => onChange(loans.filter((x) => x.id !== l.id))} aria-label={`Remove ${l.label}`} className="rounded p-1.5 text-grey hover:bg-danger/10 hover:text-danger">
+                    <button type="button" onClick={() => onChange(loans.filter((x) => x.id !== l.id))} aria-label={`Remove ${l.label}`} className="hit rounded p-1.5 text-grey hover:bg-danger/10 hover:text-danger">
                       <Trash2 size={15} />
                     </button>
                   </td>

@@ -60,9 +60,9 @@ describe('simulate — invariants', () => {
     }
     const retIn = r.rows.reduce((s, row, i) => s + (i === 0 ? row.retirement - p.position.retirement.balance : row.retirement - r.rows[i - 1].retirement), 0);
     const downPayments = r.rows.reduce((s, row) => s + row.oneTimeCosts, 0) - 300000 - 800000; // event-only one-time costs at 0% inflation
-    const borrowingCost = 0; // demo stays solvent; asserted below
-    expect(r.rows.every((row) => !row.flags.includes('borrowing'))).toBe(true);
-    close(r.rows[19].netWorth, expected + retIn + downPayments - borrowingCost, 1e-6);
+    // Loan-financed goals and short-term borrowing are covered too: their interest is in interestPaid.
+    expect(r.rows.some((row) => row.goalLoans > 0)).toBe(true);
+    close(r.rows[19].netWorth, expected + retIn + downPayments, 1e-6);
   });
 
   it('a home purchase does not change net worth on the day it happens', () => {
@@ -82,7 +82,7 @@ describe('simulate — invariants', () => {
     const p = simpleProfile();
     p.goals = [
       { id: 'g1', name: 'Bike', category: 'car', cost: 100000, targetYear: 2027, saved: 0, priority: 1, inflation: 0, source: 'investments' },
-      { id: 'g2', name: 'Mansion', category: 'home', cost: 1e9, targetYear: 2028, saved: 0, priority: 1, inflation: 0, source: 'investments' },
+      { id: 'g2', name: 'Mansion', category: 'home', cost: 1e9, targetYear: 2028, saved: 0, priority: 1, inflation: 0, source: 'investments', fundingMode: 'savings' },
       { id: 'g3', name: 'Retire', category: 'retirement', cost: 1e7, targetYear: 2030, saved: 0, priority: 1, inflation: 0, source: 'investments' },
     ];
     const r = simulate(p, zeroAssumptions);
@@ -100,6 +100,23 @@ describe('simulate — invariants', () => {
     expect(r.rows[0].flags).toContain('deficit');
     expect(r.rows.at(-1)!.flags).toContain('borrowing');
     expect(r.rows.at(-1)!.liabilities).toBeGreaterThan(0);
+  });
+
+  it('monthly deficits use investments before the emergency reserve', () => {
+    const p = simpleProfile(); // ₹1L cash, ₹2L invested; reserve target 6 × ₹20k = ₹1.2L
+    p.cashflow.lifestyle = [{ id: 'l', label: 'Fun', amount: 40000 }]; // ₹10k/month deficit
+    const r = simulate(p, zeroAssumptions, { years: 1 });
+    close(r.rows[0].cash, 100000);
+    close(r.rows[0].portfolio, 80000);
+  });
+
+  it('salary changes from life events scale retirement contributions too', () => {
+    const p = simpleProfile();
+    p.position.retirement.monthlyContribution = 1000;
+    p.lifeEvents = [{ id: 'p', kind: 'promotion', label: 'Promotion', year: 2027, oneTimeCost: 0, incomeChangePct: 0.5, monthlyExpenseChange: 0, breakMonths: 0 }];
+    const r = simulate(p, zeroAssumptions, { years: 2 });
+    close(r.rows[0].retirement, 12000);
+    close(r.rows[1].retirement - r.rows[0].retirement, 18000);
   });
 
   it('a market shock reduces the portfolio in the shock year', () => {
@@ -140,7 +157,8 @@ describe('financial independence', () => {
     const p = demoProfile(2026);
     const fi = fiAnalysis(p, DEFAULT_ASSUMPTIONS);
     const row = fi.sim.rows[fi.yearsToTarget - 1];
-    close(fi.targetCorpus, row.expenses / DEFAULT_ASSUMPTIONS.withdrawalRate);
+    close(fi.targetCorpus, row.expenses / DEFAULT_ASSUMPTIONS.withdrawalRate + row.liabilities);
+    expect(row.liabilities).toBeGreaterThan(0); // demo still owes on the home loan at 50
     if (fi.gap > 0 && fi.extraMonthlyNeeded !== null) {
       const check = simulate(p, DEFAULT_ASSUMPTIONS, { years: fi.yearsToTarget, extraMonthlyInvestment: fi.extraMonthlyNeeded }).rows[fi.yearsToTarget - 1];
       expect(check.financialAssets).toBeGreaterThanOrEqual(check.fiTarget * 0.9999);

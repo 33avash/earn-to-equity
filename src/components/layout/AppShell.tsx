@@ -73,7 +73,7 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
                   end={end}
                   onClick={onNavigate}
                   className={({ isActive }) =>
-                    `group relative flex items-center gap-3 rounded px-3 py-[7px] text-[13.5px] transition-[background-color,color] duration-200 ${
+                    `tap group relative flex items-center gap-3 rounded px-3 py-[7px] text-[13.5px] transition-[background-color,color] duration-200 ${
                       isActive
                         ? 'bg-ivory/[0.09] font-medium text-ivory before:absolute before:left-0 before:top-1/2 before:h-4 before:w-[2px] before:-translate-y-1/2 before:rounded-full before:bg-champagne dark:bg-mint dark:text-charcoal'
                         : 'text-ivory/65 hover:bg-ivory/[0.05] hover:text-ivory dark:text-charcoal/70 dark:hover:text-charcoal'
@@ -100,7 +100,7 @@ function ProfileFooter({ onNavigate }: { onNavigate?: () => void }) {
       <NavLink
         to="/app/settings"
         onClick={onNavigate}
-        className={({ isActive }) => `flex items-center gap-3 rounded px-3 py-2 text-[13.5px] ${isActive ? 'bg-ivory/10 text-ivory dark:bg-mint dark:text-charcoal' : 'text-ivory/70 hover:text-ivory dark:text-charcoal/70'}`}
+        className={({ isActive }) => `tap flex items-center gap-3 rounded px-3 py-2 text-[13.5px] ${isActive ? 'bg-ivory/10 text-ivory dark:bg-mint dark:text-charcoal' : 'text-ivory/70 hover:text-ivory dark:text-charcoal/70'}`}
       >
         <Settings size={16} strokeWidth={1.75} aria-hidden /> Settings
       </NavLink>
@@ -160,7 +160,7 @@ export function AppShell() {
       {/* Mobile top bar */}
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-ivory/95 px-4 backdrop-blur-sm lg:hidden">
         <Wordmark to="/" />
-        <button type="button" onClick={() => setDrawer(true)} aria-label="Open navigation" aria-expanded={drawer} className="rounded p-2 text-evergreen">
+        <button type="button" onClick={() => setDrawer(true)} aria-label="Open navigation" aria-expanded={drawer} className="hit rounded p-2 text-evergreen">
           <Menu size={22} />
         </button>
       </header>
@@ -173,7 +173,7 @@ export function AppShell() {
             <div>
               <div className="mb-6 flex items-center justify-between px-3">
                 <Wordmark to="/" inverse />
-                <button type="button" onClick={() => setDrawer(false)} aria-label="Close navigation" className="text-ivory dark:text-charcoal">
+                <button type="button" onClick={() => setDrawer(false)} aria-label="Close navigation" className="hit text-ivory dark:text-charcoal">
                   <X size={20} />
                 </button>
               </div>

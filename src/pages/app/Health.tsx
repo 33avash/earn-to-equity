@@ -90,7 +90,7 @@ export default function Health() {
                 <li key={c.key} className="border-l-2 border-champagne pl-4">
                   <p className="font-semibold text-evergreen">{c.label}</p>
                   <p className="text-sm text-grey">{IMPROVE[c.key].text}</p>
-                  <Link to={IMPROVE[c.key].to} className="mt-1 inline-block text-sm font-medium text-forest hover:underline">
+                  <Link to={IMPROVE[c.key].to} className="hit mt-1 inline-block text-sm font-medium text-forest hover:underline">
                     Open the relevant tool
                   </Link>
                 </li>
