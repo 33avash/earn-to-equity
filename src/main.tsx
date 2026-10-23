@@ -11,7 +11,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       {/* Respect prefers-reduced-motion everywhere. */}
       <MotionConfig reducedMotion="user">
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || '/'}>
           <App />
         </BrowserRouter>
       </MotionConfig>

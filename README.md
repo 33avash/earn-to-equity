@@ -6,6 +6,8 @@ Earn to Equity is a wealth-planning web app for young Indian earners. You descri
 
 Everything runs in the browser. There are no accounts, and your profile is stored only in your browser's local storage on this device.
 
+**Live demo:** https://33avash.github.io/earn-to-equity/
+
 **Team:** Atulya Singh · Avash Srivastava · Aayushi Paul · Agustyae Gupta
 
 ---
@@ -50,6 +52,10 @@ Then open http://localhost:5173. Use **See the demo plan** to look around with a
 | `npm run typecheck` | Type-check the project |
 | `npm run build` | Type-check and build for production |
 | `npm run preview` | Serve the production build locally |
+
+### Deployment
+
+Every push to `main` runs the tests, builds the site and publishes it to GitHub Pages (`.github/workflows/deploy.yml`). The build sets `BASE_PATH=/earn-to-equity/` so assets and routes resolve under the repository path, and `404.html` is a copy of `index.html` so deep links like `/app/goals` load. GitHub Pages is static, so the live demo always uses the rule-based coach.
 
 ### Optional: Gemini-powered coach
 

@@ -8,6 +8,8 @@ export default defineConfig(({ mode }) => {
   // (only VITE_-prefixed variables are injected into client code).
   const env = loadEnv(mode, process.cwd(), '');
   return {
+    // GitHub Pages serves the site from /<repo>/; BASE_PATH is set by the deploy workflow.
+    base: process.env.BASE_PATH || '/',
     plugins: [
       react(),
       {
