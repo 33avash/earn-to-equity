@@ -10,12 +10,12 @@ export function AllocationBar({ weights, label, height = 14 }: { weights: AssetM
   const t = useChartTheme();
   const total = ASSET_CLASSES.reduce((s, c) => s + Math.max(0, weights[c]), 0);
   return (
-    <div role="img" aria-label={`${label}: ${ASSET_CLASSES.filter((c) => weights[c] > 0).map((c) => `${ASSET_LABELS[c]} ${formatPct(weights[c] / (total || 1), 0)}`).join(', ')}`} className="flex w-full gap-[2px] overflow-hidden rounded-sm" style={{ height }}>
+    <div role="img" aria-label={`${label}: ${ASSET_CLASSES.filter((c) => weights[c] > 0).map((c) => `${ASSET_LABELS[c]} ${formatPct(weights[c] / (total || 1), 0)}`).join(', ')}`} className="flex w-full gap-[3px] overflow-hidden rounded-full" style={{ height }}>
       {total === 0 ? (
         <div className="h-full w-full bg-line" />
       ) : (
         ASSET_CLASSES.filter((c) => weights[c] > 0).map((c) => (
-          <div key={c} title={`${ASSET_LABELS[c]} ${formatPct(weights[c] / total)}`} style={{ width: `${(weights[c] / total) * 100}%`, background: t.asset[c] }} className="h-full transition-[width] duration-500 ease-out first:rounded-l-sm last:rounded-r-sm" />
+          <div key={c} title={`${ASSET_LABELS[c]} ${formatPct(weights[c] / total)}`} style={{ width: `${(weights[c] / total) * 100}%`, background: t.asset[c] }} className="h-full" />
         ))
       )}
     </div>
@@ -50,9 +50,9 @@ export function CashflowBar({ parts, total }: { parts: { key: string; label: str
   const shown = parts.filter((p) => p.value > 0);
   return (
     <div>
-      <div role="img" aria-label={`Monthly income of ${money(total)}: ${shown.map((p) => `${p.label} ${money(p.value)}`).join(', ')}`} className="flex h-3.5 w-full gap-[2px] overflow-hidden rounded-sm bg-line">
+      <div role="img" aria-label={`Monthly income of ${money(total)}: ${shown.map((p) => `${p.label} ${money(p.value)}`).join(', ')}`} className="flex h-3.5 w-full gap-[3px] overflow-hidden rounded-full bg-line">
         {shown.map((p) => (
-          <div key={p.key} style={{ width: `${(p.value / Math.max(total, shown.reduce((s, x) => s + x.value, 0))) * 100}%`, background: p.color }} className="h-full transition-[width] duration-500 ease-out" />
+          <div key={p.key} style={{ width: `${(p.value / Math.max(total, shown.reduce((s, x) => s + x.value, 0))) * 100}%`, background: p.color }} className="h-full" />
         ))}
       </div>
       <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-[13px] sm:grid-cols-3">

@@ -9,7 +9,7 @@
  * Contrast (checked in tests/a11y/contrast.test.ts): text ≥ 4.5:1 and UI ≥ 3:1 on background and card.
  */
 :root {
-  --background: 250 250 250;
+  --background: 246 246 244;
   --card: 255 255 255;
   --foreground: 10 10 11;
   --body: 39 39 42;
@@ -49,26 +49,39 @@
   --c-onbrand: var(--background);
 
   /* Shape, depth and motion tokens */
-  --radius-sm: 6px;
-  --radius: 8px;
-  --radius-lg: 12px;
-  --shadow-sm: 0 1px 2px rgb(10 10 11 / 0.05);
-  --shadow-float: 0 16px 40px -24px rgb(10 10 11 / 0.25), 0 2px 6px -3px rgb(10 10 11 / 0.08);
+  --radius-sm: 10px;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --radius-bezel: 28px;
+  --bezel-gap: 6px;
+  --shadow-sm: 0 1px 2px rgb(10 10 11 / 0.04);
+  /* Ambient, highly diffused depth. Never a hard drop shadow. */
+  --shadow-ambient: 0 1px 1px rgb(10 10 11 / 0.02), 0 14px 36px -18px rgb(10 10 11 / 0.08), 0 50px 90px -50px rgb(10 10 11 / 0.12);
+  --shadow-float: 0 40px 90px -40px rgb(10 10 11 / 0.22), 0 12px 30px -18px rgb(10 10 11 / 0.08);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --glass-bg: rgb(255 255 255 / 0.78);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Double-bezel: the tray a card sits in, and the hairlines around both. */
+  --shell: rgb(10 10 11 / 0.025);
+  --shell-line: rgb(10 10 11 / 0.06);
+  --core-line: rgb(10 10 11 / 0.05);
+  --core-highlight: rgb(255 255 255 / 0.9);
+  --glass-bg: rgb(255 255 255 / 0.72);
   --glass-border: rgb(10 10 11 / 0.06);
-  --glass-edge: rgb(10 10 11 / 0.06);
+  --glass-edge: rgb(255 255 255 / 0.7);
+  --orb-1: rgb(15 118 110 / 0.10);
+  --orb-2: rgb(79 70 229 / 0.06);
+  --grain-opacity: 0.035;
   color-scheme: light;
 }
 
 .dark {
-  --background: 9 9 11;
-  --card: 19 19 22;
+  --background: 6 6 7;
+  --card: 15 15 17;
   --foreground: 250 250 250;
   --body: 228 228 231;
-  --muted: 28 28 32;
+  --muted: 26 26 30;
   --muted-foreground: 161 161 170;
-  --border: 39 39 42;
+  --border: 34 34 38;
   --border-strong: 113 113 122;
   --accent: 45 212 191;
   --accent-subtle: 17 40 38;
@@ -84,12 +97,20 @@
   --chart-5: 148 163 184;
   --chart-6: 192 132 252;
   --chart-7: 163 230 53;
-  --chart-grid: 39 39 42;
+  --chart-grid: 34 34 38;
   --chart-axis: 161 161 170;
-  --glass-bg: rgb(19 19 22 / 0.8);
+  --shadow-ambient: 0 1px 1px rgb(0 0 0 / 0.3), 0 24px 60px -30px rgb(0 0 0 / 0.6);
+  --shadow-float: 0 40px 100px -40px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(255 255 255 / 0.02);
+  --shell: rgb(255 255 255 / 0.025);
+  --shell-line: rgb(255 255 255 / 0.07);
+  --core-line: rgb(255 255 255 / 0.06);
+  --core-highlight: rgb(255 255 255 / 0.07);
+  --glass-bg: rgb(15 15 17 / 0.72);
   --glass-border: rgb(255 255 255 / 0.08);
-  --glass-edge: rgb(0 0 0 / 0.4);
-  --shadow-float: 0 16px 40px -20px rgb(0 0 0 / 0.7), 0 2px 6px -3px rgb(0 0 0 / 0.5);
+  --glass-edge: rgb(255 255 255 / 0.06);
+  --orb-1: rgb(45 212 191 / 0.09);
+  --orb-2: rgb(129 140 248 / 0.07);
+  --grain-opacity: 0.05;
   color-scheme: dark;
 }
 
@@ -134,8 +155,17 @@
   .eyebrow {
     @apply text-[12px] font-medium text-grey;
   }
+  /* Microscopic pill that sits above a major heading. */
+  .tag {
+    @apply inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1 text-[10.5px] font-medium uppercase tracking-[0.2em] text-grey;
+    box-shadow: 0 0 0 1px var(--shell-line), inset 0 1px 0 var(--core-highlight);
+  }
   .display {
-    @apply font-sans font-semibold tracking-[-0.035em] text-evergreen;
+    @apply font-sans font-semibold tracking-[-0.04em] text-evergreen;
+  }
+  /* Editorial accent word inside a heading. */
+  .serif-accent {
+    @apply font-serif font-normal italic tracking-[-0.01em];
   }
   .container-x {
     @apply mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8;
@@ -143,23 +173,43 @@
   .rule {
     @apply border-t border-line;
   }
+  /*
+   * Double-bezel card: an inner core (this element) sitting in a slightly larger tray.
+   * The tray is drawn with spread shadows, so its radius stays concentric (radius + gap) without extra DOM.
+   */
+  .bezel,
   .panel {
-    @apply rounded-md border border-line bg-surface;
+    border-radius: var(--radius-bezel);
+    background: rgb(var(--card));
+    box-shadow:
+      inset 0 1px 0 var(--core-highlight),
+      0 0 0 1px var(--core-line),
+      0 0 0 var(--bezel-gap) var(--shell),
+      0 0 0 calc(var(--bezel-gap) + 1px) var(--shell-line),
+      var(--shadow-ambient);
+  }
+  .panel {
+    border-radius: var(--radius-lg);
+  }
+  /* A recessed well inside a card. */
+  .well {
+    @apply rounded-2xl bg-muted/60;
+    box-shadow: inset 0 0 0 1px var(--core-line);
   }
   .link {
     @apply text-forest underline decoration-sage underline-offset-4 hover:decoration-forest;
   }
   .input {
-    @apply h-10 w-full rounded border border-sage bg-surface px-3 text-sm text-charcoal num placeholder:text-grey transition-colors hover:border-evergreen/60 focus:border-forest focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-forest/20;
+    @apply h-11 w-full rounded-xl border border-sage bg-surface px-3.5 text-sm text-charcoal num placeholder:text-grey transition-[border-color,box-shadow] duration-300 hover:border-evergreen/50 focus:border-forest focus:outline-none focus-visible:outline-none focus:ring-4 focus:ring-forest/15;
   }
   .input-error {
     @apply border-danger focus:border-danger focus:ring-danger/15;
   }
   .table-fin th {
-    @apply py-2 pr-4 text-left text-[11px] font-semibold uppercase tracking-[0.1em] text-grey whitespace-nowrap;
+    @apply py-2 pr-3 sm:pr-4 text-left text-[11px] font-semibold uppercase tracking-[0.1em] text-grey whitespace-nowrap;
   }
   .table-fin td {
-    @apply py-2.5 pr-4 align-middle border-t border-line num;
+    @apply py-2.5 pr-3 sm:pr-4 align-middle border-t border-line num;
   }
 }
 
@@ -271,11 +321,56 @@ input[type='range'].range::-moz-range-thumb {
 
 /* Card that lifts slightly on hover. */
 .lift {
-  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  transition: transform 700ms var(--ease-spring);
 }
 .lift:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-float);
+  transform: translate3d(0, -4px, 0);
+}
+
+/* Fine-line icons: every Lucide glyph is drawn with a hairline stroke. */
+svg.lucide {
+  stroke-width: 1.4px;
+}
+
+/*
+ * Ambient background: two slow light orbs behind the content, plus a fixed film grain on top.
+ * Both are fixed and pointer-events: none, so they never repaint with scroll.
+ */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(40rem 32rem at 85% -5%, var(--orb-1), rgb(0 0 0 / 0) 70%),
+    radial-gradient(36rem 28rem at -10% 35%, var(--orb-2), rgb(0 0 0 / 0) 70%);
+}
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/*
+ * Island buttons. A trailing arrow never sits naked next to the label: it gets its own
+ * circular well, flush with the button's right padding, and drifts diagonally on hover.
+ */
+.btn > svg.lucide-arrow-right:last-child,
+.btn > svg.lucide-arrow-up-right:last-child {
+  box-sizing: content-box;
+  padding: 0.4em;
+  margin-right: -0.85em;
+  margin-left: 0.15em;
+  border-radius: 9999px;
+  background: color-mix(in srgb, currentColor 13%, rgb(0 0 0 / 0));
+  transition: transform 600ms var(--ease-spring);
+}
+.btn:hover > svg.lucide-arrow-right:last-child,
+.btn:hover > svg.lucide-arrow-up-right:last-child {
+  transform: translate3d(3px, -1px, 0) scale(1.06);
 }
 
 /* Spotlight border: a soft accent glow that follows the pointer (set --x/--y in JS). */
@@ -298,8 +393,8 @@ input[type='range'].range::-moz-range-thumb {
 
 .glass {
   background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(16px) saturate(1.25);
-  backdrop-filter: blur(16px) saturate(1.25);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow-float), inset 0 0 0 0.5px var(--glass-edge);
   border-radius: var(--radius-lg);
@@ -315,10 +410,10 @@ input[type='range'].range::-moz-range-thumb {
 /* ---------- Motion ---------- */
 .reveal {
   opacity: 0;
-  transform: translate3d(0, 16px, 0);
+  transform: translate3d(0, 40px, 0);
   transition:
-    opacity 0.9s var(--ease-out),
-    transform 0.9s var(--ease-out);
+    opacity 0.9s var(--ease-spring),
+    transform 0.9s var(--ease-spring);
   transition-delay: var(--reveal-delay, 0ms);
 }
 .reveal.is-in {
@@ -354,10 +449,10 @@ input[type='range'].range::-moz-range-thumb {
   }
 }
 .float-slow {
-  animation: float 10s ease-in-out infinite;
+  animation: float 10s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
 }
 .float-slower {
-  animation: float 13s ease-in-out -4s infinite;
+  animation: float 13s cubic-bezier(0.45, 0.05, 0.55, 0.95) -4s infinite;
 }
 @keyframes float {
   50% {
@@ -367,7 +462,7 @@ input[type='range'].range::-moz-range-thumb {
 .skeleton {
   background: linear-gradient(90deg, rgb(var(--c-line) / 0.5), rgb(var(--c-line) / 0.9), rgb(var(--c-line) / 0.5));
   background-size: 200% 100%;
-  animation: shimmer 1.4s linear infinite;
+  animation: shimmer 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   border-radius: var(--radius-sm);
 }
 @keyframes shimmer {
@@ -393,6 +488,10 @@ input[type='range'].range::-moz-range-thumb {
   .float-slower,
   .skeleton {
     animation: none !important;
+  }
+  .lift:hover,
+  .btn:hover > svg {
+    transform: none !important;
   }
   .reveal {
     opacity: 1;
@@ -426,4 +525,72 @@ input[type='range'].range::-moz-range-thumb {
   from {
     opacity: 0;
   }
+}
+/* Individual transform properties, so this composes with any centring translate on the element. */
+@keyframes pop {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+    scale: 0.97;
+  }
+}
+
+/*
+ * Planner (/app) as a desktop web dashboard. The public site keeps the editorial bezel look;
+ * inside .app-ui the same classes render as flat, bordered dashboard surfaces with tighter radii.
+ */
+.app-ui .bezel,
+.app-ui .panel {
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 1px rgb(var(--border)),
+    0 1px 2px rgb(10 10 11 / 0.04);
+}
+.dark .app-ui .bezel,
+.dark .app-ui .panel {
+  box-shadow: 0 0 0 1px rgb(var(--border));
+}
+.app-ui .well {
+  border-radius: 10px;
+}
+.app-ui .btn,
+.app-ui .seg,
+.app-ui .seg > button {
+  border-radius: 8px;
+}
+.app-ui .seg > button {
+  border-radius: 6px;
+}
+.app-ui .btn > svg.lucide-arrow-right:last-child,
+.app-ui .btn > svg.lucide-arrow-up-right:last-child {
+  padding: 0;
+  margin: 0;
+  background: none;
+}
+.app-ui .input {
+  border-radius: 8px;
+  height: 2.5rem;
+}
+.app-ui .tag {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  letter-spacing: 0.08em;
+}
+.app-ui .lift:hover {
+  transform: none;
+}
+/* Card header row: title on the left, a quiet link on the right, hairline below. */
+.card-head {
+  @apply flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5;
+}
+.card-title {
+  @apply text-[14px] font-semibold tracking-[-0.01em] text-evergreen;
+}
+.card-link {
+  @apply inline-flex items-center gap-1 text-[13px] font-medium text-grey transition-colors hover:text-evergreen;
+}
+.app-ui .rounded-2xl,
+.app-ui .rounded-3xl {
+  border-radius: 12px;
 }

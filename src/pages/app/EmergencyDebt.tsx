@@ -35,11 +35,11 @@ export default function EmergencyDebt() {
   const note = strategyNote(p.liabilities, result);
 
   return (
-    <div className="flex flex-col gap-16">
-      <PageHeader title="Emergency Fund & Debt" description="Build a reserve that keeps a setback from becoming a crisis, then clear costly debt in the order that saves you the most." />
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Emergency fund & debt" description="Size a reserve of 3 to 12 months of essentials and EMIs, then compare two ways to clear your loans." />
 
       <Section title="Emergency fund" description="Covers essential expenses and loan repayments, the bills that continue if income stops.">
-        <div className="grid gap-12 lg:grid-cols-12">
+        <div className="grid gap-8 lg:grid-cols-12">
           <div className="flex flex-col gap-6 lg:col-span-5">
             <Slider label="Target" value={p.protection.emergencyTargetMonths} min={3} max={12} step={1} format={(v) => `${v} months`} onChange={(v) => update((x) => void (x.protection.emergencyTargetMonths = v))} help="3 months is a minimum for stable salaried income. 6–12 months suits variable income, dependents or a single-income household." />
             <Field label="Monthly contribution towards the reserve" hint="Defaults to your monthly savings transfer.">
@@ -71,7 +71,7 @@ export default function EmergencyDebt() {
       <Section title="Debt planner" description="Compare paying the highest interest rate first (avalanche) with paying the smallest balance first (snowball).">
         <LoansEditor loans={p.liabilities} onChange={(l) => update((x) => void (x.liabilities = l))} />
         {hasDebt && (
-          <div className="mt-10 grid gap-12 lg:grid-cols-12">
+          <div className="mt-10 grid gap-8 lg:grid-cols-12">
             <div className="lg:col-span-4">
               <Field label="Extra monthly repayment" hint="On top of all minimum payments. Defaults to your unallocated surplus.">
                 {(id, d) => <MoneyInput id={id} describedBy={d} value={extra} onChange={setExtra} max={1e7} />}

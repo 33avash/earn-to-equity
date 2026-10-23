@@ -88,7 +88,7 @@ function NativeNumberInput({ value, onChange, min, max, id, describedBy, ariaLab
   useEffect(() => {
     setText((t) => (Number(t) === value ? t : Number.isFinite(value) ? String(value) : ''));
   }, [value]);
-  const h = size === 'sm' ? 'h-8 text-[13px]' : 'h-10 text-sm';
+  const h = size === 'sm' ? 'h-9 text-[13px]' : 'h-11 text-sm';
   return (
     <input
       id={id}
@@ -140,7 +140,7 @@ function GroupedNumberInput({ value, onChange, min, max, step, prefix, suffix, i
   };
 
   const display = focused ? text : Number.isFinite(value) ? groupIN.format(value) : '';
-  const h = size === 'sm' ? 'h-8 text-[13px]' : 'h-10 text-sm';
+  const h = size === 'sm' ? 'h-9 text-[13px]' : 'h-11 text-sm';
   return (
     <div className={`relative flex items-center ${className}`}>
       {prefix && <span className="pointer-events-none absolute left-3 text-sm text-grey">{prefix}</span>}
@@ -252,7 +252,7 @@ export function Toggle({ checked, onChange, label, description }: { checked: boo
 /** Segmented control for small mutually exclusive choices. */
 export function Segmented<T extends string>({ value, onChange, options, label, size = 'md' }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; label: string; size?: 'sm' | 'md' }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded border border-line bg-surface p-0.5">
+    <div role="radiogroup" aria-label={label} className="seg inline-flex rounded-full bg-muted/80 p-1 shadow-[inset_0_0_0_1px_var(--core-line)]">
       {options.map((o) => (
         <button
           key={o.value}
@@ -260,8 +260,8 @@ export function Segmented<T extends string>({ value, onChange, options, label, s
           role="radio"
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
-          className={`tap ${size === 'sm' ? 'h-7 px-2.5 text-xs' : 'h-8 px-3 text-[13px]'} rounded-[3px] font-medium transition-colors ${
-            value === o.value ? 'bg-evergreen text-onbrand' : 'text-grey hover:text-evergreen'
+          className={`tap ${size === 'sm' ? 'h-7 px-3 text-xs' : 'h-8 px-4 text-[13px]'} rounded-full font-medium transition-[background-color,color,box-shadow] duration-500 ${
+            value === o.value ? 'bg-surface text-evergreen shadow-[0_0_0_1px_var(--shell-line),0_4px_12px_-6px_rgb(10_10_11/0.25)]' : 'text-grey hover:text-evergreen'
           }`}
         >
           {o.label}

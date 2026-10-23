@@ -35,9 +35,21 @@ export default {
         sans: ['Geist', 'system-ui', 'sans-serif'],
         mono: ['"Geist Mono"', 'ui-monospace', 'monospace'],
         display: ['Geist', 'system-ui', 'sans-serif'],
+        serif: ['"Instrument Serif"', 'ui-serif', 'Georgia', 'serif'],
       },
-      borderRadius: { DEFAULT: '6px', md: '8px', lg: '12px' },
-      maxWidth: { content: '1200px' },
+      // Exaggerated, concentric radii: cards sit in a tray 6px larger than themselves.
+      borderRadius: { DEFAULT: '10px', md: '12px', lg: '20px', xl: '24px', '2xl': '28px', '3xl': '32px' },
+      maxWidth: { content: '1240px' },
+      transitionTimingFunction: {
+        DEFAULT: 'cubic-bezier(0.32, 0.72, 0, 1)',
+        spring: 'cubic-bezier(0.32, 0.72, 0, 1)',
+        out: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      },
+      transitionDuration: { DEFAULT: '300ms' },
+      boxShadow: {
+        ambient: 'var(--shadow-ambient)',
+        float: 'var(--shadow-float)',
+      },
     },
   },
   plugins: [],

@@ -50,8 +50,8 @@ export default function Simulator() {
   });
 
   return (
-    <div className="flex flex-col gap-14">
-      <PageHeader title="Wealth Simulator" description="The engine behind every number in your plan. Twenty years of income, spending, contributions, returns, loans, goals and life events, projected one year at a time." />
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Wealth simulator" description="Twenty years of take-home, tax, spending, EMIs, investments, EPF, goals and life events, one year at a time." />
 
       <Section title="Core assumptions" description="Edit the base case. Every module updates immediately.">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -80,7 +80,7 @@ export default function Simulator() {
             <Button variant="secondary" size="sm" disabled={sel.index === rows.length} onClick={() => setSelected(sel.year + 1)}>Next →</Button>
           </div>
         }>
-          <div className="grid gap-10 lg:grid-cols-12">
+          <div className="grid gap-6 lg:grid-cols-12">
             <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:col-span-8">
               <Stat
                 size="sm"
@@ -139,7 +139,7 @@ export default function Simulator() {
         }
       >
         {cmp && baseline && (
-          <div className="mb-5 rounded-lg border border-line bg-surface p-4">
+          <div className="well mb-6 p-5 sm:p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <p className="text-sm text-charcoal">
                 Compared with <strong className="text-evergreen">{baseline.label}</strong>:{' '}

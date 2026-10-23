@@ -1,66 +1,78 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowUpRight } from 'lucide-react';
-import { APP_NAV } from '@/components/layout/AppShell';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
+import { APP_NAV } from '@/components/layout/nav';
+import { PublicHero } from '@/components/layout/PublicHero';
 import { Button } from '@/components/ui/Button';
+import { Reveal } from '@/components/motion/Motion';
 import { useExploreDemo } from '@/state/useDemo';
 
+/** One line per module, keyed by its nav path. */
 const DESCRIPTIONS: Record<string, string> = {
-  Overview: 'Net worth, cash flow, emergency cover, portfolio, projected corpus and FI progress, with the wealth trajectory at the centre.',
-  'Financial Health': 'A transparent 0–100 score from six documented components, with strengths and practical improvements.',
-  'Budget Planner': 'An editable monthly cash-flow table with an optional 50/30/20 comparison. Changes flow straight to the dashboard.',
-  'Emergency Fund & Debt': 'A 3–12 month reserve calculator, plus avalanche and snowball repayment comparisons for your loans.',
-  'Goals Planner': 'Inflation-adjusted goal costs, required contributions and funding shortfalls, with options to delay, reduce or fund more.',
-  'Portfolio Builder': 'Seven asset classes, educational presets, weighted return, drift and the rebalancing needed.',
-  'SIP Calculator': 'Lump sum, step-up, contribution timing and a flat versus step-up comparison, with a year-by-year table.',
-  'Wealth Simulator': 'The 20-year year-by-year engine, a year inspector, and conservative, base and high-growth scenarios with attribution.',
-  'Life Events': 'A timeline of promotions, breaks, marriage, a home and more, with before-and-after impact on your roadmap.',
-  'Risk Lab': 'Stress tests for salary, inflation and market falls, plus 1,000-path Monte Carlo goal probabilities.',
-  'Financial Independence': 'Target corpus, projected corpus, gap, estimated FI age and the extra monthly investment needed.',
-  'AI Wealth Coach': 'Plain-language explanations of your own calculated figures. Uses Gemini when configured, otherwise a labelled rule-based coach.',
-  'Learning Centre': 'Eleven short modules with worked examples and knowledge checks, plus dated tax-awareness notes.',
+  '/app': 'Net worth, monthly surplus, savings rate, FI age and plan health, with your 20-year trajectory and this month’s cash flow.',
+  '/app/health': 'A 0 to 100 score from six components, each with its rule shown.',
+  '/app/budget': 'CTC to take-home under both tax regimes, monthly spending, EMIs and SIPs, with an optional 50/30/20 check.',
+  '/app/emergency-debt': 'A 3 to 12 month reserve, and avalanche against snowball for your loans.',
+  '/app/goals': 'Each goal priced for its year and paid from savings, a loan or both. Drag to set which gets money first.',
+  '/app/portfolio': 'Seven asset classes, fund costs, drift, and rebalancing with new SIP money only.',
+  '/app/sip': 'Step-up SIPs with the corpus before and after capital-gains tax.',
+  '/app/simulator': 'Every year to 2046, a year inspector, three scenarios, a tornado chart and CSV export.',
+  '/app/life-events': 'Promotions, breaks, a wedding or a home, with stamp duty and the lender’s 50% limit checked.',
+  '/app/risk-lab': 'One-click stress tests and 1,000 market paths using fat-tailed returns or Nifty 50 history.',
+  '/app/fi': 'Your FI target with healthcare, the corpus after tax, and the extra SIP needed to reach it.',
+  '/app/coach': 'Answers about your plan that quote figures from your own projection.',
+  '/app/learn': 'Eleven short lessons with worked examples, plus tax notes for 2026-27.',
 };
 
 export default function Features() {
   const explore = useExploreDemo();
   const navigate = useNavigate();
   return (
-    <div className="container-x py-16 lg:py-24">
-      <p className="eyebrow">Features</p>
-      <h1 className="display mt-3 max-w-3xl text-[44px] leading-[1.06] sm:text-[56px]">Fourteen tools. One financial model.</h1>
-      <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-grey">Each module answers a practical question and shares the same numbers as every other module. Open any of them with the demo profile.</p>
-      {APP_NAV.map((g) => (
-        <section key={g.group} className="mt-16">
-          <h2 className="eyebrow mb-4">{g.group}</h2>
-          <ul className="grid border-t border-line md:grid-cols-2">
-            {g.items.map(({ to, label, icon: Icon }) => (
-              <li key={to} className="border-b border-line md:odd:border-r md:odd:pr-8 md:even:pl-8">
-                <button
-                  type="button"
-                  onClick={() => explore(to, true)}
-                  className="group flex w-full items-start gap-4 py-6 text-left"
-                >
-                  <Icon size={20} strokeWidth={1.5} className="mt-1 shrink-0 text-forest" aria-hidden />
-                  <span className="flex-1">
-                    <span className="flex items-center justify-between gap-3">
-                      <span className="text-lg font-semibold tracking-tight text-evergreen">{label}</span>
-                      <ArrowUpRight size={16} className="text-grey opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />
+    <>
+      <PublicHero tag="Thirteen modules" title={<span className="serif-accent">Features</span>}>
+        <p>Thirteen modules, all reading the same 20-year projection. Click any of them to open it on the demo plan.</p>
+      </PublicHero>
+
+      <div className="container-x flex flex-col gap-24 lg:gap-36">
+        {APP_NAV.map((g, gi) => (
+          <section key={g.group} aria-labelledby={`grp-${gi}`} className="grid gap-10 lg:grid-cols-12">
+            <div className="lg:col-span-4">
+              <div className="lg:sticky lg:top-36">
+                <span className="num text-sm text-grey">0{gi + 1}</span>
+                <h2 id={`grp-${gi}`} className="display mt-3 text-[40px] leading-none sm:text-[56px]">
+                  {g.group}
+                </h2>
+              </div>
+            </div>
+            <ul className="grid gap-6 sm:grid-cols-2 lg:col-span-8">
+              {g.items.map(({ to, label, icon: Icon }, i) => (
+                <Reveal as="li" key={to} delay={i * 80}>
+                  <button type="button" onClick={() => explore(to, true)} className="bezel lift group flex h-full w-full flex-col p-7 text-left sm:p-8">
+                    <span className="flex w-full items-start justify-between gap-4">
+                      <span className="well flex h-12 w-12 items-center justify-center rounded-2xl text-forest">
+                        <Icon size={22} aria-hidden />
+                      </span>
+                      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-grey transition-transform duration-500 ease-spring group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:scale-105 group-hover:text-evergreen" aria-hidden>
+                        <ArrowUpRight size={16} />
+                      </span>
                     </span>
-                    <span className="mt-1 block text-sm leading-relaxed text-grey">{DESCRIPTIONS[label]}</span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
-      <div className="mt-16 flex flex-wrap gap-3">
-        <Button size="lg" onClick={() => navigate('/start')}>
-          Build My Wealth Plan
-        </Button>
-        <Link to="/how-it-works" className="hit inline-flex h-12 items-center px-2 text-sm font-medium text-forest hover:underline">
-          How the model works
-        </Link>
+                    <span className="mt-12 text-[20px] font-semibold tracking-[-0.02em] text-evergreen">{label}</span>
+                    <span className="mt-2 block text-sm leading-relaxed text-grey">{DESCRIPTIONS[to]}</span>
+                  </button>
+                </Reveal>
+              ))}
+            </ul>
+          </section>
+        ))}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Button size="lg" onClick={() => navigate('/start')}>
+            Build your plan <ArrowRight size={16} aria-hidden />
+          </Button>
+          <Link to="/how-it-works" className="hit inline-flex h-12 items-center px-4 text-sm font-medium text-forest hover:underline">
+            How the model works
+          </Link>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

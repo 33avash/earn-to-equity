@@ -7,7 +7,8 @@ import { useStore } from '@/state/store';
 import { useExploreDemo } from '@/state/useDemo';
 import { blankProfile } from '@/state/demo';
 import { Wordmark } from '@/components/layout/Wordmark';
-import { Button, Field, MoneyInput, NumberInput, PercentInput, Select, Slider, TextInput, Disclaimer, Notice, Badge, toast } from '@/components/ui';
+import { Atmosphere } from '@/components/motion/Motion';
+import { Button, Field, MoneyInput, NumberInput, PercentInput, Select, Slider, TextInput, Disclaimer, Notice, Badge, toast, Tag, AccentTitle } from '@/components/ui';
 import { LineItemsEditor } from '@/features/editors/LineItems';
 import { SalaryEditor } from '@/features/editors/SalaryEditor';
 import { LoansEditor } from '@/features/editors/Loans';
@@ -24,13 +25,13 @@ import { useMoney } from '@/state/selectors';
 
 const STEPS = [
   { title: 'About you', why: 'Your age and the age you’d like work to become optional set the length of your plan.' },
-  { title: 'Income & career', why: 'Take-home pay is the starting point of everything. Expected growth shapes the next 20 years.' },
+  { title: 'Income & career', why: 'Your CTC sets your take-home, tax and EPF. Expected raises shape the next 20 years.' },
   { title: 'Monthly cash flow', why: 'What you spend, what you repay, and what you move to savings. Transfers are kept separate from expenses.' },
   { title: 'Current position', why: 'What you own and owe today. This becomes your starting net worth.' },
   { title: 'Protection', why: 'An emergency reserve and insurance keep a setback from undoing your plan.' },
   { title: 'Financial goals', why: 'What you are working towards, in today’s prices. We’ll inflate costs to their target year.' },
   { title: 'Investment preferences', why: 'How your investments are split determines the return the projections assume.' },
-  { title: 'Review & generate', why: 'Check everything before your plan is built. You can change any of it later.' },
+  { title: 'Review', why: 'Check your answers before your plan is built. You can change any of them later.' },
 ];
 
 type StepErrors = Record<string, string | null>;
@@ -136,10 +137,16 @@ export default function Onboarding() {
   const progress = (step + 1) / STEPS.length;
 
   return (
-    <div className="min-h-screen bg-ivory">
-      <header className="sticky top-0 z-30 border-b border-line bg-ivory/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Wordmark />
+    <div className="relative isolate min-h-[100dvh]">
+      <Atmosphere />
+      <header className="sticky top-0 z-30 px-3 pt-3 sm:px-4 sm:pt-4">
+        <div className="glass relative mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 overflow-hidden !rounded-full pl-4 pr-2">
+          <span className="sm:hidden">
+            <Wordmark compact />
+          </span>
+          <span className="hidden sm:block">
+            <Wordmark />
+          </span>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={() => exploreDemo('/app')}>
               Use demo data
@@ -156,15 +163,15 @@ export default function Onboarding() {
               Save & exit
             </Button>
           </div>
-        </div>
-        <div className="h-0.5 bg-line" role="progressbar" aria-label="Setup progress" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={step + 1}>
-          <div className="h-full bg-forest transition-[width] duration-300" style={{ width: `${progress * 100}%` }} />
+          <div className="absolute inset-x-6 bottom-0 h-[2px] overflow-hidden rounded-full bg-line/70" role="progressbar" aria-label="Setup progress" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={step + 1}>
+            <div className="h-full w-full origin-left rounded-full bg-forest transition-transform duration-700 ease-spring" style={{ transform: `scaleX(${progress})` }} />
+          </div>
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-6xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-12">
+      <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-24 pt-12 sm:px-6 lg:grid-cols-12 lg:pt-20">
         <nav aria-label="Setup steps" className="hidden lg:col-span-3 lg:block">
-          <ol className="sticky top-28 space-y-1">
+          <ol className="sticky top-32 space-y-1">
             {STEPS.map((s, i) => (
               <li key={s.title}>
                 <button
@@ -172,7 +179,7 @@ export default function Onboarding() {
                   onClick={() => (i < step ? go(i) : undefined)}
                   disabled={i > step}
                   aria-current={i === step ? 'step' : undefined}
-                  className={`tap flex w-full items-center gap-3 rounded px-2 py-2 text-left text-[13.5px] transition-colors ${i === step ? 'font-semibold text-evergreen' : i < step ? 'text-charcoal hover:bg-mint/60' : 'text-grey/70'}`}
+                  className={`tap flex w-full items-center gap-3 rounded-full px-2 py-2 text-left text-[13.5px] transition-[background-color,color,box-shadow] duration-500 ${i === step ? 'bg-surface font-semibold text-evergreen shadow-[0_0_0_1px_var(--shell-line)]' : i < step ? 'text-charcoal hover:bg-mint/60' : 'text-grey/70'}`}
                 >
                   <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] num ${i < step ? 'border-forest bg-forest text-onbrand' : i === step ? 'border-evergreen text-evergreen' : 'border-line'}`}>
                     {i < step ? <Check size={12} /> : i + 1}
@@ -185,15 +192,15 @@ export default function Onboarding() {
         </nav>
 
         <main className="lg:col-span-9">
-          <p className="eyebrow">
+          <Tag>
             Step {step + 1} of {STEPS.length}
-          </p>
-          <h1 id="step-title" tabIndex={-1} className="display mt-2 text-[34px] leading-tight outline-none sm:text-[40px]">
-            {STEPS[step].title}
+          </Tag>
+          <h1 id="step-title" tabIndex={-1} className="display mt-6 text-[40px] leading-[1] outline-none sm:text-[56px]">
+            <AccentTitle text={STEPS[step].title} />
           </h1>
-          <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-grey">{STEPS[step].why}</p>
+          <p className="mt-4 max-w-2xl text-[16px] leading-relaxed text-grey">{STEPS[step].why}</p>
 
-          <div className="mt-10">
+          <div className="mt-14">
             {step === 0 && <StepAbout p={p} update={update} errs={errs} />}
             {step === 1 && <StepIncome p={p} update={update} errs={tried ? errs : {}} />}
             {step === 2 && <StepCashflow p={p} update={update} errs={tried ? errs : {}} />}
@@ -204,7 +211,7 @@ export default function Onboarding() {
             {step === 7 && <StepReview p={p} goTo={go} />}
           </div>
 
-          <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6">
+          <div className="mt-16 flex flex-wrap items-center justify-between gap-3 border-t border-line/70 pt-8">
             <Button variant="secondary" onClick={() => go(step - 1)} disabled={step === 0} icon={<ArrowLeft size={16} />}>
               Back
             </Button>
@@ -309,7 +316,7 @@ function ParentsQuestion({ p, update, error }: StepProps & { error?: string | nu
   const answer = p.about.parentsAsDependents;
   const set = (v: boolean) => update((x) => void (x.about.parentsAsDependents = v));
   return (
-    <div className={`rounded border-l-2 px-4 py-3 ${error ? 'border-danger bg-danger/5' : 'border-champagne bg-champagne/10'}`}>
+    <div className={`rounded-2xl px-5 py-4 ring-1 ring-inset ${error ? 'bg-danger/5 ring-danger/30' : 'bg-champagne/10 ring-champagne/25'}`}>
       <p id="parents-q" className="text-sm font-semibold text-evergreen">
         You send {money(support)} home every month. Should we count your parents as dependents?
       </p>
@@ -377,7 +384,7 @@ function StepCashflow({ p, update, errs = {} }: StepProps) {
         </section>
       </div>
       <aside aria-label="Your month" className="xl:col-span-4">
-        <div className="panel sticky top-28 p-5">
+        <div className="panel sticky top-32 p-6">
           <p className="eyebrow mb-4">Your month</p>
           <dl className="space-y-2 text-sm">
             {[
@@ -462,7 +469,7 @@ function StepPosition({ p, update, errs = {} }: StepProps) {
         </section>
       </div>
       <aside aria-label="Starting position" className="xl:col-span-4">
-        <div className="panel sticky top-28 p-5">
+        <div className="panel sticky top-32 p-6">
           <p className="eyebrow mb-4">Starting position</p>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between"><dt className="text-grey">Total assets</dt><dd className="num">{money(bs.totalAssets)}</dd></div>
@@ -571,7 +578,7 @@ function StepPreferences({ p, update, errs = {} }: StepProps) {
         <legend className="mb-3 text-[15px] font-semibold">How would you describe your comfort with investment ups and downs?</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {(Object.keys(PRESETS) as RiskProfile[]).map((k) => (
-            <label key={k} className={`flex cursor-pointer gap-3 rounded border p-4 transition-colors ${p.preferences.risk === k ? 'border-evergreen bg-mint/50' : 'border-line hover:border-sage'}`}>
+            <label key={k} className={`flex cursor-pointer gap-3 rounded-2xl border p-5 transition-colors duration-300 ${p.preferences.risk === k ? 'border-evergreen bg-mint/50' : 'border-line hover:border-sage'}`}>
               <input
                 type="radio"
                 name="risk"

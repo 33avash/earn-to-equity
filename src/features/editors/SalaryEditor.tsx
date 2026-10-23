@@ -87,7 +87,7 @@ export function SalaryEditor({ p, update, error }: { p: FinancialProfile; update
       )}
 
       {b && (
-        <div className="rounded border border-line p-4">
+        <div className="well p-5 sm:p-6">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
             <div><dt className="text-xs text-grey">Gross salary</dt><dd className="num">{money(b.gross)}</dd></div>
             <div><dt className="text-xs text-grey">Your PF</dt><dd className="num">−{money(b.employeePf)}</dd></div>

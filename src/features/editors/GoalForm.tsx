@@ -112,7 +112,7 @@ export function GoalForm({ initial, startYear, onSave, onCancel, saveLabel = 'Sa
         )}
       </Field>
       {mode !== 'savings' && (
-        <fieldset className="grid gap-5 rounded border border-line p-4 sm:col-span-2 sm:grid-cols-3">
+        <fieldset className="well grid gap-5 p-5 sm:col-span-2 sm:grid-cols-3 sm:p-6">
           <legend className="px-1 text-[13px] font-medium text-charcoal">Loan terms</legend>
           <Field label="Interest rate" error={tried ? errors.loanRate : null}>
             {(id, d, invalid) => <PercentInput id={id} describedBy={d} invalid={invalid} value={terms.rate} onChange={(v) => setLoan({ rate: v })} max={30} />}

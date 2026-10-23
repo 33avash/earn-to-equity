@@ -25,10 +25,10 @@ export function Tornado({ bars, lowLabel, highLabel }: { bars: TornadoBar[]; low
         {bars.map((b) => (
           <li key={b.driver} className="grid grid-cols-[minmax(7rem,9rem)_1fr] items-center gap-3">
             <span className="text-[13px] text-charcoal">{b.label}</span>
-            <span className="relative block h-7 rounded-sm bg-line/40">
+            <span className="relative block h-7 rounded-full bg-line/40">
               <span aria-hidden className="absolute inset-y-0 left-1/2 w-px bg-grey/50" />
               {[{ v: b.low, color: t.scenario.conservative, name: lowLabel }, { v: b.high, color: t.scenario.high, name: highLabel }].map((x) => (
-                <span key={x.name} className="absolute inset-y-1 rounded-sm" style={{ ...bar(x.v), background: x.color }} title={`${x.name}: ${x.v >= 0 ? '+' : ''}${money(x.v)}`} />
+                <span key={x.name} className="absolute inset-y-1 rounded-full" style={{ ...bar(x.v), background: x.color }} title={`${x.name}: ${x.v >= 0 ? '+' : ''}${money(x.v)}`} />
               ))}
               <span className="sr-only">
                 {lowLabel}: {money(b.low)}. {highLabel}: {money(b.high)}.

@@ -38,7 +38,7 @@ export function LifeScenarios({ plan }: { plan: Plan }) {
       </div>
       <div id="scenario-panel" role="tabpanel" className="lg:col-span-7">
         <div className="relative">
-          <div className="glass relative z-10 mb-4 inline-block px-5 py-4 md:absolute md:left-16 md:top-2 md:mb-0">
+          <div className="bezel relative z-10 mb-4 inline-block rounded-2xl px-5 py-4 md:absolute md:left-16 md:top-2 md:mb-0">
             <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">{plan.headline.year} · today’s ₹</p>
             <p className="num mt-1 text-[28px] font-semibold tracking-tight text-evergreen">
               <AnimatedNumber value={s.altFinal} format={formatCompact} />

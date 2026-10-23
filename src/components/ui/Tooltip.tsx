@@ -38,7 +38,7 @@ export function Tooltip({ content, children, label = 'More information' }: { con
         <span
           id={id}
           role="tooltip"
-          className="glass absolute bottom-full left-1/2 z-50 mb-2 w-64 max-w-[78vw] -translate-x-1/2 animate-[tip_.2s_ease-out] px-3 py-2 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-charcoal"
+          className="glass absolute bottom-full left-1/2 z-50 mb-2 w-64 max-w-[78vw] -translate-x-1/2 animate-[pop_.4s_var(--ease-spring)] rounded-2xl px-3.5 py-2.5 text-left text-xs font-normal normal-case leading-relaxed tracking-normal text-charcoal"
         >
           {content}
         </span>

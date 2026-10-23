@@ -55,7 +55,10 @@ export function HeroGraphic({ series }: { series: HeroSeries }) {
           const cx = x(m.index);
           const cy = y(points[m.index]);
           const end = m.index > years * 0.7;
-          const ly = cy - (k === 0 ? 46 : 58);
+          // Lift the label clear of the curve's highest point under the label's width (about 110 units).
+          const span = pts.filter(([px]) => (end ? px <= cx && px >= cx - 110 : px >= cx && px <= cx + 110));
+          const peak = Math.min(cy, ...span.map(([, py]) => py));
+          const ly = Math.min(cy - (k === 0 ? 46 : 58), peak - 30);
           return (
             <g key={m.label}>
               <line x1={cx} x2={cx} y1={ly + 12} y2={cy - 7} className="stroke-sage" strokeWidth="1" />

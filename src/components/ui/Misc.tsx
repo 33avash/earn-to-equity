@@ -46,48 +46,97 @@ export function Stat({
   );
 }
 
+/** Splits a heading so its last word can be set as an editorial serif accent. */
+export function AccentTitle({ text }: { text: string }) {
+  const i = text.lastIndexOf(' ');
+  if (i < 0) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, i + 1)}
+      <span className="serif-accent">{text.slice(i + 1)}</span>
+    </>
+  );
+}
+
+/** Pill-shaped eyebrow tag for major headings. */
+export function Tag({ children, dot = true, className = '' }: { children: ReactNode; dot?: boolean; className?: string }) {
+  return (
+    <span className={`tag ${className}`}>
+      {dot && <span className="h-1.5 w-1.5 rounded-full bg-forest" aria-hidden />}
+      {children}
+    </span>
+  );
+}
+
+/** Double-bezel card: a core sitting in a hairline tray. Use for any major card. */
+export function Bezel({ as: As = 'div', className = '', children, ...rest }: { as?: 'div' | 'section' | 'article' | 'aside' | 'li'; className?: string; children: ReactNode; [k: string]: unknown }) {
+  return (
+    <As className={`bezel ${className}`} {...rest}>
+      {children}
+    </As>
+  );
+}
+
 export function PageHeader({ title, description, actions, eyebrow }: { title: string; description?: ReactNode; actions?: ReactNode; eyebrow?: string }) {
   return (
-    <header className="flex flex-col gap-5 border-b border-line pb-8 md:flex-row md:items-end md:justify-between">
-      <div className="max-w-2xl">
-        {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
-        <h1 className="display text-[34px] leading-[1.05] tracking-[-0.015em] sm:text-[44px]">{title}</h1>
-        {description && <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-grey">{description}</p>}
+    <header className="flex flex-col gap-4 border-b border-line pb-6 md:flex-row md:items-end md:justify-between">
+      <div className="max-w-3xl">
+        {eyebrow && <p className="mb-1.5 text-[12px] font-medium text-grey">{eyebrow}</p>}
+        <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.025em] text-evergreen sm:text-[28px]">{title}</h1>
+        {description && <p className="mt-1.5 max-w-2xl text-[14px] leading-relaxed text-grey">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>
   );
 }
 
-export function Section({ title, description, actions, children, className = '' }: { title?: string; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
+/** A dashboard card: a header row (title, description, actions) over a padded body. Pass bare for a flat block. */
+export function Section({ title, description, actions, children, className = '', bare = false }: { title?: string; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; bare?: boolean }) {
+  const head = title || actions;
+  if (bare) {
+    return (
+      <section className={className}>
+        {head && (
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div className="max-w-2xl">
+              {title && <h2 className="text-[16px] font-semibold tracking-[-0.015em]">{title}</h2>}
+              {description && <p className="mt-1 text-[13px] leading-relaxed text-grey">{description}</p>}
+            </div>
+            {actions}
+          </div>
+        )}
+        {children}
+      </section>
+    );
+  }
   return (
-    <section className={className}>
-      {(title || actions) && (
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            {title && <h2 className="text-[17px] font-semibold tracking-tight">{title}</h2>}
-            {description && <p className="mt-1 text-sm text-grey">{description}</p>}
+    <section className={`bezel ${className}`}>
+      {head && (
+        <div className="card-head">
+          <div className="max-w-2xl">
+            {title && <h2 className="card-title">{title}</h2>}
+            {description && <p className="mt-0.5 text-[12.5px] leading-relaxed text-grey">{description}</p>}
           </div>
           {actions}
         </div>
       )}
-      {children}
+      <div className="p-5">{children}</div>
     </section>
   );
 }
 
 export function Disclaimer({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <p className={`border-l-2 border-champagne pl-3 text-xs leading-relaxed text-grey ${className}`}>{children}</p>;
+  return <p className={`max-w-3xl border-l border-champagne/60 pl-4 text-xs leading-relaxed text-grey ${className}`}>{children}</p>;
 }
 
 export function Notice({ tone = 'info', title, children, action }: { tone?: 'info' | 'warning' | 'error'; title?: string; children: ReactNode; action?: ReactNode }) {
   const tones = {
-    info: 'border-sage bg-mint/50',
-    warning: 'border-champagne bg-champagne/10',
-    error: 'border-danger/60 bg-danger/5',
+    info: 'bg-mint/50 ring-forest/15',
+    warning: 'bg-champagne/10 ring-champagne/25',
+    error: 'bg-danger/5 ring-danger/25',
   };
   return (
-    <div role={tone === 'error' ? 'alert' : 'status'} className={`flex flex-col gap-3 rounded border-l-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${tones[tone]}`}>
+    <div role={tone === 'error' ? 'alert' : 'status'} className={`flex flex-col gap-4 rounded-2xl px-5 py-4 ring-1 ring-inset sm:flex-row sm:items-center sm:justify-between ${tones[tone]}`}>
       <div className="flex gap-2.5">
         {tone !== 'info' && <AlertTriangle size={16} className={`mt-0.5 shrink-0 ${tone === 'error' ? 'text-danger' : 'text-champagne'}`} aria-hidden />}
         <div className="text-sm">
@@ -158,7 +207,7 @@ function EmptyIllustration({ art }: { art: EmptyArt }) {
 
 export function EmptyState({ title, children, action, art = 'chart' }: { title: string; children?: ReactNode; action?: ReactNode; art?: EmptyArt }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line bg-surface px-6 py-10 text-center sm:px-8">
+    <div className="well flex flex-col items-center gap-3 px-6 py-14 text-center sm:px-10">
       <EmptyIllustration art={art} />
       <p className="text-[16px] font-semibold tracking-tight text-evergreen">{title}</p>
       {children && <p className="max-w-md text-sm text-grey">{children}</p>}
@@ -189,7 +238,7 @@ export function Progress({ value, label, tone = 'forest' }: { value: number; lab
   const color = { forest: 'bg-forest', champagne: 'bg-champagne', danger: 'bg-danger' }[tone];
   return (
     <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)} className="h-1.5 w-full overflow-hidden rounded-full bg-line">
-      <div className={`h-full ${color} transition-[width] duration-300`} style={{ width: `${pct}%` }} />
+      <div className={`h-full w-full origin-left rounded-full ${color} transition-transform duration-700 ease-spring`} style={{ transform: `scaleX(${pct / 100})` }} />
     </div>
   );
 }
@@ -237,5 +286,5 @@ export const toast = (text: string) => sonnerToast(text);
 
 export function Toaster() {
   const { resolved } = useTheme();
-  return <SonnerToaster theme={resolved} position="bottom-center" offset={88} toastOptions={{ className: 'font-sans text-sm', duration: 3500 }} />;
+  return <SonnerToaster theme={resolved} position="bottom-right" offset={24} toastOptions={{ className: 'font-sans text-sm', duration: 3500 }} />;
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import { MODULES, type LearnModule as LM } from '@/features/learn/modules';
 import { useStore } from '@/state/store';
 import { Button, ButtonLink, Disclaimer, Notice, Field, PercentInput, MoneyInput, TextInput, Stat, Segmented } from '@/components/ui';
@@ -14,9 +14,9 @@ function Quiz({ m }: { m: LM }) {
   const [checked, setChecked] = useState(false);
   const score = answers.filter((a, i) => a === m.quiz[i].answer).length;
   return (
-    <section className="border-t border-line pt-10">
-      <h2 className="text-xl font-semibold tracking-tight">Knowledge check</h2>
-      <ol className="mt-6 space-y-8">
+    <section className="bezel p-5 sm:p-6">
+      <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Knowledge check</h2>
+      <ol className="mt-8 space-y-10">
         {m.quiz.map((q, qi) => (
           <li key={q.q}>
             <fieldset>
@@ -27,7 +27,7 @@ function Quiz({ m }: { m: LM }) {
                   const right = checked && oi === q.answer;
                   const wrong = checked && sel && oi !== q.answer;
                   return (
-                    <label key={o} className={`flex cursor-pointer items-center gap-3 rounded border px-3 py-2.5 text-sm transition-colors ${right ? 'border-forest bg-mint' : wrong ? 'border-danger bg-danger/5' : sel ? 'border-evergreen' : 'border-line hover:border-sage'}`}>
+                    <label key={o} className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm transition-colors duration-300 ${right ? 'border-forest bg-mint' : wrong ? 'border-danger bg-danger/5' : sel ? 'border-evergreen' : 'border-line hover:border-sage'}`}>
                       <input type="radio" name={`q${qi}`} className="accent-[rgb(var(--c-forest))]" checked={sel} disabled={checked} onChange={() => setAnswers((a) => a.map((x, i) => (i === qi ? oi : x)))} />
                       {o}
                     </label>
@@ -39,7 +39,7 @@ function Quiz({ m }: { m: LM }) {
           </li>
         ))}
       </ol>
-      <div className="mt-8 flex flex-wrap items-center gap-4">
+      <div className="mt-10 flex flex-wrap items-center gap-4">
         {!checked ? (
           <Button disabled={answers.some((a) => a === null)} onClick={() => { setChecked(true); setScore(m.id, score); }}>Check answers</Button>
         ) : (
@@ -69,36 +69,36 @@ function TaxAwareness() {
     ['New vs old regime', `The new regime is the default and has lower rates but few deductions. With the ₹75,000 standard deduction and the rebate, salary up to about ₹12.75 lakh (taxable income ${formatINR(tax.newRegimeZeroTaxIncome)}) pays no tax. Compare both before choosing tax-saving products.`],
   ];
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col gap-6">
       <Notice tone="warning" title="Education, not tax advice">
         These are reference values for <strong>{tax.asOf}</strong>. Section numbers changed under the new Act (for example, the 87A rebate is now section 202), and share buybacks are now taxed as capital gains. Verify on the official sources below or with a CA before acting.
       </Notice>
-      <section>
-        <h2 className="text-xl font-semibold tracking-tight">How common instruments are taxed</h2>
-        <dl className="mt-4">
+      <section className="bezel p-5 sm:p-6">
+        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">How common instruments are taxed</h2>
+        <dl className="mt-6">
           {rows.map(([k, v]) => (
-            <div key={k} className="grid gap-1 border-t border-line py-4 sm:grid-cols-[220px_1fr]">
+            <div key={k} className="grid gap-1.5 border-t border-line/70 py-5 first:border-t-0 sm:grid-cols-[220px_1fr] sm:gap-6">
               <dt className="font-semibold text-evergreen">{k}</dt>
               <dd className="text-sm leading-relaxed text-grey">{v}</dd>
             </div>
           ))}
         </dl>
       </section>
-      <section className="grid gap-10 border-t border-line pt-10 lg:grid-cols-2">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">Illustrative equity gains tax</h2>
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div className="bezel p-5 sm:p-6">
+          <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Illustrative equity gains tax</h2>
           <div className="mt-6 grid gap-5">
             <Field label="Capital gain">{(id) => <MoneyInput id={id} value={gain} onChange={setGain} max={1e10} />}</Field>
             <div><p className="mb-2 text-[13px] font-medium">Holding period</p><Segmented label="Holding period" value={held} onChange={setHeld} options={[{ value: 'short', label: '12 months or less' }, { value: 'long', label: 'More than 12 months' }]} /></div>
           </div>
-          <div className="mt-6 grid grid-cols-2 gap-6">
+          <div className="well mt-8 grid grid-cols-2 gap-6 p-6">
             <Stat label={`Estimated ${calc.kind}`} value={formatINR(calc.tax)} />
             <Stat label="Effective rate on gain" value={formatPct(gain > 0 ? calc.tax / gain : 0)} />
           </div>
           <p className="mt-3 text-xs text-grey">Ignores surcharge, 4% cess, loss set-offs, grandfathering and the other gains you realise in the same year.</p>
         </div>
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight">Reference values (editable)</h2>
+        <div className="bezel p-5 sm:p-6">
+          <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Reference values (editable)</h2>
           <p className="mt-1 text-sm text-grey">Update them if the rules change. They are saved in this browser.</p>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <Field label="Values reflect" className="sm:col-span-2">{(id) => <TextInput id={id} value={tax.asOf} maxLength={120} onChange={(e) => setTax({ asOf: e.target.value })} />}</Field>
@@ -114,8 +114,8 @@ function TaxAwareness() {
           <Button variant="ghost" size="sm" className="mt-3" onClick={() => setTax({ ...DEFAULT_TAX })}>Restore reference values</Button>
         </div>
       </section>
-      <section className="border-t border-line pt-10">
-        <h2 className="text-xl font-semibold tracking-tight">Official sources</h2>
+      <section className="bezel p-5 sm:p-6">
+        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Official sources</h2>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
           {TAX_SOURCES.map((s) => <li key={s.url}><a className="link inline-flex items-center gap-1 text-sm" href={s.url} target="_blank" rel="noreferrer noopener">{s.label}<ExternalLink size={12} aria-hidden /></a></li>)}
         </ul>
@@ -132,9 +132,11 @@ export default function LearnModule() {
   }, [lessonTitle]);
   if (id === 'tax-awareness') {
     return (
-      <article className="flex flex-col gap-8">
-        <Link to="/app/learn" className="hit inline-flex items-center gap-1 text-sm text-grey hover:text-evergreen"><ArrowLeft size={14} /> Learning Centre</Link>
-        <h1 className="display text-[40px] leading-tight">Tax Awareness</h1>
+      <article className="flex flex-col gap-6">
+        <div className="border-b border-line pb-6">
+          <Link to="/app/learn" className="hit inline-flex items-center gap-1.5 text-[13px] font-medium text-grey transition-colors hover:text-evergreen"><ArrowLeft size={14} /> Learning Centre</Link>
+          <h1 className="mt-4 text-[28px] font-semibold leading-tight tracking-[-0.025em] text-evergreen">Tax awareness</h1>
+        </div>
         <TaxAwareness />
       </article>
     );
@@ -144,36 +146,36 @@ export default function LearnModule() {
   const i = MODULES.indexOf(m);
   const next = MODULES[i + 1];
   return (
-    <article className="mx-auto flex max-w-3xl flex-col gap-10">
-      <div>
-        <Link to="/app/learn" className="hit inline-flex items-center gap-1 text-sm text-grey hover:text-evergreen"><ArrowLeft size={14} /> Learning Centre</Link>
-        <p className="eyebrow mt-6">Module {i + 1} · {m.minutes} min</p>
-        <h1 className="display mt-2 text-[40px] leading-tight">{m.title}</h1>
-        <p className="mt-3 text-lg leading-relaxed text-grey">{m.summary}</p>
+    <article className="mx-auto flex max-w-3xl flex-col gap-8">
+      <div className="border-b border-line pb-6">
+        <Link to="/app/learn" className="hit inline-flex items-center gap-1.5 text-[13px] font-medium text-grey transition-colors hover:text-evergreen"><ArrowLeft size={14} /> Learning Centre</Link>
+        <p className="mt-4 text-[12px] font-medium text-grey">Module {i + 1} · {m.minutes} min</p>
+        <h1 className="mt-1.5 text-[30px] font-semibold leading-tight tracking-[-0.025em] text-evergreen">{m.title}</h1>
+        <p className="mt-2 text-[16px] leading-relaxed text-grey">{m.summary}</p>
       </div>
       <div className="space-y-5 text-[16px] leading-[1.75] text-charcoal/90">{m.body.map((b) => <p key={b.slice(0, 24)}>{b}</p>)}</div>
-      <section className="panel p-6">
+      <section className="bezel p-5 sm:p-6">
         <p className="eyebrow">Worked example</p>
-        <h2 className="mt-1 text-lg font-semibold">{m.example.title}</h2>
-        <dl className="mt-4">
+        <h2 className="mt-2 text-[22px] font-semibold tracking-[-0.02em]">{m.example.title}</h2>
+        <dl className="well mt-6 px-5 py-2">
           {m.example.lines.map(([k, v]) => (
-            <div key={k} className="flex justify-between gap-4 border-b border-line/70 py-2 text-sm"><dt className="text-grey">{k}</dt><dd className="num font-semibold text-evergreen">{v}</dd></div>
+            <div key={k} className="flex justify-between gap-4 border-b border-line/70 py-3 text-sm last:border-0"><dt className="text-grey">{k}</dt><dd className="num font-semibold text-evergreen">{v}</dd></div>
           ))}
         </dl>
         <p className="mt-4 text-sm text-charcoal">{m.example.note}</p>
       </section>
       <section>
-        <h2 className="text-xl font-semibold tracking-tight">Key takeaways</h2>
-        <ul className="mt-4 space-y-2">{m.takeaways.map((t) => <li key={t} className="flex gap-3 text-[15px]"><span className="text-champagne">—</span>{t}</li>)}</ul>
+        <h2 className="text-[22px] font-semibold tracking-[-0.02em]">Key takeaways</h2>
+        <ul className="mt-6 space-y-3">{m.takeaways.map((t) => <li key={t} className="flex gap-3 text-[15px]"><span className="text-champagne">—</span>{t}</li>)}</ul>
       </section>
       <Quiz key={m.id} m={m} />
-      <section className="border-t border-line pt-8">
-        <h2 className="eyebrow mb-3">Official resources</h2>
+      <section className="border-t border-line/70 pt-10">
+        <h2 className="eyebrow mb-4">Official resources</h2>
         <ul className="space-y-1.5">{m.links.map((l) => <li key={l.url}><a className="link inline-flex items-center gap-1 text-sm" href={l.url} target="_blank" rel="noreferrer noopener">{l.label}<ExternalLink size={12} aria-hidden /></a></li>)}</ul>
       </section>
-      <div className="flex flex-wrap gap-3 border-t border-line pt-8">
+      <div className="flex flex-wrap gap-3 border-t border-line/70 pt-10">
         {m.tool && <ButtonLink to={m.tool.to} variant="secondary">{m.tool.label}</ButtonLink>}
-        {next && <ButtonLink to={`/app/learn/${next.id}`}>Next: {next.title}</ButtonLink>}
+        {next && <ButtonLink to={`/app/learn/${next.id}`}>Next: {next.title} <ArrowRight size={15} aria-hidden /></ButtonLink>}
       </div>
       <Disclaimer>Educational content only. Figures use illustrative assumptions and are not recommendations.</Disclaimer>
     </article>

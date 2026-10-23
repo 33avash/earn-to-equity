@@ -1,15 +1,4 @@
-import { useEffect, useState } from 'react';
-
-function useWide(query = '(min-width: 768px)') {
-  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    const on = () => setWide(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, [query]);
-  return wide;
-}
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import type { Plan } from '@/state/selectors';
@@ -27,11 +16,27 @@ export function TrajectoryPanel({ plan, height = 320, interactive = true }: { pl
   const points = plan.sim.points.slice(0, Number(range) + 1);
   const end = points[points.length - 1];
   const money = useMoney();
-  const wide = useWide();
   return (
     <div>
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-wrap gap-x-8 gap-y-3">
+          <div>
+            <p className="text-[12px] font-medium text-grey">
+              Projected, {end.year} · age {end.age}
+            </p>
+            <p className="mt-1 text-[28px] font-semibold leading-none tracking-[-0.03em] text-evergreen [&_.num]:font-sans">
+              <AnimatedNumber value={end.netWorth} format={money} />
+            </p>
+          </div>
+          <div>
+            <p className="text-[12px] font-medium text-grey">In today’s rupees</p>
+            <p className="mt-1 text-[28px] font-semibold leading-none tracking-[-0.03em] text-champagne [&_.num]:font-sans">
+              <AnimatedNumber value={end.netWorthReal} format={money} />
+            </p>
+          </div>
+        </div>
       {interactive && (
-        <div className="mb-4 flex flex-wrap justify-end gap-2">
+        <div className="flex flex-wrap gap-2">
           <Segmented
             label="Time range"
             size="sm"
@@ -56,22 +61,8 @@ export function TrajectoryPanel({ plan, height = 320, interactive = true }: { pl
           />
         </div>
       )}
-      <div className="relative">
-        {/* Projection read-out floats over the empty upper-left of the chart */}
-        <div className="glass relative z-10 mb-4 inline-flex flex-wrap gap-x-8 gap-y-3 px-5 py-4 md:absolute md:left-14 md:top-0 md:mb-0">
-          <div>
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">
-              Projected, {end.year} · age {end.age}
-            </p>
-            <p className="mt-1 text-[28px] font-semibold leading-none tracking-tight [&_.num]:font-sans text-evergreen"><AnimatedNumber value={end.netWorth} format={money} /></p>
-          </div>
-          <div>
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.14em] text-grey">In today’s rupees</p>
-            <p className="mt-1 text-[28px] font-semibold leading-none tracking-tight [&_.num]:font-sans text-champagne"><AnimatedNumber value={end.netWorthReal} format={money} /></p>
-          </div>
-        </div>
-        <WealthChart points={points} mode={mode} height={height + (wide ? 72 : 0)} topPad={wide ? 92 : 16} />
       </div>
+      <WealthChart points={points} mode={mode} height={height} topPad={16} />
       <div className="mt-3">
         <WealthLegend mode={mode} />
       </div>

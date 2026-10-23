@@ -169,12 +169,12 @@ export default function LifeEvents() {
   };
 
   return (
-    <div className="flex flex-col gap-14">
-      <PageHeader title="Life Events" description="Promotions, breaks, marriage, a home, a family. Add the moments that change your finances, and see how your roadmap shifts." actions={!editing && <Button icon={<Plus size={16} />} onClick={() => setEditing(blank('promotion', p.planStartYear + 2))}>Add event</Button>} />
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Life events" description="Add a promotion, a career break, a wedding or a home with its year and cost, and see the change in your net worth." actions={!editing && <Button icon={<Plus size={16} />} onClick={() => setEditing(blank('promotion', p.planStartYear + 2))}>Add event</Button>} />
 
       {editing && (
-        <div className="panel p-5 sm:p-6">
-          <h2 className="mb-5 text-[15px] font-semibold">{p.lifeEvents.some((x) => x.id === editing.id) ? 'Edit event' : 'New event'}</h2>
+        <div className="bezel p-5 sm:p-6">
+          <h2 className="mb-8 text-[22px] font-semibold tracking-[-0.02em]">{p.lifeEvents.some((x) => x.id === editing.id) ? 'Edit event' : 'New event'}</h2>
           <EventForm initial={editing} start={p.planStartYear} goals={p.goals} onSave={save} onCancel={() => setEditing(null)} />
         </div>
       )}
@@ -212,7 +212,7 @@ export default function LifeEvents() {
       </Section>
 
       <Section title="Before and after" description="Your roadmap with these events, compared with the same plan without any events.">
-        <div className="grid grid-cols-2 gap-8 border-y border-line py-6 lg:grid-cols-4">
+        <div className="well grid grid-cols-2 gap-8 p-6 sm:p-8 lg:grid-cols-4">
           <Stat label={`Net worth, ${w.year}`} value={money(w.netWorth)} sub={<>without events: {money(wo.netWorth)} · <span className={w.netWorth - wo.netWorth < 0 ? 'text-danger' : 'text-forest'}>{w.netWorth - wo.netWorth >= 0 ? '+' : ''}{money(w.netWorth - wo.netWorth)}</span></>} />
           <Stat label="Final financial corpus" value={money(w.financialAssets)} sub={`without events: ${money(wo.financialAssets)}`} />
           <Stat label="Goals funded in projection" value={`${cmp.goalsWith} of ${cmp.goalsTotal}`} sub={`without events: ${cmp.goalsWithout}`} />

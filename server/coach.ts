@@ -49,7 +49,7 @@ function send(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
-export function coachMiddleware(apiKey: string | undefined, model = process.env.GEMINI_MODEL || 'gemini-2.5-flash') {
+export function coachMiddleware(apiKey: string | undefined, model = process.env.GEMINI_MODEL || 'gemini-3.8-flash') {
   return async (req: IncomingMessage, res: ServerResponse) => {
     if (req.method === 'GET') return send(res, 200, { configured: Boolean(apiKey) });
     if (req.method !== 'POST') return send(res, 405, { error: 'method-not-allowed' });

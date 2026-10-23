@@ -2,17 +2,20 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { animate, motion, useInView, useReducedMotion } from 'motion/react';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
+/** Heavy spring-like curve used for entry motion. */
+export const SPRING = [0.32, 0.72, 0, 1] as const;
 
-/** Fades content up 10px over 250ms the first time it scrolls into view. */
+/** Fades content up and out of a soft blur the first time it scrolls into view. Static under reduced motion. */
 export function Reveal({ as = 'div', delay = 0, className = '', children, ...rest }: { as?: 'div' | 'li' | 'section'; delay?: number; className?: string; children: ReactNode; [k: string]: unknown }) {
   const Tag = motion[as];
+  const reduce = useReducedMotion();
   return (
     <Tag
       className={className}
-      initial={{ opacity: 0, y: 10 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '0px 0px -8% 0px' }}
-      transition={{ duration: 0.25, delay: delay / 1000, ease: EASE }}
+      initial={reduce ? false : { opacity: 0, y: 48, filter: 'blur(10px)' }}
+      whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)', transitionEnd: { filter: 'none' } }}
+      viewport={{ once: true, margin: '0px 0px -10% 0px' }}
+      transition={{ duration: 0.9, delay: delay / 1000, ease: SPRING }}
       {...rest}
     >
       {children}
@@ -54,7 +57,7 @@ export function AnimatedNumber({ value, format }: { value: number; format: (v: n
 /** Route-level fade and lift when the page changes. */
 export function PageTransition({ id, children }: { id: string; children: ReactNode }) {
   return (
-    <motion.div key={id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22, ease: EASE }}>
+    <motion.div key={id} initial={{ opacity: 0, y: 24, filter: 'blur(6px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)', transitionEnd: { filter: 'none' } }} transition={{ duration: 0.7, ease: SPRING }}>
       {children}
     </motion.div>
   );
@@ -82,5 +85,15 @@ export function Spotlight({ className = '', children }: { className?: string; ch
     >
       {children}
     </div>
+  );
+}
+
+/** Fixed ambient light orbs and film grain. Decorative, painted once, never repaints on scroll. */
+export function Atmosphere() {
+  return (
+    <>
+      <div aria-hidden className="ambient" />
+      <div aria-hidden className="grain" />
+    </>
   );
 }

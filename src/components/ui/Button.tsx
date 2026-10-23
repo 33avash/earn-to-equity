@@ -4,19 +4,21 @@ import { Link, type LinkProps } from 'react-router-dom';
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'inverse';
 type Size = 'sm' | 'md' | 'lg';
 
+// Fully rounded island buttons. They press in slightly on click; see .btn in index.css for the arrow well.
 const base =
-  'tap inline-flex items-center justify-center gap-2 rounded font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-[cubic-bezier(.22,1,.36,1)] active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap select-none [&_svg]:transition-transform [&:hover_svg.lucide-arrow-right]:translate-x-0.5 [&:hover_svg.lucide-arrow-up-right]:-translate-y-0.5 [&:hover_svg.lucide-arrow-up-right]:translate-x-0.5';
+  'btn tap group inline-flex items-center justify-center gap-2 rounded-full font-medium transition-[background-color,box-shadow,color,transform] duration-500 ease-spring active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap select-none';
 const variants: Record<Variant, string> = {
-  primary: 'bg-evergreen text-onbrand shadow-[0_1px_0_rgb(255_255_255/0.08)_inset,0_1px_2px_rgb(16_42_35/0.2)] hover:bg-forest hover:shadow-[0_1px_0_rgb(255_255_255/0.08)_inset,0_8px_20px_-10px_rgb(16_42_35/0.6)]',
-  secondary: 'border border-evergreen/20 bg-surface/60 text-evergreen hover:border-evergreen/60 hover:bg-surface',
-  ghost: 'text-forest hover:bg-mint/60',
+  primary: 'bg-evergreen text-onbrand shadow-[inset_0_1px_0_rgb(255_255_255/0.14),0_10px_30px_-12px_rgb(10_10_11/0.45)] hover:bg-forest dark:shadow-[inset_0_1px_0_rgb(255_255_255/0.4),0_10px_40px_-12px_rgb(45_212_191/0.35)]',
+  secondary: 'bg-surface text-evergreen shadow-[0_0_0_1px_var(--shell-line),inset_0_1px_0_var(--core-highlight),var(--shadow-sm)] hover:bg-muted/70',
+  ghost: 'text-forest hover:bg-mint/70',
   danger: 'bg-danger text-white hover:opacity-90',
-  inverse: 'bg-ivory text-evergreen hover:bg-mint dark:bg-evergreen dark:text-onbrand',
+  // For use on an inverted (foreground-coloured) surface, in either theme.
+  inverse: 'bg-ivory text-evergreen shadow-[inset_0_1px_0_rgb(255_255_255/0.2)] hover:bg-mint',
 };
 const sizes: Record<Size, string> = {
-  sm: 'h-8 px-3 text-[13px]',
-  md: 'h-10 px-4 text-sm',
-  lg: 'h-12 px-6 text-[15px]',
+  sm: 'h-9 px-4 text-[13px]',
+  md: 'h-11 px-5 text-sm',
+  lg: 'h-[52px] px-7 text-[15px]',
 };
 
 export const btn = (variant: Variant = 'primary', size: Size = 'md', extra = '') => `${base} ${variants[variant]} ${sizes[size]} ${extra}`;

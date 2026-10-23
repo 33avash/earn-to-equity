@@ -86,7 +86,7 @@ export function LoansEditor({ loans, onChange, columns = ['kind', 'label', 'bala
                     </td>
                   )}
                   <td className="text-right">
-                    <button type="button" onClick={() => onChange(loans.filter((x) => x.id !== l.id))} aria-label={`Remove ${l.label}`} className="hit rounded p-1.5 text-grey hover:bg-danger/10 hover:text-danger">
+                    <button type="button" onClick={() => onChange(loans.filter((x) => x.id !== l.id))} aria-label={`Remove ${l.label}`} className="hit rounded-full p-2 text-grey hover:bg-danger/10 hover:text-danger">
                       <Trash2 size={15} />
                     </button>
                   </td>

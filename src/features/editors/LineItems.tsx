@@ -17,7 +17,7 @@ export function LineItemsEditor({ items, onChange, addLabel, title }: { items: L
         <thead>
           <tr>
             <th scope="col">Category</th>
-            <th scope="col" className="w-[44%] sm:w-48">
+            <th scope="col" className="w-[36%] sm:w-48">
               Monthly
             </th>
             <th scope="col" className="w-10">
@@ -29,13 +29,13 @@ export function LineItemsEditor({ items, onChange, addLabel, title }: { items: L
           {items.map((i) => (
             <tr key={i.id}>
               <td>
-                <input aria-label="Category name" className="input h-9 border-transparent bg-transparent px-1 hover:border-line" value={i.label} onChange={(e) => set(i.id, { label: e.target.value })} />
+                <input aria-label="Category name" className="input h-9 border-transparent bg-transparent px-1 font-sans text-[13px] tracking-normal hover:border-line sm:text-sm" value={i.label} onChange={(e) => set(i.id, { label: e.target.value })} />
               </td>
               <td>
                 <MoneyInput size="sm" ariaLabel={`${i.label || 'Item'} per month`} value={i.amount} onChange={(v) => set(i.id, { amount: v })} max={1e8} />
               </td>
               <td className="text-right">
-                <button type="button" onClick={() => onChange(items.filter((x) => x.id !== i.id))} aria-label={`Remove ${i.label || 'item'}`} className="hit rounded p-1.5 text-grey hover:bg-danger/10 hover:text-danger">
+                <button type="button" onClick={() => onChange(items.filter((x) => x.id !== i.id))} aria-label={`Remove ${i.label || 'item'}`} className="hit rounded-full p-2 text-grey hover:bg-danger/10 hover:text-danger">
                   <Trash2 size={15} />
                 </button>
               </td>

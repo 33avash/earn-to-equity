@@ -197,7 +197,7 @@ export const MODULES: LearnModule[] = [
         ['5 large-cap equity funds', 'Low diversification'],
         ['Equity + debt + gold + international', 'Broader diversification'],
       ],
-      note: 'Look through to the underlying holdings, not just the fund names.',
+      note: 'Check the underlying holdings as well as the fund names.',
     },
     takeaways: ['Diversify across asset classes, not fund names.', 'International equity adds geographic diversification.', 'Concentration in your employer’s stock adds career and portfolio risk together.'],
     quiz: [

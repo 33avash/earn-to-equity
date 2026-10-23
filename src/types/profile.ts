@@ -2,7 +2,7 @@ import type { CityTier, StateCode } from '@/finance/assumptions';
 import type { RegimeChoice } from '@/finance/tax';
 
 /**
- * Shared financial profile — the single source of truth every module reads.
+ * Shared financial profile: the one profile every module reads.
  *
  * Units convention (applies everywhere):
  *  - Money: Indian rupees (INR) as unrounded numbers. Monthly unless the field name says otherwise.

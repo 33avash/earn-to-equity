@@ -92,11 +92,11 @@ export default function RiskLab() {
   };
 
   return (
-    <div className="flex flex-col gap-14">
-      <PageHeader title="Risk Lab" description="Stress-test your plan. Change one assumption or several, and compare the result with your baseline side by side." actions={<Button variant="secondary" onClick={() => { set(defaultRiskLab()); setMc(null); }}>Reset tests</Button>} />
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Risk lab" description="Test your plan against a market crash, a job loss or an inflation spike, and compare it with your plan year by year." actions={<Button variant="secondary" onClick={() => { set(defaultRiskLab()); setMc(null); }}>Reset tests</Button>} />
 
-      <div className="grid gap-12 lg:grid-cols-12">
-        <div className="flex flex-col gap-8 lg:col-span-4">
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="bezel flex flex-col gap-6 self-start p-5 sm:p-6 lg:col-span-4">
           <fieldset className="flex flex-col gap-5">
             <legend className="eyebrow mb-4">Income & spending</legend>
             <Slider label="Salary growth change" value={r.salaryGrowthDelta} min={-0.08} max={0.05} step={0.005} onChange={(v) => set({ salaryGrowthDelta: v })} format={pp} help={`Baseline ${formatPct(p.income.salaryGrowth)} a year.`} />
@@ -141,16 +141,16 @@ export default function RiskLab() {
           </fieldset>
         </div>
 
-        <div className="lg:col-span-8">
+        <div className="bezel p-5 sm:p-6 lg:col-span-8">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Stress test presets">
             {presets.map((pr) => (
-              <button key={pr.key} type="button" onClick={() => applyPreset(pr.key)} className="tap inline-flex items-center rounded-full border border-line bg-surface px-3 text-[13px] text-evergreen transition-colors hover:border-forest hover:bg-mint">
+              <button key={pr.key} type="button" onClick={() => applyPreset(pr.key)} className="tap inline-flex h-9 items-center rounded-full bg-surface px-4 text-[13px] text-evergreen shadow-[0_0_0_1px_var(--shell-line),var(--shadow-sm)] transition-colors duration-300 hover:bg-mint">
                 {pr.label}
               </button>
             ))}
           </div>
           {!changed && <p className="mt-4 text-sm text-grey">Pick a preset or move any control to compare a stress test against your plan.</p>}
-          <div className="mt-6 grid grid-cols-2 gap-8 border-b border-line pb-8 sm:grid-cols-4">
+          <div className="well mt-8 grid grid-cols-2 gap-8 p-6 sm:grid-cols-4 sm:p-8">
             <Stat size="sm" label={`Net worth ${bEnd.year}`} value={money(mEnd.netWorth)} sub={<>baseline {money(bEnd.netWorth)}<br /><span className={mEnd.netWorth < bEnd.netWorth ? 'text-danger' : 'text-forest'}>{mEnd.netWorth - bEnd.netWorth >= 0 ? '+' : ''}{money(mEnd.netWorth - bEnd.netWorth)}</span></>} />
             <Stat size="sm" label="Today’s rupees" value={money(mEnd.netWorthReal)} sub={`baseline ${money(bEnd.netWorthReal)}`} />
             <Stat size="sm" label="Goals paid for" value={`${paid(goalsM)} of ${goalsM.length}`} sub={`baseline ${paid(goalsB)}`} />
@@ -166,7 +166,7 @@ export default function RiskLab() {
             />
           </div>
           {r.shockOn && (
-            <div className="mt-8 grid grid-cols-2 gap-6 border-t border-line pt-6 sm:grid-cols-4">
+            <div className="mt-10 grid grid-cols-2 gap-6 border-t border-line/70 pt-8 sm:grid-cols-4">
               <Stat size="sm" label="Decline year" value={String(r.shockYear)} />
               <Stat size="sm" label="Portfolio impact" value={`−${money(shockImpact)}`} tone="negative" sub={`−${formatPct(r.shockDrop, 0)} of the portfolio`} />
               <Stat size="sm" label="Net worth back on baseline" value={recoveredRow ? String(recoveredRow.year + 1) : 'Not within horizon'} sub="Within 2% of baseline" />
@@ -202,7 +202,7 @@ export default function RiskLab() {
         </div>
         {running && <div role="status" className="mt-6 text-sm text-grey">Simulating…</div>}
         {mc && (
-          <div className="mt-8 grid gap-12 lg:grid-cols-12">
+          <div className="mt-8 grid gap-8 lg:grid-cols-12">
             <div className="lg:col-span-8">
               <FanChart data={mc.mod.percentiles} baseline={mod.rows.map((x) => x.netWorth)} />
               <p className="mt-2 text-xs text-grey">Shaded band between the dotted lines: 10th to 90th percentile (P10–P90) of net worth. Solid line: median (P50). Dashed gold: the deterministic projection.</p>

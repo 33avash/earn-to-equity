@@ -46,7 +46,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="flex flex-col gap-14">
+    <div className="flex flex-col gap-6">
       <PageHeader title="Settings" description="Your profile, assumptions, display preferences and data." />
       {issues.length > 0 && <div className="space-y-2">{issues.map((i) => <Notice key={i.field + i.message} tone={i.severity === 'error' ? 'error' : 'warning'}>{i.message}</Notice>)}</div>}
 

@@ -18,14 +18,14 @@ export const DropdownMenuContent = forwardRef<ElementRef<typeof DropdownMenuPrim
       <DropdownMenuPrimitive.Content
         ref={ref}
         sideOffset={sideOffset}
-        className={cn('z-50 min-w-[11rem] rounded-md border border-line bg-surface p-1 text-sm text-charcoal shadow-[var(--shadow-float)] data-[state=open]:animate-[tip_.15s_ease-out]', className)}
+        className={cn('z-50 min-w-[11rem] rounded-2xl bg-surface p-1.5 text-sm text-charcoal shadow-[0_0_0_1px_var(--shell-line),var(--shadow-float)] data-[state=open]:animate-[pop_.4s_var(--ease-spring)]', className)}
         {...props}
       />
     </DropdownMenuPrimitive.Portal>
   );
 });
 
-const itemClass = 'tap relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 outline-none data-[highlighted]:bg-muted data-[disabled]:opacity-50';
+const itemClass = 'tap relative flex cursor-pointer select-none items-center gap-2 rounded-xl px-2.5 py-2 outline-none data-[highlighted]:bg-muted data-[disabled]:opacity-50';
 
 export const DropdownMenuItem = forwardRef<ElementRef<typeof DropdownMenuPrimitive.Item>, ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Item>>(function DropdownMenuItem({ className, ...props }, ref) {
   return <DropdownMenuPrimitive.Item ref={ref} className={cn(itemClass, className)} {...props} />;

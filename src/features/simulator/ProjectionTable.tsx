@@ -33,7 +33,7 @@ export function ProjectionTable({
   const heads = ['Take-home', 'Income tax', 'Expenses', 'EMIs', 'Invested', 'Portfolio', 'EPF', 'Cash', 'Liabilities', 'Net worth', 'Today’s ₹', ...(baselineDiff ? ['vs baseline'] : []), 'Notes'];
   const stickyCell = 'sticky left-0 z-[1] bg-surface';
   return (
-    <div ref={scroller} className="max-h-[480px] overflow-auto rounded-lg border border-line bg-surface" tabIndex={0} aria-label="Year-by-year projection table">
+    <div ref={scroller} className="max-h-[520px] overflow-auto rounded-2xl bg-surface shadow-[inset_0_0_0_1px_rgb(var(--border))]" tabIndex={0} aria-label="Year-by-year projection table">
       <table className="table-fin w-full min-w-[1120px] [&_td]:whitespace-nowrap [&_td:first-child]:pl-4 [&_th:first-child]:pl-4">
         <thead className="sticky top-0 z-[2] bg-surface shadow-[inset_0_-1px_0_rgb(var(--border))]">
           <tr>

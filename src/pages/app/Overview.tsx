@@ -1,40 +1,64 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Plus } from 'lucide-react';
 import { usePlan, useMoney } from '@/state/selectors';
-import { useStore } from '@/state/store';
-import { Section, Disclaimer, EmptyState, ButtonLink, Notice } from '@/components/ui';
+import { Disclaimer, EmptyState, ButtonLink, Notice } from '@/components/ui';
 import { TrajectoryPanel, AllocationPanel, FiPanel } from '@/features/overview/Panels';
 import { KpiStrip, MonthWaterfall, NextStepsChecklist } from '@/features/overview/Kpis';
 import { GoalTimeline } from '@/features/goals/GoalTimeline';
 import { formatPct } from '@/finance/money';
+import type { ReactNode } from 'react';
 
 function greeting() {
   const h = new Date().getHours();
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
-const sectionLink = 'hit inline-flex items-center gap-1 text-sm font-medium text-forest hover:underline';
+/** Dashboard card: a title row with a quiet link, then the body. */
+function Card({ id, title, to, linkLabel, className = '', children }: { id: string; title: string; to?: string; linkLabel?: string; className?: string; children: ReactNode }) {
+  return (
+    <section aria-labelledby={id} className={`bezel flex flex-col ${className}`}>
+      <div className="card-head">
+        <h2 id={id} className="card-title">
+          {title}
+        </h2>
+        {to && (
+          <Link to={to} className="card-link">
+            {linkLabel} <ArrowRight size={13} aria-hidden />
+          </Link>
+        )}
+      </div>
+      <div className="flex-1 p-5">{children}</div>
+    </section>
+  );
+}
 
 export default function Overview() {
   const plan = usePlan();
   const money = useMoney();
-  const isDemo = useStore((s) => s.isDemo);
   const { profile, cashflow: cf, sheet, headline, unfundedGoals } = plan;
 
   return (
-    <div className="flex flex-col gap-10">
-      <header>
-        <p className="eyebrow">
-          {isDemo ? 'Demo plan' : 'Overview'}, {new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
-        </p>
-        <h1 className="display mt-2 text-[30px] leading-tight sm:text-[36px]">
-          {greeting()}
-          {profile.about.name ? `, ${profile.about.name}` : ''}.
-        </h1>
-        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-grey">
-          You keep <strong className="font-semibold text-evergreen">{formatPct(cf.savingsRate, 0)}</strong> of your take-home after spending and EMIs. On today’s assumptions you reach{' '}
-          <strong className="font-semibold text-evergreen">{money(headline.netWorthReal)}</strong> in today’s rupees by {headline.year}, at {headline.age}.
-        </p>
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col gap-4 border-b border-line pb-6 md:flex-row md:items-end md:justify-between">
+        <div>
+          <p className="mb-1.5 text-[12px] font-medium text-grey">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          <h1 className="text-[26px] font-semibold leading-tight tracking-[-0.025em] text-evergreen sm:text-[28px]">
+            {greeting()}
+            {profile.about.name ? `, ${profile.about.name}` : ''}
+          </h1>
+          <p className="mt-1.5 max-w-2xl text-[14px] leading-relaxed text-grey">
+            You keep <strong className="font-semibold text-evergreen">{formatPct(cf.savingsRate, 0)}</strong> of your take-home after spending and EMIs. On today’s assumptions you reach{' '}
+            <strong className="font-semibold text-evergreen">{money(headline.netWorthReal)}</strong> in today’s rupees by {headline.year}, at {headline.age}.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <ButtonLink to="/app/simulator" size="sm" variant="secondary">
+            Open simulator
+          </ButtonLink>
+          <ButtonLink to="/app/goals?new=1" size="sm">
+            <Plus size={14} aria-hidden /> Add goal
+          </ButtonLink>
+        </div>
       </header>
 
       <KpiStrip plan={plan} />
@@ -60,44 +84,20 @@ export default function Overview() {
       ))}
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <section aria-labelledby="traj-h" className="rounded-lg border border-line bg-surface p-5 lg:col-span-8">
-          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="traj-h" className="text-[15px] font-semibold tracking-tight">
-              Net worth to {headline.year}
-            </h2>
-            <Link to="/app/simulator" className={sectionLink}>
-              Inspect any year <ArrowRight size={14} aria-hidden />
-            </Link>
-          </div>
+        <Card id="traj-h" title={`Net worth to ${headline.year}`} to="/app/simulator" linkLabel="Inspect any year" className="lg:col-span-8">
           <TrajectoryPanel plan={plan} height={300} />
-        </section>
-        <section aria-labelledby="month-h" className="rounded-lg border border-line bg-surface p-5 lg:col-span-4">
-          <div className="mb-4 flex items-baseline justify-between gap-2">
-            <h2 id="month-h" className="text-[15px] font-semibold tracking-tight">
-              This month
-            </h2>
-            <Link to="/app/budget" className={sectionLink}>
-              Budget
-            </Link>
-          </div>
+        </Card>
+        <Card id="month-h" title="This month" to="/app/budget" linkLabel="Budget" className="lg:col-span-4">
           <MonthWaterfall plan={plan} />
           {cf.investableSurplus < 0 && <p className="mt-3 text-[13px] text-danger">You spend more than you earn. The projection covers the gap from savings.</p>}
-        </section>
+        </Card>
       </div>
 
-      <Section title="Next steps" description="From your own figures. Tick them off as you go.">
-        <NextStepsChecklist plan={plan} />
-      </Section>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Section
-          title="Goals"
-          actions={
-            <Link to="/app/goals" className={sectionLink}>
-              Goals
-            </Link>
-          }
-        >
+      <div className="grid gap-6 lg:grid-cols-12">
+        <Card id="steps-h" title="Next steps" className="lg:col-span-7">
+          <NextStepsChecklist plan={plan} />
+        </Card>
+        <Card id="goals-h" title="Goals" to="/app/goals" linkLabel="All goals" className="lg:col-span-5">
           {plan.goals.goals.length ? (
             <GoalTimeline goals={plan.goalViews} />
           ) : (
@@ -113,43 +113,31 @@ export default function Overview() {
               Add a degree, a car or a home to see its cost in the year you need it and how your plan pays for it.
             </EmptyState>
           )}
-        </Section>
-        <Section
-          title="Financial independence"
-          actions={
-            <Link to="/app/fi" className={sectionLink}>
-              Details
-            </Link>
-          }
-        >
-          <FiPanel plan={plan} />
-        </Section>
+        </Card>
       </div>
 
-      <Section
-        title="Asset allocation"
-        actions={
-          <Link to="/app/portfolio" className={sectionLink}>
-            Portfolio
-          </Link>
-        }
-      >
-        {sheet.investments > 0 ? (
-          <AllocationPanel plan={plan} />
-        ) : (
-          <EmptyState
-            art="portfolio"
-            title="No investments yet"
-            action={
-              <ButtonLink to="/app/portfolio" size="sm">
-                Set a target mix
-              </ButtonLink>
-            }
-          >
-            Your target mix still sets the return assumed for future SIPs.
-          </EmptyState>
-        )}
-      </Section>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card id="fi-h" title="Financial independence" to="/app/fi" linkLabel="Details">
+          <FiPanel plan={plan} />
+        </Card>
+        <Card id="alloc-h" title="Asset allocation" to="/app/portfolio" linkLabel="Portfolio">
+          {sheet.investments > 0 ? (
+            <AllocationPanel plan={plan} />
+          ) : (
+            <EmptyState
+              art="portfolio"
+              title="No investments yet"
+              action={
+                <ButtonLink to="/app/portfolio" size="sm">
+                  Set a target mix
+                </ButtonLink>
+              }
+            >
+              Your target mix still sets the return assumed for future SIPs.
+            </EmptyState>
+          )}
+        </Card>
+      </div>
 
       <Disclaimer>
         Projections use your inputs and editable assumptions: {formatPct(plan.assumptions.inflation)} inflation, {formatPct(profile.income.salaryGrowth)} salary growth and a {formatPct(plan.portfolioReturn)} portfolio return after fund costs. They are not guarantees or investment advice.

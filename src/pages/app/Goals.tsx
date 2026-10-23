@@ -33,14 +33,14 @@ function Explorer({ a, onApply, onClose }: { a: GoalAnalysis; onApply: (g: Goal)
   const r = analyzeGoal(modified, allocated, plan.profile, plan.assumptions);
 
   return (
-    <div className="panel mt-4 p-5 sm:p-6">
+    <div className="bezel mt-6 p-5 sm:p-6">
       <div className="mb-6 flex items-center justify-between gap-3">
         <h3 className="text-[15px] font-semibold">Explore options for “{a.goal.name}”</h3>
         <Button variant="ghost" size="sm" onClick={onClose}>
           Close
         </Button>
       </div>
-      <div className="grid gap-10 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-6">
           <Slider label="Delay the goal" value={delay} min={0} max={10} step={1} onChange={setDelay} format={(v) => (v === 0 ? 'No delay' : `+${v} yr${v > 1 ? 's' : ''} (${a.goal.targetYear + v})`)} />
           <Slider label="Reduce the cost" value={reduce} min={0} max={0.5} step={0.05} onChange={setReduce} format={(v) => (v === 0 ? 'No change' : `−${formatPct(v, 0)}`)} />
@@ -85,7 +85,7 @@ function GoalCard({ v, money, exploring, onExplore, onEdit, onDelete, onApply, d
   const mode = goalFundingMode(g);
   const terms = goalLoanTerms(g);
   return (
-    <article id={`goal-${g.id}`} className="scroll-mt-24 rounded-lg border border-line bg-surface p-5">
+    <article id={`goal-${g.id}`} className="well scroll-mt-28 p-6 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex min-w-0 gap-3">
           {dragHandle}
@@ -262,7 +262,7 @@ export default function Goals() {
   const byId = new Map(goalViews.map((v) => [v.goal.id, v]));
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Goals"
         description="Enter each goal in today’s prices. In its target year your plan pays for it from savings, a loan, or both, depending on how you fund it."
@@ -276,24 +276,24 @@ export default function Goals() {
       />
 
       {editing && (
-        <div className="panel p-5 sm:p-6">
-          <h2 className="mb-5 text-[15px] font-semibold">{p.goals.some((g) => g.id === editing.id) ? `Edit “${editing.name}”` : 'New goal'}</h2>
+        <div className="bezel p-5 sm:p-6">
+          <h2 className="mb-8 text-[22px] font-semibold tracking-[-0.02em]">{p.goals.some((g) => g.id === editing.id) ? `Edit “${editing.name}”` : 'New goal'}</h2>
           <GoalForm initial={editing} startYear={p.planStartYear} onSave={save} onCancel={() => setEditing(null)} linkedEvents={linkedEvents(editing.id)} />
         </div>
       )}
 
       {p.goals.length > 0 && (
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line lg:grid-cols-4">
-          <div className="bg-surface p-4">
+        <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
+          <div className="bezel p-5 sm:p-6">
             <Stat label="Paid from savings" value={`${counts.paid} of ${p.goals.length}`} />
           </div>
-          <div className="bg-surface p-4">
+          <div className="bezel p-5 sm:p-6">
             <Stat label="Need a loan" value={String(counts.loan)} />
           </div>
-          <div className="bg-surface p-4">
+          <div className="bezel p-5 sm:p-6">
             <Stat label="Unpaid" value={String(counts.unpaid)} tone={counts.unpaid > 0 ? 'negative' : undefined} />
           </div>
-          <div className="bg-surface p-4">
+          <div className="bezel p-5 sm:p-6">
             <Stat label="Monthly surplus" value={money(summary.capacity)} def="surplus" sub={`Dedicated plans need ${money(summary.totalRequired)}`} />
           </div>
         </div>
@@ -348,14 +348,14 @@ export default function Goals() {
               {BOARD.map((col) => {
                 const items = ordered.filter((v) => col.status.includes(v.status));
                 return (
-                  <section key={col.title} aria-label={col.title} className="rounded-lg border border-line bg-muted/40 p-3">
+                  <section key={col.title} aria-label={col.title} className="well p-3">
                     <h3 className="mb-3 flex items-center justify-between px-1 text-[13px] font-medium text-evergreen">
                       {col.title}
                       <span className="num text-grey">{items.length}</span>
                     </h3>
                     <ul className="flex flex-col gap-2">
                       {items.map((v) => (
-                        <motion.li layout key={v.goal.id} className="rounded-md border border-line bg-surface p-3">
+                        <motion.li layout key={v.goal.id} className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--shell-line),var(--shadow-sm)]">
                           <button type="button" className="w-full text-left" onClick={() => setEditing(v.goal)}>
                             <span className="flex items-baseline justify-between gap-2">
                               <span className="text-[14px] font-medium text-evergreen">{v.goal.name}</span>
@@ -376,7 +376,7 @@ export default function Goals() {
             </div>
           )}
           {view === 'timeline' && (
-            <div className="rounded-lg border border-line bg-surface p-5">
+            <div className="bezel p-5 sm:p-6">
               <GoalTimeline goals={goalViews} />
             </div>
           )}

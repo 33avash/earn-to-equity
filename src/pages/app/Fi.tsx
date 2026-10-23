@@ -26,23 +26,23 @@ export default function Fi() {
   }, [p, a, money, bounds.max]);
 
   return (
-    <div className="flex flex-col gap-14">
-      <PageHeader title="Financial Independence" description="When could your investments cover your living costs? An illustrative estimate built on your expenses, your projection and a withdrawal-rate assumption." />
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Financial independence" description="The year your investments, after tax, could pay your living costs and healthcare at your chosen withdrawal rate." />
 
-      <div className="grid gap-12 lg:grid-cols-12">
-        <div className="flex flex-col gap-6 lg:col-span-4">
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="bezel flex flex-col gap-7 self-start p-5 sm:p-6 lg:col-span-4">
           <Slider label="Target FI age" value={Math.min(bounds.max, Math.max(bounds.min, p.about.fiAge))} min={bounds.min} max={bounds.max} step={1} onChange={(v) => update((x) => void (x.about.fiAge = v))} format={(v) => `${v}`} />
           <Slider label="Withdrawal rate" value={a.withdrawalRate} min={0.025} max={0.05} step={0.0025} onChange={(v) => updateA({ withdrawalRate: v })} format={(v) => formatPct(v, 2)} help={`Share of the corpus withdrawn in the first year, then raised with inflation. ${WITHDRAWAL_RATE.note}`} />
           <Slider label="Healthcare after FI" value={a.postFiHealthcare} min={0} max={20000} step={500} onChange={(v) => updateA({ postFiHealthcare: v })} format={(v) => `${money(v)}/mo today`} help={`An extra monthly healthcare cost, in today’s ₹, that grows at ${formatPct(a.healthcareInflation, 0)} a year rather than with general inflation.`} />
           <Slider label="Inflation" value={a.inflation} min={0.03} max={0.1} step={0.0025} onChange={(v) => updateA({ inflation: v })} format={(v) => formatPct(v)} />
-          <div className="mt-4 rounded border-l-2 border-champagne pl-4 text-sm leading-relaxed text-grey">
+          <div className="well mt-2 p-5 text-sm leading-relaxed text-grey">
             <p className="font-semibold text-evergreen">How it’s calculated</p>
             <p className="mt-1">Target = (living expenses + healthcare) in the target year ÷ withdrawal rate, plus any loans still outstanding then. Living expenses rise with inflation and life events; healthcare rises at {formatPct(a.healthcareInflation, 0)}.</p>
             <p className="mt-2">Financial assets = investments after the tax you’d pay to sell them + EPF/PPF/NPS + cash. Your home is excluded because you need somewhere to live.</p>
           </div>
         </div>
-        <div className="lg:col-span-8">
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
+        <div className="bezel p-5 sm:p-6 lg:col-span-8">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3">
             <Stat label={`Target corpus at ${fi.targetAge}`} value={money(fi.targetCorpus)} def="fiTarget" sub={`${money(fi.targetCorpusReal)} in today’s ₹`} />
             <Stat label="Projected corpus, after tax" value={money(fi.projectedCorpus)} sub={`${money(fi.projectedCorpusPreTax)} before tax on selling, in ${fi.targetYear}`} />
             <Stat label="Funding gap" value={fi.gap > 0 ? money(fi.gap) : 'None'} tone={fi.gap > 0 ? 'negative' : undefined} def="fiGap" sub={`Target includes ${money(fi.healthcare)} a year of healthcare`} />
@@ -54,7 +54,7 @@ export default function Fi() {
               <div className="mt-2"><Progress value={fi.progress} label="FI progress" /></div>
             </div>
           </div>
-          <div className="mt-10">
+          <div className="mt-12 border-t border-line/70 pt-10">
             <WealthChart points={fi.sim.points} mode="nominal" height={300} showEvents={false} showFiTarget ariaLabel="Net worth compared with the FI target" />
             <div className="mt-3"><WealthLegend mode="nominal" fi /></div>
             <p className="mt-2 text-xs text-grey">The chart shows net worth (including property), while the FI test uses financial assets only.</p>

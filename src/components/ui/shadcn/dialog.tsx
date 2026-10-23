@@ -9,7 +9,7 @@ export const DialogClose = DialogPrimitive.Close;
 export const DialogPortal = DialogPrimitive.Portal;
 
 export const DialogOverlay = forwardRef<ElementRef<typeof DialogPrimitive.Overlay>, ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>>(function DialogOverlay({ className, ...props }, ref) {
-  return <DialogPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] data-[state=open]:animate-[fade_.15s_ease-out]', className)} {...props} />;
+  return <DialogPrimitive.Overlay ref={ref} className={cn('fixed inset-0 z-50 bg-black/30 backdrop-blur-md data-[state=open]:animate-[fade_.4s_var(--ease-spring)]', className)} {...props} />;
 });
 
 export const DialogContent = forwardRef<ElementRef<typeof DialogPrimitive.Content>, ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { hideClose?: boolean }>(function DialogContent(
@@ -22,7 +22,7 @@ export const DialogContent = forwardRef<ElementRef<typeof DialogPrimitive.Conten
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          'fixed left-1/2 top-1/2 z-50 w-[min(92vw,460px)] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-line bg-surface p-6 text-charcoal shadow-[var(--shadow-float)] focus:outline-none data-[state=open]:animate-[tip_.18s_ease-out]',
+          'fixed left-1/2 top-1/2 z-50 w-[min(92vw,460px)] -translate-x-1/2 -translate-y-1/2 bezel p-7 text-charcoal focus:outline-none data-[state=open]:animate-[pop_.5s_var(--ease-spring)]',
           className,
         )}
         {...props}
@@ -61,8 +61,8 @@ export const SheetContent = forwardRef<ElementRef<typeof DialogPrimitive.Content
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          'fixed inset-y-0 z-50 flex w-[88%] max-w-sm flex-col overflow-y-auto border-line bg-surface shadow-[var(--shadow-float)] focus:outline-none',
-          side === 'left' ? 'left-0 border-r data-[state=open]:animate-[sheet-left_.22s_var(--ease-out)]' : 'right-0 border-l data-[state=open]:animate-[sheet-right_.22s_var(--ease-out)]',
+          'fixed inset-y-3 z-50 flex w-[calc(88%-0.75rem)] max-w-sm flex-col overflow-y-auto rounded-[1.75rem] bg-surface shadow-[0_0_0_1px_var(--shell-line),var(--shadow-float)] focus:outline-none',
+          side === 'left' ? 'left-3 data-[state=open]:animate-[sheet-left_.6s_var(--ease-spring)]' : 'right-3 data-[state=open]:animate-[sheet-right_.6s_var(--ease-spring)]',
           className,
         )}
         {...props}

@@ -17,7 +17,7 @@ export function ThemeToggle() {
   const Icon = theme === 'system' ? Monitor : resolved === 'dark' ? Moon : Sun;
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="hit inline-flex h-9 w-9 items-center justify-center rounded-md text-grey transition-colors hover:bg-muted hover:text-evergreen" aria-label={`Theme: ${theme}`}>
+      <DropdownMenuTrigger className="hit inline-flex h-9 w-9 items-center justify-center rounded-full text-grey transition-colors hover:bg-muted hover:text-evergreen" aria-label={`Theme: ${theme}`}>
         <Icon size={17} aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -48,10 +48,10 @@ export function PlanSwitcher() {
   const mine = name ? `${name}’s plan` : 'My plan';
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="tap inline-flex h-9 items-center gap-2 rounded-md border border-line bg-surface px-3 text-[13px] font-medium text-evergreen hover:bg-muted">
-        <span className={`h-2 w-2 rounded-full ${isDemo ? 'bg-champagne' : 'bg-forest'}`} aria-hidden />
-        {isDemo ? 'Demo' : mine}
-        <ChevronsUpDown size={14} className="text-grey" aria-hidden />
+      <DropdownMenuTrigger className="tap flex h-9 w-full items-center gap-2 rounded-md border border-line bg-surface px-2.5 text-left text-[13px] font-medium text-evergreen transition-colors hover:bg-muted/60">
+        <span className={`h-2 w-2 shrink-0 rounded-full ${isDemo ? 'bg-champagne' : 'bg-forest'}`} aria-hidden />
+        <span className="min-w-0 flex-1 truncate">{isDemo ? 'Demo plan' : mine}</span>
+        <ChevronsUpDown size={14} className="shrink-0 text-grey" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuLabel>Plan</DropdownMenuLabel>
@@ -85,11 +85,11 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     onOpenChange(false);
     fn();
   };
-  const item = 'tap flex cursor-pointer items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm text-charcoal aria-selected:bg-muted aria-selected:text-evergreen';
+  const item = 'tap flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-charcoal aria-selected:bg-muted aria-selected:text-evergreen';
   const group = 'px-1 py-1 text-xs font-medium text-grey [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2';
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hideClose className="top-[18%] w-[min(94vw,560px)] translate-y-0 overflow-hidden p-0">
+      <DialogContent hideClose className="top-[18%] w-[min(94vw,580px)] translate-y-0 overflow-hidden rounded-[1.75rem] p-0">
         <DialogTitle className="sr-only">Search and actions</DialogTitle>
         <Command label="Search modules, goals and actions" loop>
           <div className="flex items-center gap-2 border-b border-line px-3">

@@ -1,5 +1,8 @@
+import { ArrowRight } from 'lucide-react';
 import { MODULES } from '@/features/learn/modules';
 import { Button } from '@/components/ui/Button';
+import { PublicHero } from '@/components/layout/PublicHero';
+import { Reveal } from '@/components/motion/Motion';
 import { useStore } from '@/state/store';
 import { useExploreDemo } from '@/state/useDemo';
 
@@ -8,40 +11,50 @@ export default function LearnPublic() {
   const explore = useExploreDemo();
   const open = (id: string) => explore(`/app/learn/${id}`, true);
   return (
-    <div className="container-x py-16 lg:py-24">
-      <p className="eyebrow">Learn</p>
-      <h1 className="display mt-3 max-w-3xl text-[44px] leading-[1.06] sm:text-[56px]">Financial confidence, one idea at a time.</h1>
-      <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-grey">
-        Eleven concise modules. Each has a worked example calculated with the planner’s own engine, the key takeaways and a short knowledge check.
-      </p>
-      <ol className="mt-14">
-        {MODULES.map((m, i) => (
-          <li key={m.id} id={m.id} className="scroll-mt-24 border-t border-line last:border-b">
-            <div className="grid gap-4 py-8 md:grid-cols-12">
-              <span className="num text-sm text-grey md:col-span-1">{String(i + 1).padStart(2, '0')}</span>
-              <div className="md:col-span-8">
-                <h2 className="display text-[26px] leading-snug">{m.title}</h2>
-                <p className="mt-2 text-[15px] leading-relaxed text-grey">{m.summary}</p>
-                <ul className="mt-4 space-y-1 text-sm text-charcoal">
-                  {m.takeaways.map((t) => (
-                    <li key={t} className="flex gap-2">
-                      <span className="text-champagne">—</span>
-                      {t}
-                    </li>
-                  ))}
-                </ul>
+    <>
+      <PublicHero
+        tag="Learning"
+        title={
+          <>
+            Eleven short <span className="serif-accent">lessons</span>
+          </>
+        }
+      >
+        <p>Each lesson takes 4 to 8 minutes and has a worked example from the planner’s own engine, the key points and a three-question check.</p>
+      </PublicHero>
+
+      <div className="container-x">
+        <ol className="grid gap-6 md:grid-cols-2 lg:gap-8">
+          {MODULES.map((m, i) => (
+            <Reveal as="li" key={m.id} id={m.id} delay={(i % 2) * 80} className={`scroll-mt-32 ${i === 0 ? 'md:col-span-2' : ''}`}>
+              <div className={`bezel flex h-full flex-col p-7 sm:p-10 ${i === 0 ? 'lg:grid lg:grid-cols-12 lg:gap-10' : ''}`}>
+                <div className={i === 0 ? 'lg:col-span-7' : ''}>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="num text-[40px] font-light leading-none tracking-[-0.06em] text-forest/80">{String(i + 1).padStart(2, '0')}</span>
+                    <span className="num rounded-full bg-muted px-3 py-1 text-xs text-grey">{m.minutes} min</span>
+                  </div>
+                  <h2 className={`mt-8 font-semibold leading-snug tracking-[-0.02em] ${i === 0 ? 'text-[28px] sm:text-[34px]' : 'text-[22px]'}`}>{m.title}</h2>
+                  <p className="mt-3 text-[15px] leading-relaxed text-grey">{m.summary}</p>
+                </div>
+                <div className={`mt-8 flex flex-1 flex-col justify-between gap-8 ${i === 0 ? 'lg:col-span-5 lg:mt-0' : ''}`}>
+                  <ul className="well space-y-2 p-5 text-sm text-charcoal">
+                    {m.takeaways.map((t) => (
+                      <li key={t} className="flex gap-3">
+                        <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-champagne" aria-hidden />
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                  <Button variant="secondary" size="sm" className="self-start" onClick={() => open(m.id)}>
+                    Open lesson <ArrowRight size={14} aria-hidden />
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-start gap-3 md:col-span-3 md:justify-end">
-                <span className="num pt-2 text-xs text-grey">{m.minutes} min</span>
-                <Button variant="secondary" size="sm" onClick={() => open(m.id)}>
-                  Open module
-                </Button>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ol>
-      {!hasPlan && <p className="mt-6 text-xs text-grey">Opening a module loads the demo profile so the examples can link to the relevant tools.</p>}
-    </div>
+            </Reveal>
+          ))}
+        </ol>
+        {!hasPlan && <p className="mt-10 text-xs text-grey">Opening a lesson loads the demo plan so its examples can link to the tools.</p>}
+      </div>
+    </>
   );
 }

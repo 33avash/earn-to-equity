@@ -41,10 +41,10 @@ export default function Portfolio() {
   };
 
   return (
-    <div className="flex flex-col gap-14">
-      <PageHeader title="Portfolio Builder" description="Set a target mix across seven asset classes, edit the return assumptions, and see drift, rebalancing and projected growth." />
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Portfolio" description="Your target mix across seven asset classes, fund costs, drift, and how to rebalance with new SIP money." />
 
-      <div className="grid grid-cols-2 gap-8 border-b border-line pb-8 lg:grid-cols-4">
+      <div className="bezel grid grid-cols-2 gap-x-6 gap-y-6 p-5 sm:p-6 lg:grid-cols-4">
         <Stat label="Current value" value={money(total)} def="portfolio" />
         <Stat label="Return after fund costs" value={formatPct(plan.portfolioReturn)} def="weightedReturn" sub={`${formatPct(plan.portfolioReturnGross)} before costs; real ≈ ${formatPct((1 + plan.portfolioReturn) / (1 + a.inflation) - 1)} after inflation`} />
         <Stat label="Illustrative volatility" value={formatPct(plan.volatility)} def="volatility" sub={`${band.label}: ${band.note}`} />
@@ -52,9 +52,9 @@ export default function Portfolio() {
       </div>
 
       <Section title="Example allocations" description="Educational illustrations of different risk levels, not personalised recommendations. Applying one replaces your target weights.">
-        <div className="grid gap-px overflow-hidden rounded border border-line bg-line sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {(Object.keys(PRESETS) as RiskProfile[]).map((k) => (
-            <div key={k} className={`flex flex-col gap-3 bg-surface p-5 ${p.preferences.risk === k ? 'shadow-[inset_0_2px_0_rgb(var(--c-champagne))]' : ''}`}>
+            <div key={k} className={`well flex flex-col gap-3 p-6 ${p.preferences.risk === k ? 'ring-2 ring-inset ring-champagne/70' : ''}`}>
               <div className="flex items-baseline justify-between">
                 <p className="font-semibold text-evergreen">{PRESETS[k].label}</p>
                 <span className="num text-xs text-grey">{formatPct(ASSET_CLASSES.reduce((s, c) => s + PRESETS[k].weights[c] * a.returns[c], 0))}</span>
@@ -69,7 +69,7 @@ export default function Portfolio() {
         </div>
       </Section>
 
-      <div className="grid gap-14 xl:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-2">
         <Section title="Target weights & assumed returns" description="Returns are long-run assumptions you control. They feed every projection in the app.">
           <AllocationEditor weights={target} onChange={(w) => update((x) => void (x.preferences.targetAllocation = w))} returns={a.returns} onReturnsChange={(r) => updateAssumptions({ returns: r })} />
           <Button variant="ghost" size="sm" className="mt-3" onClick={() => updateAssumptions({ returns: { ...DEFAULT_RETURNS } })}>

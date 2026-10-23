@@ -17,11 +17,11 @@ export default function Budget() {
   const rule = fiftyThirtyTwenty(cf);
 
   return (
-    <div className="flex flex-col gap-12">
-      <PageHeader title="Budget Planner" description="Your monthly cash flow. Every change here immediately updates your surplus, dashboard, goals and 20-year projection." />
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Budget" description="Take-home, spending, EMIs and SIPs for one month. Every change reruns your 20-year projection." />
 
-      <div className="grid gap-12 xl:grid-cols-12">
-        <div className="flex flex-col gap-12 xl:col-span-8">
+      <div className="grid gap-6 xl:grid-cols-12">
+        <div className="flex flex-col gap-6 xl:col-span-8">
           <Section title="Income">
             <SalaryEditor p={p} update={update} />
             <div className="mt-6 grid gap-6 sm:grid-cols-2">
@@ -46,7 +46,7 @@ export default function Budget() {
         </div>
 
         <aside aria-label="Monthly summary" className="xl:col-span-4">
-          <div className="panel sticky top-6 flex flex-col gap-6 p-6">
+          <div className="bezel sticky top-20 flex flex-col gap-8 p-5 sm:p-6">
             <div>
               <p className="eyebrow mb-4">Monthly summary</p>
               <dl className="space-y-2 text-sm">

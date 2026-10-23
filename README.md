@@ -1,10 +1,10 @@
 # Earn to Equity
 
-> From your first paycheck to your future wealth.
+> Plan the next 20 years of your salary.
 
 Earn to Equity is a wealth-planning web app for young Indian earners. You describe where you are today (income, spending, savings, loans and goals), and it builds a 20-year projection showing where that path leads and which decisions change it.
 
-Everything runs in the browser. There are no bank logins and no accounts, and your data never leaves your device.
+Everything runs in the browser. There are no accounts, and your profile is stored only in your browser's local storage on this device.
 
 **Team:** Atulya Singh · Avash Srivastava · Aayushi Paul · Agustyae Gupta
 
@@ -41,7 +41,7 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5173. Use **Explore the demo** to look around with a fictional profile, or **Build My Wealth Plan** to enter your own numbers.
+Then open http://localhost:5173. Use **See the demo plan** to look around with a fictional profile, or **Build your plan** to enter your own numbers.
 
 | Command | |
 |---|---|

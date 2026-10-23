@@ -28,23 +28,23 @@ export default function Health() {
   const gaps = health.components.filter((c) => c.score < 60).sort((a, b) => a.score * a.weight - b.score * b.weight);
 
   return (
-    <div className="flex flex-col gap-14">
-      <PageHeader title="Financial Health" description="A transparent score built from six documented components. It shows where you are resilient and where small changes would help most." />
+    <div className="flex flex-col gap-6">
+      <PageHeader title="Financial health" description="A 0 to 100 score from six components. The rule behind each one is in the table at the end." />
 
-      <div className="grid gap-12 lg:grid-cols-12">
-        <div className="lg:col-span-4">
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="bezel flex flex-col p-5 sm:p-6 lg:col-span-4">
           <p className="eyebrow">Your score</p>
-          <p className="display mt-2 text-[88px] leading-none">
+          <p className="display mt-3 text-[64px] leading-none tracking-[-0.05em] sm:text-[72px]">
             {Math.round(health.score)}
             <span className="font-sans text-2xl text-grey">/100</span>
           </p>
           <p className="mt-2 text-lg font-semibold text-evergreen">{band(health.score)}</p>
           <Disclaimer className="mt-6">An educational measure calculated only from what you entered. It is not a credit score, a CIBIL score or an official rating of any kind.</Disclaimer>
         </div>
-        <div className="lg:col-span-8">
+        <div className="bezel px-5 py-3 sm:px-6 lg:col-span-8">
           <ul>
             {health.components.map((c) => (
-              <li key={c.key} className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-2 border-t border-line py-4 last:border-b">
+              <li key={c.key} className="grid grid-cols-[1fr_auto] gap-x-6 gap-y-2 border-t border-line/70 py-6 first:border-t-0">
                 <div>
                   <p className="text-[14px] font-semibold text-evergreen">
                     {c.label} <span className="ml-1 text-xs font-normal text-grey">weight {c.weight}%</span>
@@ -61,14 +61,14 @@ export default function Health() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-8 border-y border-line py-8 lg:grid-cols-4">
+      <div className="bezel grid grid-cols-2 gap-x-6 gap-y-6 p-5 sm:p-6 lg:grid-cols-4">
         <Stat label="Net worth" value={money(sheet.netWorth)} def="netWorth" />
         <Stat label="Debt-to-income" value={formatPct(cf.debtToIncome)} def="dti" sub="EMIs ÷ monthly income" />
         <Stat label="Savings rate" value={formatPct(cf.savingsRate)} def="savingsRate" />
         <Stat label="Emergency coverage" value={`${ef.coverageMonths === Infinity ? '—' : ef.coverageMonths.toFixed(1)} months`} def="emergencyCoverage" />
       </div>
 
-      <div className="grid gap-14 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Section title="Strengths">
           {strengths.length ? (
             <ul className="space-y-3">

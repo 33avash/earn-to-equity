@@ -54,10 +54,10 @@ export default function Coach() {
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <PageHeader
-        title="AI Wealth Coach"
-        description="Ask about your plan in plain language. The financial engine produces the numbers. The coach explains them, states the assumptions and points out missing information."
+        title="Coach"
+        description="Ask about your plan. Answers quote figures from your own projection and name the assumptions behind them."
         actions={messages.length > 0 && <Button variant="ghost" size="sm" onClick={clear}>Clear conversation</Button>}
       />
 
@@ -71,15 +71,15 @@ export default function Coach() {
         )}
       </div>
 
-      <div className="panel flex min-h-[420px] flex-col">
-        <div className="flex-1 space-y-6 p-5 sm:p-8" aria-live="polite">
+      <div className="bezel flex min-h-[520px] flex-col overflow-hidden">
+        <div className="flex-1 space-y-8 p-6 sm:p-10" aria-live="polite">
           {messages.length === 0 && (
             <div>
-              <p className="display text-2xl">What would you like to understand?</p>
+              <p className="text-[22px] font-semibold leading-tight tracking-[-0.02em] text-evergreen">What would you like to understand?</p>
               <p className="mt-2 text-sm text-grey">Pick a question or write your own.</p>
-              <div className="mt-6 grid gap-2 sm:grid-cols-2">
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
                 {SUGGESTED.map((s) => (
-                  <button key={s} type="button" onClick={() => ask(s)} className="rounded border border-line px-4 py-3 text-left text-sm text-charcoal transition-colors hover:border-forest hover:bg-mint/40">
+                  <button key={s} type="button" onClick={() => ask(s)} className="well group px-5 py-4 text-left text-sm text-charcoal transition-colors duration-500 hover:bg-mint/60">
                     {s}
                   </button>
                 ))}
@@ -89,7 +89,7 @@ export default function Coach() {
           {messages.map((m) =>
             m.role === 'user' ? (
               <div key={m.id} className="flex justify-end">
-                <p className="max-w-[85%] rounded bg-evergreen px-4 py-2.5 text-sm text-onbrand">{m.text}</p>
+                <p className="max-w-[85%] rounded-[1.25rem] rounded-br-md bg-evergreen px-5 py-3 text-sm text-onbrand">{m.text}</p>
               </div>
             ) : (
               <div key={m.id} className="max-w-[92%]">
@@ -106,17 +106,17 @@ export default function Coach() {
           <div ref={endRef} />
         </div>
         {messages.length > 0 && (
-          <div className="flex flex-wrap gap-2 border-t border-line px-5 py-3 sm:px-8">
+          <div className="flex flex-wrap gap-2 border-t border-line/70 px-6 py-4 sm:px-10">
             {SUGGESTED.slice(0, 4).map((s) => (
-              <button key={s} type="button" disabled={busy} onClick={() => ask(s)} className="tap rounded-sm border border-line px-2.5 py-1 text-xs text-grey hover:border-forest hover:text-evergreen">
+              <button key={s} type="button" disabled={busy} onClick={() => ask(s)} className="tap rounded-full bg-muted/70 px-3.5 py-1.5 text-xs text-grey transition-colors hover:bg-mint hover:text-evergreen">
                 {s}
               </button>
             ))}
           </div>
         )}
-        <form className="flex gap-2 border-t border-line p-3 sm:p-4" onSubmit={(e) => { e.preventDefault(); ask(input); }}>
+        <form className="m-2 flex gap-2 rounded-full bg-muted/60 p-1.5 sm:m-3" onSubmit={(e) => { e.preventDefault(); ask(input); }}>
           <label htmlFor="coach-input" className="sr-only">Ask the coach</label>
-          <input id="coach-input" className="input flex-1" placeholder="e.g. What if markets fall 30% in Year 6?" value={input} maxLength={500} onChange={(e) => setInput(e.target.value)} />
+          <input id="coach-input" className="input flex-1 rounded-full bg-surface px-5" placeholder="e.g. What if markets fall 30% in Year 6?" value={input} maxLength={500} onChange={(e) => setInput(e.target.value)} />
           <Button type="submit" disabled={busy || !input.trim()} icon={<Send size={15} />}>Ask</Button>
         </form>
       </div>
