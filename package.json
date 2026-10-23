@@ -5,7 +5,7 @@
   "description": "A 20-year wealth planner for young Indian earners: budgeting, goals, portfolio, simulation and stress tests in one connected model.",
   "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": ">=22.19"
   },
   "scripts": {
     "dev": "vite",

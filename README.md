@@ -36,7 +36,7 @@ Everything runs in the browser. There are no accounts, and your profile is store
 
 ## Getting started
 
-You'll need Node.js 18 or newer.
+You'll need Node.js 22.19 or newer.
 
 ```bash
 npm install
