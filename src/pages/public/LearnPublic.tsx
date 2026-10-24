@@ -3,6 +3,8 @@ import { MODULES } from '@/features/learn/modules';
 import { Button } from '@/components/ui/Button';
 import { PublicHero } from '@/components/layout/PublicHero';
 import { Reveal } from '@/components/motion/Motion';
+import { MicroLessons } from '@/features/landing/MicroLessons';
+import { SectionHead } from '@/components/ui/Misc';
 import { useStore } from '@/state/store';
 import { useExploreDemo } from '@/state/useDemo';
 
@@ -13,7 +15,6 @@ export default function LearnPublic() {
   return (
     <>
       <PublicHero
-        tag="Learning"
         title={
           <>
             Eleven short <span className="serif-accent">lessons</span>
@@ -22,6 +23,13 @@ export default function LearnPublic() {
       >
         <p>Each lesson takes 4 to 8 minutes and has a worked example from the planner’s own engine, the key points and a three-question check.</p>
       </PublicHero>
+
+      <section aria-labelledby="quick-h" className="container-x pb-24 lg:pb-32">
+        <SectionHead id="quick-h" title={<>Six lessons in a <span className="serif-accent">minute</span> each</>}>
+          <p>Live widgets on the planner’s own engine, each with a one-question check. The full lessons follow below.</p>
+        </SectionHead>
+        <MicroLessons />
+      </section>
 
       <div className="container-x">
         <ol className="grid gap-6 md:grid-cols-2 lg:gap-8">

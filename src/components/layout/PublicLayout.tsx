@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Search } from 'lucide-react';
 import { Atmosphere } from '@/components/motion/Motion';
 import { Wordmark } from './Wordmark';
-import { ThemeToggle } from './ShellControls';
+import { CommandPalette, ThemeToggle, useCommandShortcut } from './ShellControls';
 import { ButtonLink } from '@/components/ui/Button';
 import { useExploreDemo } from '@/state/useDemo';
 
@@ -20,6 +20,7 @@ const NAV = [
  */
 export function PublicNav() {
   const [open, setOpen] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useCommandShortcut();
   const loc = useLocation();
   useEffect(() => setOpen(false), [loc.pathname]);
   useEffect(() => {
@@ -51,6 +52,15 @@ export function PublicNav() {
             ))}
           </nav>
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPaletteOpen(true)}
+              aria-label="Search pages, lessons and terms"
+              className="tap inline-flex h-9 items-center gap-2 rounded-full px-2.5 text-[13px] text-grey transition-colors hover:bg-muted hover:text-evergreen"
+            >
+              <Search size={16} aria-hidden />
+              <kbd className="num hidden rounded-md border border-line bg-muted px-1.5 py-px text-[11px] xl:inline">⌘K</kbd>
+            </button>
             <ThemeToggle />
             <ButtonLink to="/start" size="sm" className="hidden lg:inline-flex">
               Build your plan <ArrowRight size={14} aria-hidden />
@@ -96,6 +106,7 @@ export function PublicNav() {
           </div>
         </nav>
       </div>
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} mode="public" />
     </>
   );
 }
@@ -143,8 +154,8 @@ export function Footer() {
             </div>
           </div>
         </div>
-        <p aria-hidden className="pointer-events-none select-none whitespace-nowrap px-4 text-center text-[15vw] font-semibold leading-[0.85] tracking-[-0.06em] text-evergreen/[0.06] lg:text-[176px]">
-          earn <span className="serif-accent">to</span> equity
+        <p aria-hidden className="pointer-events-none select-none whitespace-nowrap px-4 text-center text-[15vw] font-semibold leading-[0.85] tracking-[-0.06em] text-evergreen/[0.05] lg:text-[184px]">
+          earn<span className="mx-[0.12em] font-light">to</span>equity
         </p>
         <div className="relative border-t border-line/70">
           <p className="px-6 py-6 text-xs leading-relaxed text-grey sm:px-10 lg:px-14">

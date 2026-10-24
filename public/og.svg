@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="g" x1="4" y1="28" x2="28" y2="4" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#818CF8"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.8" cy="0.1" r="0.7">
+      <stop offset="0" stop-color="#2DD4BF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#2DD4BF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#07070A"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <g transform="translate(96 96) scale(3.4) skewX(-14)" fill="url(#g)">
+    <rect x="10" y="21" width="16" height="6" rx="3" fill-opacity="0.55"/>
+    <rect x="13" y="13" width="12" height="6" rx="3" fill-opacity="0.8"/>
+    <rect x="15" y="5" width="15" height="6" rx="3"/>
+  </g>
+  <text x="96" y="400" font-family="Geist, Inter, system-ui, sans-serif" font-size="96" font-weight="600" letter-spacing="-4" fill="#FAFAFA">earn <tspan fill="#A8A8AC" font-weight="400">to</tspan> equity</text>
+  <text x="96" y="470" font-family="Geist, Inter, system-ui, sans-serif" font-size="34" fill="#A8A8AC">A 20-year wealth plan for salaried professionals in India.</text>
+</svg>

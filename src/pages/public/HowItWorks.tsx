@@ -1,6 +1,6 @@
 import { ArrowRight, Check } from 'lucide-react';
 import { ButtonLink } from '@/components/ui/Button';
-import { Bezel, Disclaimer, Tag } from '@/components/ui/Misc';
+import { Bezel, Disclaimer } from '@/components/ui/Misc';
 import { PublicHero } from '@/components/layout/PublicHero';
 import { Reveal } from '@/components/motion/Motion';
 
@@ -42,7 +42,6 @@ export default function HowItWorks() {
   return (
     <>
       <PublicHero
-        tag="Method"
         title={
           <>
             How it <span className="serif-accent">works</span>
@@ -78,8 +77,7 @@ export default function HowItWorks() {
         <section className="grid gap-12 pt-28 lg:grid-cols-12 lg:pt-40">
           <div className="lg:col-span-4">
             <div className="lg:sticky lg:top-36">
-              <Tag>Rules</Tag>
-              <h2 className="display mt-6 text-[40px] leading-none sm:text-[52px]">
+              <h2 className="display text-[40px] leading-none sm:text-[52px]">
                 Calculation <span className="serif-accent">rules</span>
               </h2>
               <p className="mt-5 text-sm leading-relaxed text-grey">Every projection follows these rules. The engine is plain TypeScript, separate from the interface, with more than 100 automated tests.</p>

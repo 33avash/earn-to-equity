@@ -63,11 +63,6 @@ export function PageTransition({ id, children }: { id: string; children: ReactNo
   );
 }
 
-/** Faint grid that fades towards the edges, with a soft accent glow. Decorative. */
-export function GridBackground() {
-  return <div aria-hidden className="grid-bg" />;
-}
-
 /** Card whose border glows where the pointer is. */
 export function Spotlight({ className = '', children }: { className?: string; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);

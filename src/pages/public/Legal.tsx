@@ -1,4 +1,4 @@
-import { Bezel, Tag } from '@/components/ui/Misc';
+import { Bezel } from '@/components/ui/Misc';
 import { Reveal } from '@/components/motion/Motion';
 
 export const DISCLAIMER_TEXT = [
@@ -18,10 +18,7 @@ export default function Legal() {
   return (
     <div className="container-x pt-10 lg:pt-20">
       <Reveal>
-        <Tag>Legal</Tag>
-      </Reveal>
-      <Reveal delay={80}>
-        <h1 className="display mt-8 max-w-4xl text-[44px] leading-[0.98] sm:text-[64px] lg:text-[80px]">
+        <h1 className="display max-w-4xl text-[44px] leading-[0.98] sm:text-[64px] lg:text-[80px]">
           Privacy, terms & <span className="serif-accent">disclaimers</span>
         </h1>
         <p className="mt-6 text-[17px] text-grey">Plain-language summary for this prototype.</p>

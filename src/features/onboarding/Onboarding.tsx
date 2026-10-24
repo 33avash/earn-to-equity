@@ -8,7 +8,7 @@ import { useExploreDemo } from '@/state/useDemo';
 import { blankProfile } from '@/state/demo';
 import { Wordmark } from '@/components/layout/Wordmark';
 import { Atmosphere } from '@/components/motion/Motion';
-import { Button, Field, MoneyInput, NumberInput, PercentInput, Select, Slider, TextInput, Disclaimer, Notice, Badge, toast, Tag, AccentTitle } from '@/components/ui';
+import { Button, Field, MoneyInput, NumberInput, PercentInput, Select, Slider, TextInput, Disclaimer, Notice, Badge, toast, AccentTitle } from '@/components/ui';
 import { LineItemsEditor } from '@/features/editors/LineItems';
 import { SalaryEditor } from '@/features/editors/SalaryEditor';
 import { LoansEditor } from '@/features/editors/Loans';
@@ -192,10 +192,10 @@ export default function Onboarding() {
         </nav>
 
         <main className="lg:col-span-9">
-          <Tag>
+          <p className="num text-[13px] text-grey">
             Step {step + 1} of {STEPS.length}
-          </Tag>
-          <h1 id="step-title" tabIndex={-1} className="display mt-6 text-[40px] leading-[1] outline-none sm:text-[56px]">
+          </p>
+          <h1 id="step-title" tabIndex={-1} className="display mt-3 text-[40px] leading-[1] outline-none sm:text-[56px]">
             <AccentTitle text={STEPS[step].title} />
           </h1>
           <p className="mt-4 max-w-2xl text-[16px] leading-relaxed text-grey">{STEPS[step].why}</p>

@@ -1,16 +1,36 @@
-import { useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Command } from 'cmdk';
-import { ChevronsUpDown, Monitor, Moon, Search, Sun, Plus, FlaskConical, CalendarRange, Download, ArrowRightLeft } from 'lucide-react';
+import { motion, useReducedMotion } from 'motion/react';
+import { ChevronsUpDown, Monitor, Moon, Search, Sun, Plus, FlaskConical, CalendarRange, Download, ArrowRightLeft, Home, Compass, LayoutGrid, Calculator, GraduationCap, Info, BookOpen, Hash, Gauge, Target, Sparkles } from 'lucide-react';
 import { useTheme, type ThemePref } from '@/theme/ThemeProvider';
 import { useStore } from '@/state/store';
-import { usePlan } from '@/state/selectors';
+import { useMoney, usePlan } from '@/state/selectors';
+import { useExploreDemo } from '@/state/useDemo';
 import { exportSummary } from '@/services/export';
+import { MODULES } from '@/features/learn/modules';
+import { DEFINITIONS } from '@/components/ui/definitions';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/shadcn/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/shadcn/menu';
 import { APP_NAV } from './nav';
 
 const THEME_ICON = { light: Sun, dark: Moon, system: Monitor };
+
+/** The palette's highlighted value, so each item can draw the gliding highlight behind itself. */
+const SelectedCtx = createContext('');
+
+function Item({ value, onSelect, children }: { value: string; onSelect: () => void; children: ReactNode }) {
+  const selected = useContext(SelectedCtx);
+  const reduce = useReducedMotion();
+  return (
+    <Command.Item value={value} onSelect={onSelect} className="tap relative flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-charcoal aria-selected:text-evergreen">
+      {selected.toLowerCase() === value.toLowerCase() && (
+        <motion.span layoutId={reduce ? undefined : 'cmdk-highlight'} className="absolute inset-0 rounded-xl bg-muted shadow-[0_0_0_1px_var(--frame-line),var(--edge-highlight)]" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />
+      )}
+      <span className="relative flex w-full min-w-0 items-center gap-2.5">{children}</span>
+    </Command.Item>
+  );
+}
 
 export function ThemeToggle() {
   const { theme, resolved, setTheme } = useTheme();
@@ -72,70 +92,186 @@ export function PlanSwitcher() {
   );
 }
 
-/** ⌘K / Ctrl+K: jump to a module or goal, or run an action. */
-export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+const PUBLIC_PAGES = [
+  { to: '/', label: 'Home', icon: Home },
+  { to: '/how-it-works', label: 'How it works', icon: Compass },
+  { to: '/features', label: 'Features', icon: LayoutGrid },
+  { to: '/tools', label: 'Calculators', icon: Calculator },
+  { to: '/learn', label: 'Learn', icon: GraduationCap },
+  { to: '/about', label: 'About', icon: Info },
+];
+
+/** Plain-language terms, each with the screen where it matters. */
+const GLOSSARY: { term: string; def: string; to: string }[] = [
+  { term: 'Net worth', def: DEFINITIONS.netWorth, to: '/app' },
+  { term: 'Investable surplus', def: DEFINITIONS.surplus, to: '/app/budget' },
+  { term: 'Savings rate', def: DEFINITIONS.savingsRate, to: '/app/budget' },
+  { term: 'Emergency coverage', def: DEFINITIONS.emergencyCoverage, to: '/app/emergency-debt' },
+  { term: 'EMI-to-income (DTI)', def: DEFINITIONS.dti, to: '/app/emergency-debt' },
+  { term: 'Today’s rupees (real value)', def: DEFINITIONS.real, to: '/app/simulator' },
+  { term: 'FI target', def: DEFINITIONS.fiTarget, to: '/app/fi' },
+  { term: 'Weighted return', def: DEFINITIONS.weightedReturn, to: '/app/portfolio' },
+  { term: 'Volatility', def: DEFINITIONS.volatility, to: '/app/risk-lab' },
+  { term: 'Future cost of a goal', def: DEFINITIONS.futureCost, to: '/app/goals' },
+  { term: 'LTCG', def: 'Long-term capital gains: profit on equity held over 12 months, taxed at 12.5% above ₹1.25 lakh a year.', to: '/app/learn/tax' },
+  { term: 'Section 80C', def: 'Old-regime deduction of up to ₹1.5 lakh a year for EPF, PPF, ELSS, life cover and similar. Not available in the new regime.', to: '/app/learn/tax' },
+  { term: 'EPF', def: 'Employees’ Provident Fund: 12% of basic pay from you and your employer, earning the rate EPFO declares each year.', to: '/app/learn/retirement' },
+  { term: 'SIP step-up', def: 'Raising your monthly SIP by a fixed percentage each year, usually in line with pay rises.', to: '/app/sip' },
+];
+
+/**
+ * ⌘K / Ctrl+K. On the public site it searches pages, lessons and terms; in the planner it adds actions,
+ * your goals and your own figures. A highlight glides between results as you move.
+ */
+export function CommandPalette({ open, onOpenChange, mode = 'app' }: { open: boolean; onOpenChange: (o: boolean) => void; mode?: 'app' | 'public' }) {
   const navigate = useNavigate();
-  const plan = usePlan();
+  const explore = useExploreDemo();
   const { setTheme } = useTheme();
   const isDemo = useStore((s) => s.isDemo);
   const hasOwn = useStore((s) => s.ownPlan !== null);
   const loadDemo = useStore((s) => s.loadDemo);
   const switchToOwn = useStore((s) => s.switchToOwnPlan);
+  const money = useMoney();
+  const [selected, setSelected] = useState('');
+  const app = mode === 'app';
   const run = (fn: () => void) => {
     onOpenChange(false);
     fn();
   };
-  const item = 'tap flex cursor-pointer items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-charcoal aria-selected:bg-muted aria-selected:text-evergreen';
+  const go = (to: string) => run(() => (to.startsWith('/app') && !app ? explore(to, true) : navigate(to)));
   const group = 'px-1 py-1 text-xs font-medium text-grey [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2';
+  const term = GLOSSARY.find((g) => `term ${g.term}`.toLowerCase() === selected.toLowerCase());
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent hideClose className="top-[18%] w-[min(94vw,580px)] translate-y-0 overflow-hidden rounded-[1.75rem] p-0">
+      <DialogContent hideClose className="frame-glass top-[16%] w-[min(94vw,620px)] translate-y-0 overflow-hidden !rounded-[1.75rem] p-0">
         <DialogTitle className="sr-only">Search and actions</DialogTitle>
-        <Command label="Search modules, goals and actions" loop>
-          <div className="flex items-center gap-2 border-b border-line px-3">
+        <SelectedCtx.Provider value={selected}>
+        <Command label="Search pages, lessons, terms and actions" loop value={selected} onValueChange={setSelected}>
+          <div className="flex items-center gap-2 border-b border-line px-4">
             <Search size={16} className="text-grey" aria-hidden />
-            <Command.Input autoFocus placeholder="Search modules, goals and actions…" className="h-12 w-full bg-transparent text-sm text-evergreen outline-none placeholder:text-grey" />
+            <Command.Input autoFocus placeholder={app ? 'Search modules, goals, terms…' : 'Search pages, lessons, terms…'} className="h-14 w-full bg-transparent text-[15px] text-evergreen outline-none placeholder:text-grey" />
+            <kbd className="num hidden rounded-md border border-line bg-muted px-1.5 py-px text-[11px] text-grey sm:inline">esc</kbd>
           </div>
-          <Command.List className="max-h-[360px] overflow-y-auto p-1.5">
-            <Command.Empty className="px-3 py-6 text-center text-sm text-grey">No matches.</Command.Empty>
-            <Command.Group heading="Actions" className={group}>
-              <Command.Item className={item} onSelect={() => run(() => navigate('/app/goals?new=1'))}><Plus size={15} aria-hidden /> Add goal</Command.Item>
-              <Command.Item className={item} onSelect={() => run(() => navigate('/app/life-events?new=1'))}><CalendarRange size={15} aria-hidden /> Add life event</Command.Item>
-              <Command.Item className={item} onSelect={() => run(() => navigate('/app/risk-lab?preset=crash'))}><FlaskConical size={15} aria-hidden /> Run stress test: 2008-style crash</Command.Item>
-              <Command.Item className={item} onSelect={() => run(() => exportSummary(plan))}><Download size={15} aria-hidden /> Export summary</Command.Item>
-              {isDemo && hasOwn && <Command.Item className={item} onSelect={() => run(switchToOwn)}><ArrowRightLeft size={15} aria-hidden /> Switch to my plan</Command.Item>}
-              {!isDemo && <Command.Item className={item} onSelect={() => run(loadDemo)}><ArrowRightLeft size={15} aria-hidden /> Open the demo plan</Command.Item>}
-            </Command.Group>
-            <Command.Group heading="Modules" className={group}>
-              {APP_NAV.flatMap((g) => g.items).map(({ to, label, icon: Icon }) => (
-                <Command.Item key={to} value={`module ${label}`} className={item} onSelect={() => run(() => navigate(to))}>
-                  <Icon size={15} aria-hidden /> {label}
-                </Command.Item>
-              ))}
-            </Command.Group>
-            {plan.profile.goals.length > 0 && (
-              <Command.Group heading="Goals" className={group}>
-                {plan.goalViews.map((v) => (
-                  <Command.Item key={v.goal.id} value={`goal ${v.goal.name} ${v.goal.targetYear}`} className={item} onSelect={() => run(() => navigate(`/app/goals#goal-${v.goal.id}`))}>
-                    {v.goal.name} <span className="ml-auto text-xs text-grey">{v.goal.targetYear}</span>
-                  </Command.Item>
-                ))}
+          <Command.List className="max-h-[min(56vh,420px)] overflow-y-auto p-1.5">
+            <Command.Empty className="px-3 py-8 text-center text-sm text-grey">No matches.</Command.Empty>
+            {app && (
+              <Command.Group heading="Your numbers" className={group}>
+                <NumbersItems go={go} money={money} />
               </Command.Group>
             )}
+            {app && (
+              <Command.Group heading="Actions" className={group}>
+                <Item value="action add goal" onSelect={() => go('/app/goals?new=1')}><Plus size={15} aria-hidden /> Add goal</Item>
+                <Item value="action add life event" onSelect={() => go('/app/life-events?new=1')}><CalendarRange size={15} aria-hidden /> Add life event</Item>
+                <Item value="action stress test crash" onSelect={() => go('/app/risk-lab?preset=crash')}><FlaskConical size={15} aria-hidden /> Run stress test: 2008-style crash</Item>
+                <ExportItem run={run} />
+                {isDemo && hasOwn && <Item value="action switch to my plan" onSelect={() => run(switchToOwn)}><ArrowRightLeft size={15} aria-hidden /> Switch to my plan</Item>}
+                {!isDemo && <Item value="action open demo plan" onSelect={() => run(loadDemo)}><ArrowRightLeft size={15} aria-hidden /> Open the demo plan</Item>}
+              </Command.Group>
+            )}
+            {!app && (
+              <Command.Group heading="Get started" className={group}>
+                <Item value="start build your plan" onSelect={() => go('/start')}><Sparkles size={15} aria-hidden /> Build your plan</Item>
+                <Item value="start see the demo plan" onSelect={() => run(() => explore('/app'))}><ArrowRightLeft size={15} aria-hidden /> See the demo plan</Item>
+              </Command.Group>
+            )}
+            <Command.Group heading={app ? 'Modules' : 'Pages'} className={group}>
+              {(app ? APP_NAV.flatMap((g) => g.items) : PUBLIC_PAGES).map(({ to, label, icon: Icon }) => (
+                <Item key={to} value={`page ${label}`} onSelect={() => go(to)}>
+                  <Icon size={15} aria-hidden /> {label}
+                </Item>
+              ))}
+            </Command.Group>
+            {app && <GoalItems go={go} />}
+            <Command.Group heading="Lessons" className={group}>
+              {MODULES.map((m) => (
+                <Item key={m.id} value={`lesson ${m.title}`} onSelect={() => go(`/app/learn/${m.id}`)}>
+                  <BookOpen size={15} aria-hidden /> {m.title}
+                  <span className="ml-auto shrink-0 text-xs text-grey">{m.minutes} min</span>
+                </Item>
+              ))}
+            </Command.Group>
+            <Command.Group heading="Glossary" className={group}>
+              {GLOSSARY.map((g) => (
+                <Item key={g.term} value={`term ${g.term}`} onSelect={() => go(g.to)}>
+                  <Hash size={15} aria-hidden /> {g.term}
+                </Item>
+              ))}
+            </Command.Group>
             <Command.Group heading="Theme" className={group}>
               {(['light', 'dark', 'system'] as const).map((t) => {
                 const I = THEME_ICON[t];
                 return (
-                  <Command.Item key={t} value={`theme ${t}`} className={item} onSelect={() => run(() => setTheme(t))}>
+                  <Item key={t} value={`theme ${t}`} onSelect={() => run(() => setTheme(t))}>
                     <I size={15} aria-hidden /> {t === 'system' ? 'Use system theme' : t === 'light' ? 'Light theme' : 'Dark theme'}
-                  </Command.Item>
+                  </Item>
                 );
               })}
             </Command.Group>
           </Command.List>
+          <div className="flex min-h-[52px] items-center gap-3 border-t border-line px-4 py-3 text-[12px] text-grey">
+            {term ? (
+              <p className="leading-relaxed">
+                <span className="font-medium text-evergreen">{term.term}:</span> {term.def}
+              </p>
+            ) : (
+              <p className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span><kbd className="num rounded border border-line bg-muted px-1">↑↓</kbd> move</span>
+                <span><kbd className="num rounded border border-line bg-muted px-1">↵</kbd> open</span>
+                <span><kbd className="num rounded border border-line bg-muted px-1">⌘K</kbd> toggle</span>
+              </p>
+            )}
+          </div>
         </Command>
+        </SelectedCtx.Provider>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Live figures from the current plan; selecting one opens the screen it comes from. */
+function NumbersItems({ go, money }: { go: (to: string) => void; money: (v: number) => string }) {
+  const plan = usePlan();
+  const rows = [
+    { label: 'Net worth today', value: money(plan.sheet.netWorth), to: '/app' },
+    { label: 'Monthly surplus', value: money(plan.cashflow.investableSurplus), to: '/app/budget' },
+    { label: 'Plan score', value: `${Math.round(plan.health.score)} / 100`, to: '/app/health' },
+    { label: 'Financial independence', value: plan.fi.fiAge ? `age ${plan.fi.fiAge}` : 'beyond the plan', to: '/app/fi' },
+    { label: `Net worth in ${plan.headline.year}`, value: money(plan.headline.netWorthReal), to: '/app/simulator' },
+  ];
+  return (
+    <>
+      {rows.map((r) => (
+        <Item key={r.label} value={`number ${r.label}`} onSelect={() => go(r.to)}>
+          <Gauge size={15} aria-hidden /> {r.label}
+          <span className="num ml-auto shrink-0 text-xs text-evergreen">{r.value}</span>
+        </Item>
+      ))}
+    </>
+  );
+}
+
+function GoalItems({ go }: { go: (to: string) => void }) {
+  const plan = usePlan();
+  if (plan.profile.goals.length === 0) return null;
+  return (
+    <Command.Group heading="Goals" className="px-1 py-1 text-xs font-medium text-grey [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2">
+      {plan.goalViews.map((v) => (
+        <Item key={v.goal.id} value={`goal ${v.goal.name} ${v.goal.targetYear}`} onSelect={() => go(`/app/goals#goal-${v.goal.id}`)}>
+          <Target size={15} aria-hidden /> {v.goal.name} <span className="ml-auto text-xs text-grey">{v.goal.targetYear}</span>
+        </Item>
+      ))}
+    </Command.Group>
+  );
+}
+
+function ExportItem({ run }: { run: (fn: () => void) => void }) {
+  const plan = usePlan();
+  return (
+    <Item value="action export summary" onSelect={() => run(() => exportSummary(plan))}>
+      <Download size={15} aria-hidden /> Export summary
+    </Item>
   );
 }
 

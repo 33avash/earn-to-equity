@@ -28,7 +28,7 @@ export default function Features() {
   const navigate = useNavigate();
   return (
     <>
-      <PublicHero tag="Thirteen modules" title={<span className="serif-accent">Features</span>}>
+      <PublicHero title={<span className="serif-accent">Features</span>}>
         <p>Thirteen modules, all reading the same 20-year projection. Click any of them to open it on the demo plan.</p>
       </PublicHero>
 

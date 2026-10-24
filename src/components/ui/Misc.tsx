@@ -58,22 +58,67 @@ export function AccentTitle({ text }: { text: string }) {
   );
 }
 
-/** Pill-shaped eyebrow tag for major headings. */
-export function Tag({ children, dot = true, className = '' }: { children: ReactNode; dot?: boolean; className?: string }) {
-  return (
-    <span className={`tag ${className}`}>
-      {dot && <span className="h-1.5 w-1.5 rounded-full bg-forest" aria-hidden />}
-      {children}
-    </span>
-  );
-}
-
 /** Double-bezel card: a core sitting in a hairline tray. Use for any major card. */
 export function Bezel({ as: As = 'div', className = '', children, ...rest }: { as?: 'div' | 'section' | 'article' | 'aside' | 'li'; className?: string; children: ReactNode; [k: string]: unknown }) {
   return (
     <As className={`bezel ${className}`} {...rest}>
       {children}
     </As>
+  );
+}
+
+type FrameTag = 'div' | 'section' | 'article' | 'aside' | 'li';
+
+/** Layered frame: a top-lit gradient surface with a hairline edge. `size` steps the radius up on wide screens. */
+export function Frame({ as: As = 'div', size = 'md', className = '', children, ...rest }: { as?: FrameTag; size?: 'md' | 'lg' | 'xl'; className?: string; children: ReactNode; [k: string]: unknown }) {
+  const radius = size === 'xl' ? 'frame-xl' : size === 'lg' ? 'frame-lg' : '';
+  return (
+    <As className={`frame ${radius} ${className}`} {...rest}>
+      {children}
+    </As>
+  );
+}
+
+/** Frosted frame for a layer floating over others (chips, overlays). */
+export function GlassFrame({ className = '', children }: { className?: string; children: ReactNode }) {
+  return <div className={`frame-glass ${className}`}>{children}</div>;
+}
+
+/** A window bezel holding a live product panel: a title bar with the mark and a label, then the screen. */
+export function DeviceFrame({ label, className = '', screenClassName = '', children, chrome }: { label: string; className?: string; screenClassName?: string; children: ReactNode; chrome?: ReactNode }) {
+  return (
+    <div className={`device ${className}`}>
+      <div className={`device-screen ${screenClassName}`}>
+        <div className="flex items-center gap-3 border-b border-line/70 px-4 py-3">
+          <span className="truncate rounded-full bg-muted/70 px-3 py-1 text-[11.5px] text-grey">{label}</span>
+          {chrome && <span className="ml-auto">{chrome}</span>}
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** Section heading for public pages: large title on the left, the supporting line on the right. */
+export function SectionHead({ id, title, children, center = false }: { id: string; title: ReactNode; children?: ReactNode; center?: boolean }) {
+  if (center)
+    return (
+      <div className="mx-auto mb-14 max-w-3xl text-center lg:mb-20">
+        <h2 id={id} className="display text-[38px] leading-[1] sm:text-[52px] lg:text-[64px]">
+          {title}
+        </h2>
+        {children && <div className="mx-auto mt-6 max-w-xl text-[16px] leading-relaxed text-grey">{children}</div>}
+      </div>
+    );
+  return (
+    <div className="mb-14 grid gap-6 lg:mb-20 lg:grid-cols-12 lg:items-end">
+      <div className="lg:col-span-7">
+        <h2 id={id} className="display text-[38px] leading-[1] sm:text-[52px] lg:text-[64px]">
+          {title}
+        </h2>
+      </div>
+      {children && <div className="text-[16px] leading-relaxed text-grey lg:col-span-4 lg:col-start-9">{children}</div>}
+    </div>
   );
 }
 

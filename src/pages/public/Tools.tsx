@@ -68,7 +68,7 @@ export default function Tools() {
   const navigate = useNavigate();
   return (
     <>
-      <PublicHero tag="Calculators" title={<span className="serif-accent">Calculators</span>}>
+      <PublicHero title={<span className="serif-accent">Calculators</span>}>
         <p>An SIP, a loan EMI and inflation, without building a plan first. The planner uses the same formulas.</p>
       </PublicHero>
 

@@ -8,17 +8,21 @@ import { useStore } from '@/state/store';
 import { ButtonLink } from '@/components/ui/Button';
 import { Dialog, DialogTitle, SheetContent } from '@/components/ui/shadcn/dialog';
 import { PageTransition } from '@/components/motion/Motion';
+import { ScoreButton } from '@/components/ui/ScoreRing';
+import { usePlan } from '@/state/selectors';
+import { motion, useReducedMotion } from 'motion/react';
 
 export { APP_NAV };
 
 const SIDEBAR_KEY = 'e2e:sidebar';
 
 const navItem = (active: boolean, collapsed: boolean) =>
-  `tap flex h-8 items-center gap-2.5 rounded-md px-2.5 text-[13px] transition-colors duration-150 ${collapsed ? 'justify-center' : ''} ${
-    active ? 'bg-muted font-medium text-evergreen' : 'text-charcoal/80 hover:bg-muted/60 hover:text-evergreen'
+  `tap relative flex h-8 items-center gap-2.5 rounded-lg px-2.5 text-[13px] transition-colors duration-150 ${collapsed ? 'justify-center' : ''} ${
+    active ? 'font-medium text-evergreen' : 'text-charcoal/80 hover:bg-muted/50 hover:text-evergreen'
   }`;
 
-function NavItems({ collapsed = false, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
+function NavItems({ collapsed = false, onNavigate, pill = 'nav-pill' }: { collapsed?: boolean; onNavigate?: () => void; pill?: string }) {
+  const reduce = useReducedMotion();
   return (
     <nav aria-label="Application" className="flex flex-col gap-5">
       {APP_NAV.map((g) => (
@@ -30,8 +34,9 @@ function NavItems({ collapsed = false, onNavigate }: { collapsed?: boolean; onNa
                 <NavLink to={to} end={end} onClick={onNavigate} title={collapsed ? label : undefined} aria-label={collapsed ? label : undefined} className={({ isActive }) => navItem(isActive, collapsed)}>
                   {({ isActive }) => (
                     <>
-                      <Icon size={16} strokeWidth={1.75} aria-hidden className={`shrink-0 ${isActive ? 'text-forest' : ''}`} />
-                      {!collapsed && label}
+                      {isActive && <motion.span layoutId={reduce ? undefined : pill} className="absolute inset-0 rounded-lg bg-muted shadow-[0_0_0_1px_var(--frame-line),var(--edge-highlight)]" transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
+                      <Icon size={16} strokeWidth={1.75} aria-hidden className={`relative shrink-0 ${isActive ? 'text-forest' : ''}`} />
+                      {!collapsed && <span className="relative">{label}</span>}
                     </>
                   )}
                 </NavLink>
@@ -80,6 +85,7 @@ export function AppShell() {
   const [paletteOpen, setPaletteOpen] = useCommandShortcut();
   const { pathname } = useLocation();
   const isDemo = useStore((s) => s.isDemo);
+  const plan = usePlan();
   const [group, page] = crumbs(pathname);
 
   useEffect(() => {
@@ -105,7 +111,7 @@ export function AppShell() {
       </a>
 
       {/* Desktop sidebar: full height, flush to the window edge */}
-      <aside aria-label="Sidebar" className={`fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-line bg-surface lg:flex ${sidebarWidth}`}>
+      <aside aria-label="Sidebar" className={`fixed inset-y-0 left-0 z-30 hidden flex-col border-r border-line bg-surface/80 backdrop-blur-xl [background-image:var(--surface-grad)] lg:flex ${sidebarWidth}`}>
         <div className={`flex h-14 shrink-0 items-center border-b border-line ${collapsed ? 'justify-center' : 'px-4'}`}>
           <Wordmark to="/" compact={collapsed} />
         </div>
@@ -135,7 +141,7 @@ export function AppShell() {
               <Wordmark to="/" />
             </div>
             <PlanSwitcher />
-            <NavItems onNavigate={() => setDrawer(false)} />
+            <NavItems onNavigate={() => setDrawer(false)} pill="nav-pill-drawer" />
           </div>
           <div className="border-t border-line pt-3">
             <SettingsLink onNavigate={() => setDrawer(false)} />
@@ -159,13 +165,14 @@ export function AppShell() {
               <button
                 type="button"
                 onClick={() => setPaletteOpen(true)}
-                className="tap inline-flex h-9 items-center gap-2 rounded-md border border-line bg-surface px-2.5 text-[13px] text-grey transition-colors hover:border-sage hover:text-evergreen md:w-64"
+                className="tap inline-flex h-9 items-center gap-2 rounded-full bg-surface px-3 text-[13px] text-grey shadow-[0_0_0_1px_var(--frame-line),var(--edge-highlight)] whitespace-nowrap transition-colors hover:text-evergreen md:w-56"
                 aria-label="Search and actions"
               >
                 <Search size={14} aria-hidden />
-                <span className="hidden md:inline">Search modules, goals…</span>
+                <span className="hidden truncate md:inline">Search or jump to…</span>
                 <kbd className="num ml-auto hidden rounded border border-line bg-muted px-1.5 py-px text-[11px] md:inline">⌘K</kbd>
               </button>
+              <ScoreButton health={plan.health} />
               <ThemeToggle />
               <ButtonLink to="/app/coach" size="sm" className="hidden sm:inline-flex">
                 <Sparkles size={14} aria-hidden /> Ask coach
@@ -200,7 +207,7 @@ export function NotFound() {
     <div className="container-x flex min-h-[60dvh] flex-col justify-center py-24">
       <p className="num text-[96px] font-semibold leading-none tracking-[-0.06em] text-evergreen/10 sm:text-[160px]">404</p>
       <h1 className="display mt-2 text-[40px] leading-tight sm:text-[56px]">
-        This page doesn’t <span className="serif-accent">exist.</span>
+        This page doesn’t <span className="text-gradient">exist.</span>
       </h1>
       <p className="mt-6 text-grey">
         <Link className="link" to="/">

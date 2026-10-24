@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { ButtonLink } from '@/components/ui/Button';
-import { Bezel, Tag } from '@/components/ui/Misc';
+import { Bezel } from '@/components/ui/Misc';
 import { Reveal } from '@/components/motion/Motion';
 
 const TEAM = ['Atulya Singh', 'Avash Srivastava', 'Aayushi Paul', 'Agustyae Gupta'];
@@ -9,10 +9,7 @@ export default function About() {
   return (
     <div className="container-x pt-10 lg:pt-20">
       <Reveal>
-        <Tag>About</Tag>
-      </Reveal>
-      <Reveal delay={80}>
-        <h1 className="display mt-8 max-w-5xl text-[48px] leading-[0.95] sm:text-[72px] lg:text-[96px]">
+        <h1 className="display max-w-5xl text-[48px] leading-[0.95] sm:text-[72px] lg:text-[96px]">
           About Earn to <span className="serif-accent">Equity</span>
         </h1>
       </Reveal>

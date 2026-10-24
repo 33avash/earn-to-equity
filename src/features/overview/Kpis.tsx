@@ -1,3 +1,4 @@
+import { ScoreRing } from '@/components/ui/ScoreRing';
 import { Link } from 'react-router-dom';
 import { ArrowDownRight, ArrowUpRight, ArrowRight, Check } from 'lucide-react';
 import { kpis, monthWaterfall, useMoney, type Kpi, type Plan } from '@/state/selectors';
@@ -65,7 +66,7 @@ export function KpiStrip({ plan }: { plan: Plan }) {
                 {k.value === null ? <span className="text-[20px]">Not reached</span> : <AnimatedNumber value={k.value} format={fmt(k)} />}
                 {k.kind === 'score' && <span className="text-[13px] font-normal text-grey">/100</span>}
               </span>
-              <Sparkline values={k.spark} className="hidden shrink-0 text-forest sm:block" />
+              {k.kind === 'score' && k.value !== null ? <ScoreRing score={k.value} size={40} stroke={3.5} showValue={false} /> : <Sparkline values={k.spark} className="hidden shrink-0 text-forest sm:block" />}
             </span>
             <DeltaChip k={k} money={money} />
           </Link>

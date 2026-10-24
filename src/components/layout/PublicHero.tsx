@@ -1,15 +1,12 @@
 import type { ReactNode } from 'react';
-import { Tag } from '@/components/ui/Misc';
 import { Reveal } from '@/components/motion/Motion';
 
-/** Editorial page opener for public pages: a tag, an oversized title, and the intro set beside it. */
-export function PublicHero({ tag, title, children }: { tag: string; title: ReactNode; children?: ReactNode }) {
+/** Page opener for public pages: an oversized title and the intro beside it, over a soft glow. */
+export function PublicHero({ title, children }: { title: ReactNode; children?: ReactNode }) {
   return (
-    <header className="container-x pb-20 pt-10 lg:pb-28 lg:pt-20">
-      <Reveal>
-        <Tag>{tag}</Tag>
-      </Reveal>
-      <div className="mt-8 grid gap-8 lg:grid-cols-12 lg:items-end">
+    <header className="container-x relative pb-20 pt-10 lg:pb-28 lg:pt-20">
+      <div aria-hidden className="glow -top-24 right-0 h-[26rem] w-[26rem]" />
+      <div className="grid gap-8 lg:grid-cols-12 lg:items-end">
         <Reveal delay={80} className="lg:col-span-8">
           <h1 className="display text-[48px] leading-[0.95] sm:text-[72px] lg:text-[96px]">{title}</h1>
         </Reveal>

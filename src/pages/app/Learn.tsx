@@ -12,8 +12,7 @@ export default function Learn() {
       <PageHeader title="Learning centre" description={`Eleven lessons, each with a worked example and a three-question check. ${done} of ${MODULES.length} done.`} />
       <Link to="/app/learn/tax-awareness" className="bezel lift group flex flex-wrap items-center justify-between gap-6 p-5 sm:p-6">
         <span className="max-w-2xl">
-          <span className="tag">Reference</span>
-          <span className="mt-5 block text-[24px] font-semibold tracking-[-0.03em] text-evergreen">Tax Awareness</span>
+          <span className="block text-[24px] font-semibold tracking-[-0.03em] text-evergreen">Tax Awareness</span>
           <span className="mt-2 block text-sm leading-relaxed text-grey">Equity gains, debt funds, EPF, PPF, NPS and ELSS: dated, editable reference values with official sources.</span>
         </span>
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-evergreen text-onbrand transition-transform duration-500 ease-spring group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:scale-105" aria-hidden>
