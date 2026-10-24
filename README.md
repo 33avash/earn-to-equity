@@ -24,6 +24,7 @@ It runs entirely in your browser. There is no sign-up and no server holding your
 - [Tests](#tests)
 - [Deployment](#deployment)
 - [Team](#team)
+- [License](#license)
 - [Disclaimer](#disclaimer)
 
 ---
@@ -310,6 +311,10 @@ Every push to `main` runs the tests, builds the site and publishes it to GitHub 
 ## Team
 
 Atulya Singh · Avash Srivastava · Aayushi Paul · Agustyae Gupta
+
+## License
+
+Released under the [MIT License](LICENSE). You can use, change and share the code, including commercially, as long as the copyright notice stays with it. The licence covers the code only; it doesn't make the projections financial advice (see below).
 
 ## Disclaimer
 
