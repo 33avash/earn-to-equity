@@ -24,14 +24,32 @@ function normal(rand: () => number) {
 
 /**
  *  - 'student-t': fat-tailed returns (Student-t, ν = 5) scaled to the assumed mean and volatility.
- *  - 'historical': the Indian-equity share draws whole calendar years, with replacement, from Nifty 50 TRI
- *    returns 2005–2025; the rest of the portfolio uses the Student-t model on its own mean and volatility.
+ *  - 'historical': the Indian-equity share replays Nifty 50 TRI returns 2005–2025 in blocks of three
+ *    consecutive years (a block bootstrap, wrapping from 2025 back to 2005), so bad years cluster as they
+ *    did in 2008 and 2011. The rest of the portfolio uses the Student-t model on its own mean and volatility.
  */
 export type ReturnModel = 'student-t' | 'historical';
 
 export const NIFTY_TRI = { ...nifty, series: Object.values(nifty.returns) as number[] };
 
 export const T_DEGREES_OF_FREEDOM = 5;
+
+/** Years per block in the historical bootstrap. */
+export const BOOTSTRAP_BLOCK = 3;
+
+/**
+ * Block bootstrap: `years` values from `series`, taken in runs of `block` consecutive years from a random
+ * start, wrapping at the end of the series. Deterministic for a given generator.
+ */
+export function blockBootstrap(rand: () => number, series: number[], years: number, block = BOOTSTRAP_BLOCK): number[] {
+  const n = series.length;
+  const out: number[] = [];
+  while (out.length < years) {
+    const start = Math.floor(rand() * n);
+    for (let k = 0; k < block && out.length < years; k++) out.push(series[(start + k) % n]);
+  }
+  return out;
+}
 
 /** Student-t draw with ν degrees of freedom, scaled to unit variance. */
 export function studentT(rand: () => number, nu = T_DEGREES_OF_FREEDOM): number {
@@ -62,39 +80,40 @@ const pct = (sorted: number[], q: number) => {
 };
 
 /**
- * Annual portfolio returns are drawn independently each year (see ReturnModel), after fund costs.
+ * Annual portfolio returns are drawn for each path (see ReturnModel), after fund costs.
  * Each path runs through the same `simulate` engine.
  */
 export function monteCarlo(p: FinancialProfile, a: Assumptions, opts: { paths?: number; seed?: number; overrides?: SimOverrides; model?: ReturnModel } = {}): MonteCarloResult {
   const model = opts.model ?? 'student-t';
-  const paths = Math.max(1000, opts.paths ?? 1000);
+  const paths = Math.max(100, Math.round(opts.paths ?? 1000));
   const rand = mulberry32(opts.seed ?? 20250101);
   const years = opts.overrides?.years ?? a.horizonYears;
   const alloc = p.preferences.targetAllocation;
-  const net = netReturns(a);
+  const net = netReturns(a, p.preferences.regularPlanShare);
   const shift = opts.overrides?.returnShift ?? 0;
   const mean = weightedReturn(alloc, net) + shift;
-  const vol = portfolioVolatility(alloc, a.volatility);
+  const vol = portfolioVolatility(alloc, a.volatility, a.correlations);
   // Historical mode splits Indian equity from the rest.
   const total = Object.values(alloc).reduce((x, w) => x + w, 0) || 1;
   const wEq = alloc.indianEquity / total;
   const rest = { ...alloc, indianEquity: 0 };
   const restMean = wEq < 1 ? weightedReturn(rest, net) + shift : 0;
-  const restVol = wEq < 1 ? portfolioVolatility(rest, a.volatility) : 0;
-  const equityCost = a.expenseRatios?.indianEquity ?? 0;
-  const draw = () => {
+  const restVol = wEq < 1 ? portfolioVolatility(rest, a.volatility, a.correlations) : 0;
+  // Fund costs on the Indian-equity share: the expense ratio plus any regular-plan drag.
+  const equityCost = a.returns.indianEquity - net.indianEquity;
+  const pathReturns = (): number[] => {
     if (model === 'historical') {
-      const hist = NIFTY_TRI.series[Math.floor(rand() * NIFTY_TRI.series.length)] - equityCost;
-      return wEq * hist + (1 - wEq) * (restMean + restVol * studentT(rand));
+      const hist = blockBootstrap(rand, NIFTY_TRI.series, years);
+      return hist.map((h) => wEq * (h - equityCost) + (1 - wEq) * (restMean + restVol * studentT(rand)));
     }
-    return mean + vol * studentT(rand);
+    return Array.from({ length: years }, () => mean + vol * studentT(rand));
   };
 
   const byYear: number[][] = Array.from({ length: years }, () => []);
   const goalHits = new Map<string, { name: string; year: number; hits: number }>();
   let fiHits = 0;
   for (let k = 0; k < paths; k++) {
-    const yearReturns = Array.from({ length: years }, () => Math.max(-0.95, draw()));
+    const yearReturns = pathReturns().map((r) => Math.max(-0.95, r));
     const r = simulate(p, a, { ...opts.overrides, years, yearReturns });
     r.rows.forEach((row, i) => {
       byYear[i].push(row.netWorth);

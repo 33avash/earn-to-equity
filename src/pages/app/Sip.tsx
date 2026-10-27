@@ -3,6 +3,7 @@ import type { ContributionTiming } from '@/types/profile';
 import { usePlan, useMoney } from '@/state/selectors';
 import { PageHeader, Section, Slider, Field, MoneyInput, Segmented, Stat, Disclaimer, Toggle } from '@/components/ui';
 import { ContribGainsChart } from '@/components/charts/SeriesCharts';
+import { RegularPlansToggle } from '@/features/editors/RegularPlans';
 import { projectSip } from '@/finance/sip';
 import { formatINR, formatPct } from '@/finance/money';
 
@@ -37,6 +38,9 @@ export default function Sip() {
             <Segmented label="Contribution timing" value={timing} onChange={setTiming} options={[{ value: 'end', label: 'End of month' }, { value: 'start', label: 'Start of month' }]} />
           </div>
           <Toggle checked={compare} onChange={setCompare} label="Compare with a flat SIP" description="Same starting amount, no annual increase." />
+          <div className="border-t border-line pt-5">
+            <RegularPlansToggle />
+          </div>
         </div>
         <div className="bezel p-5 sm:p-6 lg:col-span-8">
           <div className="grid grid-cols-2 gap-6 border-b border-line pb-6 sm:grid-cols-3 xl:grid-cols-5">

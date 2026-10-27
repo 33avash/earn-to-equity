@@ -50,7 +50,7 @@ export default function Legal() {
             <h2 className="text-[26px] font-semibold tracking-[-0.03em]">Terms of use</h2>
             <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-charcoal/90">
               <p>Earn to Equity is provided as-is for education and personal exploration. You are responsible for your financial decisions. Use the projections as one input among many, and consult a qualified, registered professional for advice specific to your situation.</p>
-              <p>The prototype may contain errors. Calculations are documented and tested, but simplified. Income tax, capital-gains tax and fund costs are modelled; exit loads, surcharge on capital gains and most tax deductions beyond 80C, 80D and HRA are not.</p>
+              <p>The prototype may contain errors. Calculations are documented and tested, but simplified. Income tax, capital-gains tax and fund costs are modelled; exit loads, surcharge on capital gains and tax deductions beyond those listed on the Settings page (Sec 123/old 80C, Sec 126/old 80D, NPS, home-loan interest and HRA) are not.</p>
             </div>
           </Bezel>
 

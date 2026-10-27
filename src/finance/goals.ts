@@ -52,8 +52,8 @@ export function reorderGoals(goals: Goal[], orderedIds: string[]): Goal[] {
 export function goalReturn(goal: Goal, months: number, p: FinancialProfile, a: Assumptions): number {
   if (goal.source === 'savings') return a.returns.cash;
   // Money needed within 3 years is assumed to sit in debt instruments, not equities.
-  if (months < 36) return netReturns(a).debt;
-  return weightedReturn(p.preferences.targetAllocation, netReturns(a));
+  if (months < 36) return netReturns(a, p.preferences.regularPlanShare).debt;
+  return weightedReturn(p.preferences.targetAllocation, netReturns(a, p.preferences.regularPlanShare));
 }
 
 function completionMonths(goal: Goal, monthly: number, annualReturn: number): number | null {

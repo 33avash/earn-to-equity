@@ -90,9 +90,9 @@ export function computePlan(profile: FinancialProfile, assumptions: Assumptions)
   const health = healthScore(profile, assumptions);
   const insights = nextSteps(profile, cashflow, emergency, goals, fi, sim);
   // After fund costs; the return every projection uses.
-  const portfolioReturn = weightedReturn(profile.preferences.targetAllocation, netReturns(assumptions));
+  const portfolioReturn = weightedReturn(profile.preferences.targetAllocation, netReturns(assumptions, profile.preferences.regularPlanShare));
   const portfolioReturnGross = weightedReturn(profile.preferences.targetAllocation, assumptions.returns);
-  const volatility = portfolioVolatility(profile.preferences.targetAllocation, assumptions.volatility);
+  const volatility = portfolioVolatility(profile.preferences.targetAllocation, assumptions.volatility, assumptions.correlations);
   const final = sim.rows[sim.rows.length - 1];
   const end = sim.points[sim.points.length - 1];
   const headline: Headline = { year: end.year, age: end.age, netWorth: end.netWorth, netWorthReal: end.netWorthReal };

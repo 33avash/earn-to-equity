@@ -3,7 +3,7 @@ import type { GoalOutcome, ProjectionPoint, SimOverrides, SimResult, SkippedEven
 import { CAPITAL_GAINS, CESS, HOME_DEFAULTS, UNDER_CONSTRUCTION_GST, propertyCharges } from './assumptions';
 import { monthlyCashflow } from './cashflow';
 import { goalFundingMode, goalLoanTerms } from './goalFunding';
-import { salaryInputs, usesCtc } from './income';
+import { rentMonthly, salaryInputs, usesCtc } from './income';
 import { balanceSheet, portfolioValue } from './networth';
 import { netReturns, weightedReturn } from './portfolio';
 import { emi as emiFor, loanMonthlyRate, monthlyRate } from './rates';
@@ -26,6 +26,22 @@ interface Loan {
   emi: number;
   moratorium: number; // months left in which interest is added to the balance and nothing is paid
   tenureMonths: number; // repayment period once the moratorium ends
+  selfOccupied?: boolean; // a home loan on a house you own: interest and principal count in the old regime
+}
+
+/** Interest and principal a loan will repay over the next twelve months, without changing it. */
+function nextYearRepayments(l: Loan): { interest: number; principal: number } {
+  let bal = l.bal;
+  let interest = 0;
+  let principal = 0;
+  for (let m = 0; m < 12 && bal > 0; m++) {
+    const i = bal * loanMonthlyRate(l.apr);
+    const pay = Math.min(l.emi, bal + i);
+    interest += i;
+    principal += pay - i;
+    bal = bal + i - pay;
+  }
+  return { interest, principal: Math.max(0, principal) };
 }
 
 /**
@@ -44,6 +60,11 @@ interface Loan {
  *  - With a CTC, take-home is recomputed every year from CTC: EPF, professional tax and income tax under
  *    the cheaper regime (src/finance/tax.ts). Salary growth and raises apply to CTC, so take-home grows
  *    more slowly as income crosses slabs. In a year with a career break, tax is on the months worked.
+ *  - Variable pay arrives once a year, in December, after the extra tax it causes.
+ *  - The old regime uses this year's rent (it stops when you move into a home you buy) and the interest
+ *    and principal your self-occupied home loan repays this year.
+ *  - Gratuity is earned each year but paid only when you leave, so it is reported separately and left out
+ *    of net worth. Employer and own NPS contributions build a balance locked until 60.
  *  - Without a CTC, the entered take-home grows at the salary-growth rate.
  *  - Lifestyle creep: a share (`lifestyleCreep`) of each above-inflation rise in take-home is added to
  *    lifestyle spending, permanently.
@@ -114,7 +135,7 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
   const stepUp = o.sipStepUp ?? a.sipStepUp;
   const creep = Math.max(0, o.lifestyleCreep ?? a.lifestyleCreep ?? 0);
   const alloc = p.preferences.targetAllocation;
-  const baseReturn = weightedReturn(alloc, netReturns(a)) + (o.returnShift ?? 0);
+  const baseReturn = weightedReturn(alloc, netReturns(a, p.preferences.regularPlanShare)) + (o.returnShift ?? 0);
   const cashMonthly = monthlyRate(Math.max(-0.99, a.returns.cash));
   const borrowMonthly = loanMonthlyRate(BORROWING_RATE);
   const cf = monthlyCashflow(p);
@@ -141,7 +162,8 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
   let extraInvest = Math.max(0, o.extraMonthlyInvestment ?? 0);
   let retContribution = Math.max(0, p.position.retirement.monthlyContribution);
   const retMonthly = monthlyRate(p.position.retirement.returnRate);
-  const fullYearTakeHome = () => (ctcMode ? salaryBreakdown(salaryInputs(p, ctc)).monthlyTakeHome : salary);
+  let rent = rentMonthly(p); // for the HRA exemption; grows with inflation, stops when you move into a home you buy
+  const fullYearTakeHome = () => (ctcMode ? salaryBreakdown(salaryInputs(p, ctc, { rentMonthly: rent })).monthlyInHand : salary);
   let prevTakeHome = fullYearTakeHome();
   let priceLevel = 1; // cumulative inflation applied to costs, as of the start of the current year
   let realLevel = 1; // cumulative inflation to the end of the current year, for today's-rupee figures
@@ -152,11 +174,13 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
   let basis = portfolio; // cost basis; existing holdings are assumed to be at cost
   let retirement = Math.max(0, p.position.retirement.balance);
   let epf = Math.max(0, p.position.epf?.balance ?? 0);
+  let nps = 0; // employer and own NPS contributions made during the plan; locked until 60
+  let gratuityAccrued = 0;
   const otherAssets = sheet.otherAssets;
   let homes = 0;
   const loans: Loan[] = p.liabilities
     .filter((l) => l.balance > 0)
-    .map((l) => ({ label: l.label, bal: l.balance, apr: l.rate, emi: Math.max(0, l.emi), moratorium: 0, tenureMonths: 0 }));
+    .map((l) => ({ label: l.label, bal: l.balance, apr: l.rate, emi: Math.max(0, l.emi), moratorium: 0, tenureMonths: 0, selfOccupied: l.kind === 'home' }));
 
   const events: LifeEvent[] = [...(o.excludeEvents ? [] : p.lifeEvents), ...(o.extraEvents ?? [])]
     .filter((e) => !skip.has(e.id))
@@ -223,6 +247,7 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
       ctc *= 1 + salaryGrowth;
       salary *= 1 + salaryGrowth;
       otherIncome *= 1 + inflY;
+      rent *= 1 + inflY;
       essential *= 1 + inflY;
       lifestyle *= 1 + inflY;
       eventExpense *= 1 + inflY;
@@ -261,9 +286,10 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
         oneTimeCosts += c.upfront - c.downPayment;
         homes += value;
         eventExpense += c.maintenanceMonthly + c.propertyTaxMonthly;
+        if (ev.home.moveIn !== false) rent = 0;
         if (c.loan > 0) {
           const tenureMonths = Math.max(1, ev.home.tenureYears) * 12;
-          loans.push({ label: `${ev.label} loan`, bal: c.loan, apr: ev.home.loanRate, emi: emiFor(c.loan, ev.home.loanRate, tenureMonths), moratorium: 0, tenureMonths });
+          loans.push({ label: `${ev.label} loan`, bal: c.loan, apr: ev.home.loanRate, emi: emiFor(c.loan, ev.home.loanRate, tenureMonths), moratorium: 0, tenureMonths, selfOccupied: true });
         }
       }
     }
@@ -272,14 +298,27 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
     const worked = retired ? 0 : Math.max(0, 12 - Math.min(12, breakMonths));
     let monthTakeHome = salary;
     let monthEpf = 0;
+    let monthNps = 0;
+    let variableNet = 0;
     let yearTax = 0;
     let regime: YearRow['regime'] = null;
+    let taxDetail: YearRow['tax'] = null;
     if (ctcMode && worked > 0) {
-      const b = salaryBreakdown(salaryInputs(p, (ctc * worked) / 12));
-      monthTakeHome = b.takeHome / worked;
+      // Old-regime home-loan deductions: what your self-occupied home loans repay this year.
+      const homeLoan = loans
+        .filter((l) => l.selfOccupied && l.bal > 0 && l.moratorium === 0)
+        .map(nextYearRepayments)
+        .reduce((x, y) => ({ interest: x.interest + y.interest, principal: x.principal + y.principal }), { interest: 0, principal: 0 });
+      const b = salaryBreakdown(salaryInputs(p, (ctc * worked) / 12, { rentMonthly: rent, homeLoanInterest: homeLoan.interest, homeLoanPrincipal: homeLoan.principal }));
+      // A part-year CTC gives part-year monthly pay; spread it over the months actually worked.
+      monthTakeHome = (b.monthlyInHand * 12) / worked;
+      variableNet = b.variableNet;
       monthEpf = hasEpf ? b.epfCredit / worked : 0;
+      monthNps = (b.employerNps + b.ownNps) / worked;
+      gratuityAccrued += b.gratuity;
       yearTax = b.tax;
       regime = b.regime;
+      taxDetail = { new: b.taxNew, old: b.taxOld, homeLoanInterest: b.homeLoanInterestDeduction, hraExemption: b.hraExemption, sec123: b.sec123Deduction, variablePaid: b.variablePaid };
       slabRate = marginalRate(taxableIncome(b), b.regime);
     } else if (worked === 0) slabRate = DEFAULT_SLAB_RATE;
 
@@ -338,13 +377,15 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
     let pm = monthlyRate(Math.max(-0.99, yearReturn));
     if (recovery && y <= recovery.untilIndex) pm = (1 + pm) * recovery.monthlyBoost - 1;
 
-    let income = 0, expenses = 0, debtPayments = 0, interestPaid = 0, contributions = 0, savingsToCash = 0, epfInterest = 0, epfContributions = 0;
+    let income = 0, expenses = 0, debtPayments = 0, interestPaid = 0, contributions = 0, savingsToCash = 0, epfInterest = 0, epfContributions = 0, npsContributions = 0;
+    const npsMonthly = monthlyRate(Math.max(-0.99, a.npsReturn ?? yearReturn));
     for (let m = 0; m < 12; m++) {
       const onBreak = breakMonths > 0;
       if (onBreak) breakMonths--;
       const working = !retired && !onBreak;
       const monthSalary = working ? monthTakeHome : 0;
-      const monthIncome = monthSalary + otherIncome;
+      // The year's variable pay arrives in December.
+      const monthIncome = monthSalary + otherIncome + (m === 11 ? variableNet : 0);
       const monthExpenses = essential + lifestyle + eventExpense;
       let monthDebt = 0;
       for (const l of loans) {
@@ -390,6 +431,9 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
       }
       const retIn = working ? retContribution : 0;
       retirement = retirement * (1 + retMonthly) + retIn;
+      const npsIn = working ? monthNps : 0;
+      nps = nps * (1 + npsMonthly) + npsIn;
+      npsContributions += npsIn;
       if (hasEpf) {
         // EPFO: interest on the monthly running balance, credited once a year.
         const credit = working ? monthEpf : 0;
@@ -424,7 +468,7 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
     const loanTotal = loans.reduce((s, l) => s + Math.max(0, l.bal), 0);
     const liabilities = loanTotal + Math.max(0, -cash);
     const property = otherAssets + homes;
-    const retirementTotal = retirement + epf;
+    const retirementTotal = retirement + epf + nps;
     const totalAssets = Math.max(0, portfolio) + retirementTotal + Math.max(0, cash) + property;
     const netWorth = totalAssets - liabilities;
     const financialAssets = Math.max(0, portfolio) + retirementTotal + Math.max(0, cash);
@@ -460,6 +504,10 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
       epf,
       epfContributions,
       epfInterest,
+      nps,
+      npsContributions,
+      gratuity: gratuityAccrued,
+      tax: taxDetail,
       cash,
       property,
       totalAssets,

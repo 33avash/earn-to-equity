@@ -139,13 +139,18 @@ All of the maths is in `src/finance/`, written as plain TypeScript with no React
 
 ### Salary and tax
 
-When you enter a CTC, take-home is recalculated from it every year. CTC is treated as gross salary plus the employer's PF contribution; gratuity and variable pay are left out. Each year the engine deducts:
+When you enter a CTC, in-hand pay is recalculated from it every year. Basic + DA defaults to 50% of CTC, the floor the Labour Codes set for "wages" from 21 November 2025. CTC is carved up in this order: employer PF, employer NPS, gratuity (4.81% of basic, when it is part of CTC) and the variable-pay target. What is left is fixed pay, paid monthly. Variable pay arrives once a year at target × expected payout and is taxed that year; the extra tax it causes comes out of the payout, so the monthly figure covers fixed pay only. Each year the engine deducts:
 
-- **EPF:** 12% of basic pay from you and 12% from your employer. The part of your employer's share that goes to the pension scheme (8.33% of up to ₹15,000 a month) is not counted as savings.
+- **EPF:** 12% of basic pay from you and 12% from your employer (or 12% of ₹25,000 a month, ₹3,000, if your employer uses the wage ceiling, which rose from ₹15,000 on 17 September 2026). The part of your employer's share that goes to the pension scheme (8.33% of up to ₹25,000 a month) is not counted as savings.
 - **Professional tax** for your state (₹2,500 a year in Maharashtra, Karnataka and Tamil Nadu; ₹2,400 in Telangana, West Bengal and Gujarat; nil in Delhi, Haryana and Uttar Pradesh).
-- **Income tax** under both regimes, using whichever is cheaper unless you pick one. Slab tax, then the rebate with marginal relief, then surcharge with marginal relief, then 4% cess.
-  - New regime: nil up to ₹4 L, then 5% for each ₹4 L band up to 30% above ₹24 L, a ₹75,000 standard deduction and a rebate of up to ₹60,000 on income up to ₹12 L. A salary up to about ₹12.75 L pays no tax.
-  - Old regime: nil up to ₹2.5 L, 5% to ₹5 L, 20% to ₹10 L, 30% above, a ₹50,000 standard deduction, 80C up to ₹1.5 L (your PF counts towards it), 80D up to ₹25,000, and an HRA exemption you enter yourself.
+- **Income tax** under both regimes, using whichever is cheaper each year unless you pick one. Slab tax, then the rebate with marginal relief, then surcharge with marginal relief, then 4% cess. Sections are named by their Income-tax Act, 2025 numbers with the old number alongside, for example "Sec 123 (old 80C)", and by the old number alone where we couldn't confirm the new one.
+  - New regime (Sec 202, old 115BAC): nil up to ₹4 L, then 5% for each ₹4 L band up to 30% above ₹24 L, a ₹75,000 standard deduction and a rebate (Sec 156, old 87A) of up to ₹60,000 on income up to ₹12 L. Employer NPS is deductible up to 14% of basic (Sec 124, old 80CCD(2)).
+  - Old regime: nil up to ₹2.5 L, 5% to ₹5 L, 20% to ₹10 L, 30% above, a ₹50,000 standard deduction, Sec 123 (old 80C) up to ₹1.5 L (your PF and home-loan principal count towards it), your own NPS up to ₹50,000 more (old 80CCD(1B)), employer NPS up to 10% of basic, health cover up to ₹25,000 for you and ₹25,000 or ₹50,000 for parents (Sec 126, old 80D), interest on a self-occupied home loan up to ₹2 L (Sec 22, old 24(b)), and HRA.
+  - HRA is worked out, not typed: the least of HRA received, rent minus 10% of basic, and 50% of basic in Delhi, Mumbai, Kolkata, Chennai, Bengaluru, Hyderabad, Pune or Ahmedabad (40% elsewhere). Rent comes from the rent line in your budget and stops when you move into a home you buy. You can still type your payslip figure to override it.
+  - Home-loan interest and principal come from the projection's own loan schedule for that year.
+  - Employer PF and NPS above ₹7.5 L a year are taxed as salary.
+- **Gratuity** is earned each year but paid only when you leave after 5 years (1 year on a fixed-term contract), so it is shown separately and left out of net worth.
+- **NPS** contributions, yours and your employer's, build a balance locked until 60. It counts towards FI and is flagged, like EPF.
 
 Because raises apply to CTC, take-home grows more slowly than CTC as you move into higher slabs. In a year with a career break, tax is worked out on the months you were paid.
 
@@ -186,8 +191,9 @@ FI target = (yearly living costs + extra healthcare after FI) ÷ the withdrawal 
 
 - The conservative and high-growth scenarios shift your own assumptions: salary growth −3 / +3 points, returns −2 / +1.5 points, inflation +1 / −0.5 points, SIP step-up −5 / +5 points. You can edit these.
 - The attribution changes one assumption at a time to see how much of the difference each one causes. Because assumptions interact, the parts don't always add up to the total, and the remainder is shown separately.
-- The Monte Carlo draws each year's return independently, after fund costs, and runs every path through the same engine. Two return models are available: fat-tailed returns (Student-t with 5 degrees of freedom, scaled to your assumed return and volatility), or actual Nifty 50 total-return years from 2005 to 2025 drawn at random for the Indian-equity share. The random generator is seeded, so the same inputs always give the same result.
-- Portfolio volatility assumes a constant 0.3 correlation between every pair of asset classes. That is good enough to compare mixes, but it is not a forecast of risk.
+- The Monte Carlo draws a return path for each run, after fund costs, and runs every path through the same engine. Two return models are available: fat-tailed returns (Student-t with 5 degrees of freedom, scaled to your assumed return and volatility), or actual Nifty 50 total-return years from 2005 to 2025 for the Indian-equity share, taken in three-year blocks. The random generator is seeded, so the same inputs always give the same result.
+- Portfolio volatility uses a correlation matrix (Indian and international equity 0.5, debt and government schemes 0.6, everything else 0), a planning convention you can edit in Settings. The app checks that an edited matrix is still positive semi-definite.
+- The historical model replays Nifty 50 total-return years in blocks of three consecutive years (wrapping from 2025 back to 2005), so bad years cluster as they did in 2008 and 2011.
 
 ### The coach
 
@@ -215,7 +221,7 @@ The engine choice, model size and Ollama options are in the coach's **AI setting
 
 ## Default assumptions
 
-Every dated rule and rate is kept in one file, `src/finance/assumptions.ts`, with the date it was checked and the official page it was checked against. The Settings page lists them all with their sources. Last full review: 18 October 2026.
+Every dated rule and rate is kept in one file, `src/finance/assumptions.ts`, with the date it was checked and the official page it was checked against. Section numbers under the Income-tax Act, 2025 are in `src/finance/sections.ts`. The Settings page lists them all with their sources. Last full review: 27 October 2026.
 
 | Assumption | Default |
 |---|---|
@@ -230,6 +236,15 @@ Every dated rule and rate is kept in one file, `src/finance/assumptions.ts`, wit
 | Education loan | 10.5% over 7 years, 12-month moratorium |
 | Car loan | 9.5% over 5 years |
 | Lender EMI limit | 50% of take-home |
+| Basic + DA | 50% of CTC (Labour Codes floor) |
+| EPF wage ceiling | ₹25,000 a month (from 17 Sep 2026); EPS 8.33% up to the same ceiling |
+| Gratuity | 15/26 × 1/12 of basic = 4.81% a year, part of CTC by default, not in net worth |
+| Variable pay | None by default; paid once a year at target × expected payout |
+| Employer NPS | None by default; deductible to 14% of basic (new regime), 10% (old) |
+| HRA | 40% of basic; exemption worked out from your rent and city |
+| Regular-plan cost | +0.75 points a year on equity funds, +0.4 on debt funds (approximate), only if you say your funds are regular plans |
+| Rupee depreciation vs USD | 0% (added to international equity if you change it) |
+| Correlations | Indian–international equity 0.5, debt–government schemes 0.6, others 0 |
 | Safe withdrawal rate | 3.5% |
 | Short-term borrowing rate | 14% |
 | Plan length | 20 years |
@@ -250,10 +265,10 @@ These are long-run planning assumptions, not forecasts, and they can all be chan
 
 We would rather list these than have them found later:
 
-- **Tax.** Exit loads, surcharge on capital gains, and deductions other than 80C, 80D and HRA are not modelled. HRA exemption is a figure you enter; it isn't calculated from your rent. Tax rules are for a resident individual under 60.
-- **Salary.** Gratuity, bonuses and variable pay are left out of CTC.
-- **Investments.** Holdings are assumed to be long-term and in your target mix, so short-term capital-gains tax on recent purchases isn't applied. Volatility uses a single fixed correlation. Each Monte Carlo year is drawn independently, so it doesn't capture the way bad years tend to cluster.
-- **Lock-ins.** EPF counts towards FI but is flagged as locked until 58. Lock-in periods on PPF and NPS are not enforced in the projection.
+- **Tax.** Exit loads, surcharge on capital gains, and deductions other than Sec 123 (old 80C), Sec 126 (old 80D), NPS, home-loan interest and HRA are not modelled. Only one self-occupied home loan is assumed. Tax rules are for a resident individual under 60.
+- **Salary.** Gratuity is accrued at 4.81% of basic a year but never paid out in the projection, because the plan doesn't know when you will change jobs. Variable pay is assumed to be paid in the year it is earned. The planner assumes you are an EPS member; if your basic was above the ceiling when you first joined EPF, more of your employer's share would go to EPF.
+- **Investments.** Holdings are assumed to be long-term and in your target mix, so short-term capital-gains tax on recent purchases isn't applied. Correlations are fixed round numbers, not estimated from data. The historical bootstrap clusters bad years within three-year blocks only.
+- **Lock-ins.** EPF and NPS count towards FI but are flagged as locked until 58 and 60. Lock-in periods on PPF are not enforced, and the NPS annuity at exit isn't modelled.
 - **Insurance.** The plan checks your health and term cover against benchmarks. Premiums are whatever you enter as expenses, and claims being paid out are not modelled.
 - **Data.** There is no import yet. The JSON export is a copy for your records, but you can't load it back into the app.
 - **Coach.** The in-browser model needs WebGPU and a one-time download of about 1.5 GB; without WebGPU the coach gives rule-based answers. Gemini needs a key on the server (dev or preview server, or the Cloudflare Worker described below), and on Google's free tier an answer currently takes about 20 seconds. The figure check compares values, not meaning, so a real figure quoted about the wrong thing passes it.

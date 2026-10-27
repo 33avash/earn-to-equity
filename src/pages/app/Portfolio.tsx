@@ -5,6 +5,7 @@ import { usePlan, useMoney } from '@/state/selectors';
 import { useStore } from '@/state/store';
 import { PageHeader, Section, Stat, Notice, Disclaimer, MoneyInput, PercentInput, Button, Field, toast } from '@/components/ui';
 import { AllocationEditor } from '@/features/editors/Allocation';
+import { RegularPlansToggle } from '@/features/editors/RegularPlans';
 import { AllocationBar } from '@/components/charts/Bars';
 import { ContribGainsChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
@@ -99,6 +100,9 @@ export default function Portfolio() {
               {(id, d) => <PercentInput id={id} describedBy={d} value={a.expenseRatios[c]} max={3} onChange={(v) => updateAssumptions({ expenseRatios: { ...a.expenseRatios, [c]: v } })} />}
             </Field>
           ))}
+        </div>
+        <div className="mt-6 border-t border-line pt-5">
+          <RegularPlansToggle />
         </div>
       </Section>
 

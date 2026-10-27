@@ -37,7 +37,7 @@ const RULES = [
   'Lifestyle creep as pay rises',
   '1,000 market paths with fat tails',
   'Goals inflated to the year they fall due',
-  'Old regime 80C, 80D and HRA',
+  'Old-regime deductions, HRA worked out from your rent',
 ];
 
 const COMPARE: { row: string; calc: boolean }[] = [

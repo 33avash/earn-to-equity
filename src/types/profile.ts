@@ -1,5 +1,6 @@
 import type { CityTier, StateCode } from '@/finance/assumptions';
 import type { RegimeChoice } from '@/finance/tax';
+import type { CityKey } from '@/finance/cities';
 
 /**
  * Shared financial profile: the one profile every module reads.
@@ -111,13 +112,20 @@ export interface LifeEvent {
 }
 
 export interface SalaryStructure {
-  basicShare?: number; // default 0.4
-  pfOnWageCeiling?: boolean; // PF on basic capped at ₹15,000 a month
+  basicShare?: number; // basic + DA as a share of CTC (default 0.5, the Labour Codes floor)
+  pfOnWageCeiling?: boolean; // PF on basic capped at ₹25,000 a month
   state?: StateCode; // for professional tax (default Maharashtra)
   regime?: RegimeChoice; // default: the cheaper regime each year
-  other80C?: number; // old-regime 80C beyond employee PF (ELSS, PPF, insurance)
-  sec80D?: number; // health-insurance premium deduction (old regime)
-  hraExemption?: number; // annual HRA exemption (old regime)
+  gratuityInCtc?: boolean; // default true
+  variablePay?: { targetShare: number; expectedPayout: number }; // default none
+  employerNpsShare?: number; // share of basic the employer puts in NPS (default 0)
+  ownNpsYearly?: number; // your own NPS contribution a year (old regime deduction)
+  hraShareOfBasic?: number; // default 0.4
+  other80C?: number; // old-regime Sec 123 (old 80C) beyond employee PF (ELSS, PPF, insurance)
+  sec80D?: number; // health-insurance premium for you and family a year (old regime)
+  sec80DParents?: number; // health-insurance premium for parents a year (old regime)
+  parentsSenior?: boolean; // a parent is 60 or older (higher limit)
+  hraExemption?: number; // annual HRA exemption typed in by hand; unset or 0 = calculated from rent
 }
 
 export interface HomeDetails {
@@ -132,6 +140,8 @@ export interface HomeDetails {
   sizeSqft?: number; // for maintenance
   maintenancePerSqft?: number; // INR per sq ft per month, today's prices
   propertyTaxAnnual?: number; // today's INR; default 0.1% of value
+  /** You live in it once bought, so rent stops (default). False: you keep renting where you work. */
+  moveIn?: boolean;
 }
 
 export interface FinancialProfile {
@@ -145,6 +155,7 @@ export interface FinancialProfile {
     /** Answer to "Should we count your parents as dependents?" when family support is paid. Unset = yes. */
     parentsAsDependents?: boolean;
     cityTier?: CityTier; // 1 = metro (default)
+    city?: CityKey; // sets state, city tier and the HRA metro rule
   };
   income: {
     /**
@@ -191,6 +202,8 @@ export interface FinancialProfile {
     risk: RiskProfile;
     horizonYears: number;
     targetAllocation: AssetMap; // decimals summing to 1
+    /** Share of your mutual-fund money in regular (not direct) plans, 0–1. Adds REGULAR_PLAN_DRAG to costs. */
+    regularPlanShare?: number;
   };
   lifeEvents: LifeEvent[];
 }
@@ -216,6 +229,14 @@ export interface Assumptions {
   epfRate: number;
   healthcareInflation: number; // for the post-FI healthcare line
   postFiHealthcare: number; // extra monthly healthcare cost after FI, today's INR
+  /** Asset-class correlations in ASSET_CLASSES order (default CORRELATIONS). */
+  correlations?: number[][];
+  /** Extra yearly cost of regular plans over direct plans (default REGULAR_PLAN_DRAG). */
+  regularPlanDrag?: { equity: number; debt: number };
+  /** Yearly fall in the rupee against the dollar, added to international equity returns (default 0). */
+  inrDepreciation?: number;
+  /** Return on NPS balances; unset = the plan's own portfolio return. */
+  npsReturn?: number;
 }
 
 export interface ScenarioDeltas {

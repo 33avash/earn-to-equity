@@ -12,6 +12,7 @@ export interface FiAnalysis {
   projectedCorpus: number; // financial assets in the target year, after tax on selling investments
   projectedCorpusPreTax: number;
   epfLocked: number; // EPF inside the corpus, which can't be withdrawn before 58
+  npsLocked: number; // NPS inside the corpus, which can't be withdrawn before 60
   healthcare: number; // post-FI healthcare line in the target year (annual)
   gap: number;
   progress: number; // projected / target, capped at 1
@@ -30,7 +31,7 @@ export function fiYears(p: FinancialProfile, a: Assumptions): number {
  * FI target = (living expenses + post-FI healthcare) in the target year ÷ safe-withdrawal-rate assumption,
  * plus any debt still outstanding (it must be cleared, since EMIs are not living expenses).
  * Financial assets = investments (after the tax due if sold) + retirement accounts incl. EPF + cash.
- * The home is excluded. EPF counts but is flagged: it can't be withdrawn before 58.
+ * The home is excluded. EPF and NPS count but are flagged: they can't be withdrawn before 58 and 60.
  */
 export function fiAnalysis(p: FinancialProfile, a: Assumptions, overrides: SimOverrides = {}): FiAnalysis {
   const yearsToTarget = Math.max(1, Math.min(50, p.about.fiAge - p.about.age));
@@ -75,6 +76,7 @@ export function fiAnalysis(p: FinancialProfile, a: Assumptions, overrides: SimOv
     projectedCorpus,
     projectedCorpusPreTax: row.financialAssets,
     epfLocked: p.about.fiAge < 58 ? row.epf : 0,
+    npsLocked: p.about.fiAge < 60 ? row.nps : 0,
     healthcare: row.fiHealthcare,
     gap,
     progress: targetCorpus > 0 ? Math.min(1, projectedCorpus / targetCorpus) : 1,

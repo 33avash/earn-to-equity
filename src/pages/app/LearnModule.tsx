@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { sectionLabel } from '@/finance/sections';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, ExternalLink } from 'lucide-react';
 import { MODULES, type LearnModule as LM } from '@/features/learn/modules';
@@ -62,16 +63,16 @@ function TaxAwareness() {
   const rows: [string, string][] = [
     ['Listed equity & equity mutual funds', `Held ≤ 12 months: short-term gains taxed at ${formatPct(tax.equityStcgRate)}. Held > 12 months: long-term gains above ${formatINR(tax.equityLtcgExemption)} a year taxed at ${formatPct(tax.equityLtcgRate)}.`],
     ['Debt mutual funds', 'Units bought on or after 1 April 2023 are taxed at your income-tax slab rate, whatever the holding period.'],
-    ['EPF', `Interest declared by EPFO (reference: ${formatPct(tax.epfRate, 2)}). Employee contributions qualify under 80C in the old regime. Interest on employee contributions above ₹2.5 lakh a year is taxable. Withdrawals after 5 years of continuous service are generally tax-free.`],
-    ['PPF', `15-year government-backed scheme (reference rate ${formatPct(tax.ppfRate)}, notified quarterly). Contributions qualify under 80C up to ${formatINR(tax.sec80cLimit)} in the old regime. Interest and maturity are tax-free.`],
-    ['NPS', `Additional deduction of ${formatINR(tax.nps80ccd1b)} under 80CCD(1B) in the old regime. Employer contributions can be deductible under 80CCD(2) in both regimes, within limits. At 60, up to 60% can be withdrawn tax-free. The remainder buys an annuity, whose income is taxable.`],
-    ['ELSS', `Equity funds with a 3-year lock-in. They qualify under 80C (old regime only), and gains are taxed like other equity funds.`],
+    ['EPF', `Interest declared by EPFO (reference: ${formatPct(tax.epfRate, 2)}). Employee contributions qualify under ${sectionLabel('80C')} in the old regime. Interest on employee contributions above ₹2.5 lakh a year is taxable. Withdrawals after 5 years of continuous service are generally tax-free.`],
+    ['PPF', `15-year government-backed scheme (reference rate ${formatPct(tax.ppfRate)}, notified quarterly). Contributions qualify under ${sectionLabel('80C')} up to ${formatINR(tax.sec80cLimit)} in the old regime. Interest and maturity are tax-free.`],
+    ['NPS', `Additional deduction of ${formatINR(tax.nps80ccd1b)} under ${sectionLabel('80CCD(1B)')} in the old regime. Employer contributions are deductible under ${sectionLabel('80CCD(2)')} in both regimes: up to 14% of basic in the new regime, 10% in the old. Since PFRDA’s December 2025 amendment, non-government subscribers can take up to 80% as a lump sum at normal exit; the rest buys an annuity, whose income is taxable.`],
+    ['ELSS', `Equity funds with a 3-year lock-in. They qualify under ${sectionLabel('80C')} (old regime only), and gains are taxed like other equity funds.`],
     ['New vs old regime', `The new regime is the default and has lower rates but few deductions. With the ₹75,000 standard deduction and the rebate, salary up to about ₹12.75 lakh (taxable income ${formatINR(tax.newRegimeZeroTaxIncome)}) pays no tax. Compare both before choosing tax-saving products.`],
   ];
   return (
     <div className="flex flex-col gap-6">
       <Notice tone="warning" title="Education, not tax advice">
-        These are reference values for <strong>{tax.asOf}</strong>. Section numbers changed under the new Act (for example, the 87A rebate is now section 202), and share buybacks are now taxed as capital gains. Verify on the official sources below or with a CA before acting.
+        These are reference values for <strong>{tax.asOf}</strong>. Section numbers changed under the new Act (80C is now section 123, the 87A rebate is section 156 and the new regime is section 202), and share buybacks are now taxed as capital gains. Verify on the official sources below or with a CA before acting.
       </Notice>
       <section className="bezel p-5 sm:p-6">
         <h2 className="text-[22px] font-semibold tracking-[-0.02em]">How common instruments are taxed</h2>

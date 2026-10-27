@@ -58,30 +58,35 @@ describe('income tax, tax year 2026-27 (hand-checked)', () => {
   });
 });
 
-describe('CTC → take-home (hand-checked)', () => {
+// The pre-Labour-Codes structure: basic 40% of CTC, gratuity outside CTC, no variable pay or NPS.
+// These hand checks show the new engine reproduces the old model exactly when those features are off.
+const OLD_STRUCTURE = { ...DEFAULT_SALARY, basicShare: 0.4, gratuityInCtc: false };
+
+describe('CTC → take-home (hand-checked, old structure)', () => {
   it('₹11.4 L CTC: ₹85,671.67 a month, no tax', () => {
-    const b = salaryBreakdown({ ...DEFAULT_SALARY, ctc: 1_140_000 });
+    const b = salaryBreakdown({ ...OLD_STRUCTURE, ctc: 1_140_000 });
     close(b.employeePf, 54_720, 1e-12);
     close(b.gross, 1_085_280, 1e-12);
     expect(b.tax).toBe(0);
     close(b.takeHome, 1_028_060, 1e-12);
-    // EPF account: 2 × ₹54,720 − EPS 8.33% of ₹1,80,000 (₹14,994) = ₹94,446.
-    close(b.epfCredit, 94_446, 1e-12);
+    // EPF account: 2 × ₹54,720 − EPS 8.33% of ₹3,00,000 (the ₹25,000 ceiling × 12 = ₹24,990) = ₹84,450.
+    close(b.epfCredit, 84_450, 1e-12);
   });
   it('₹20 L CTC: new regime tax ₹1,72,432, take-home ₹16,33,068', () => {
-    const b = salaryBreakdown({ ...DEFAULT_SALARY, ctc: 2_000_000 });
+    const b = salaryBreakdown({ ...OLD_STRUCTURE, ctc: 2_000_000 });
     expect(b.regime).toBe('new');
     close(b.tax, 172_432, 1e-12);
     close(b.takeHome, 1_633_068, 1e-12);
   });
   it('picks the old regime when deductions make it cheaper', () => {
-    const b = salaryBreakdown({ ...DEFAULT_SALARY, ctc: 2_000_000, other80C: 150_000, sec80D: 25_000, hraExemption: 500_000 });
+    const b = salaryBreakdown({ ...OLD_STRUCTURE, ctc: 2_000_000, other80C: 150_000, sec80D: 25_000, hraExemption: 500_000 });
     close(b.taxOld, 172_068, 1e-12);
     expect(b.regime).toBe('old');
   });
-  it('PF on the ₹15,000 wage ceiling', () => {
-    const b = salaryBreakdown({ ...DEFAULT_SALARY, ctc: 2_000_000, pfOnWageCeiling: true });
-    close(b.employeePf, 21_600, 1e-12);
+  it('PF on the ₹25,000 wage ceiling: 12% of ₹25,000 = ₹3,000 a month', () => {
+    const b = salaryBreakdown({ ...OLD_STRUCTURE, ctc: 2_000_000, pfOnWageCeiling: true });
+    close(b.employeePf, 36_000, 1e-12);
+    close(b.eps, 0.0833 * 300_000, 1e-12);
   });
   it('take-home grows more slowly than CTC as income crosses slabs', () => {
     const p = demoProfile(2026);
@@ -99,9 +104,10 @@ describe('CTC → take-home (hand-checked)', () => {
 describe('EPF account', () => {
   it('interest on the monthly running balance, credited at year-end (hand-checked demo 2026)', () => {
     const r = simulate(demoProfile(2026), DEFAULT_ASSUMPTIONS);
-    // ₹2,80,000 + ₹94,446 of credits + ₹27,320.56 interest (8.25%/12 on each month's closing balance).
-    close(r.rows[0].epf, 401_766.555625, 1e-9);
-    close(r.rows[0].epfInterest, 27_320.555625, 1e-9);
+    // Credits ₹84,450 a year (₹7,037.50 a month: 2 × 12% of ₹38,000 basic, less EPS on the ₹25,000 ceiling).
+    // Interest = 8.25%/12 × (12 × ₹2,80,000 + ₹7,037.50 × (1 + 2 + … + 12)) = 0.006875 × ₹39,08,925 = ₹26,873.86.
+    close(r.rows[0].epfInterest, 0.006875 * (12 * 280_000 + 7_037.5 * 78), 1e-9);
+    close(r.rows[0].epf, 280_000 + 84_450 + 0.006875 * (12 * 280_000 + 7_037.5 * 78), 1e-9);
   });
   it('a flat balance earns exactly the annual rate', () => {
     const p = bare();
@@ -248,15 +254,15 @@ describe('scenario tornado', () => {
 describe('golden file: demo profile, 2026–2046', () => {
   /*
    * Hand-verified rows:
-   *  - 2026: take-home ₹10,28,060 (CTC ₹11.4 L − employer PF ₹54,720 − employee PF ₹54,720 − PT ₹2,500, no tax);
-   *          EPF ₹4,01,766.56 (₹2,80,000 + ₹94,446 credits + ₹27,320.56 interest).
+   *  - 2026: take-home ₹10,06,136.92 (CTC ₹11.4 L − employer PF ₹54,720 − gratuity ₹21,923.08 − employee PF ₹54,720
+   *          − PT ₹2,500, no tax); EPF ₹3,91,323.86 (₹2,80,000 + ₹84,450 credits + ₹26,873.86 interest).
    *  - 2027: Japan trip ₹2,50,000 × 1.06 = ₹2,65,000, paid from savings.
    *  - 2029: MBA ₹18,00,000 × 1.08³ = ₹22,67,481.60, all on an education loan (savings are kept for the 21-month break);
    *          no salary that year.
    */
   it('matches the snapshot', () => {
     const r = simulate(demoProfile(2026), DEFAULT_ASSUMPTIONS);
-    close(r.rows[0].income, 1_028_060, 1e-12);
+    close(r.rows[0].income, 1_140_000 - 54_720 - (456_000 * 15) / 26 / 12 - 54_720 - 2_500, 1e-12);
     close(r.rows[1].goals[0].cost, 265_000, 1e-12);
     expect(r.rows[1].goals[0].status).toBe('funded');
     close(r.rows[3].goals[0].loan, 2_267_481.6, 1e-12);

@@ -35,7 +35,10 @@ export const GLOSSARY: { term: string; def: string; to: string }[] = [
   { term: 'Volatility', def: DEFINITIONS.volatility, to: '/app/risk-lab' },
   { term: 'Future cost of a goal', def: DEFINITIONS.futureCost, to: '/app/goals' },
   { term: 'LTCG', def: 'Long-term capital gains: profit on equity held over 12 months, taxed at 12.5% above ₹1.25 lakh a year.', to: '/app/learn/tax' },
-  { term: 'Section 80C', def: 'Old-regime deduction of up to ₹1.5 lakh a year for EPF, PPF, ELSS, life cover and similar. Not available in the new regime.', to: '/app/learn/tax' },
+  { term: 'Section 123 (old 80C)', def: 'Old-regime deduction of up to ₹1.5 lakh a year for EPF, PPF, ELSS, life cover, home-loan principal and similar. Called 80C before the Income-tax Act, 2025. Not available in the new regime.', to: '/app/learn/tax' },
+  { term: 'Gratuity', def: '15 days’ basic pay for every year of service (about 4.81% of basic a year), usually part of CTC. Paid when you leave after 5 years, or 1 year on a fixed-term contract.', to: '/app/budget' },
+  { term: 'Variable pay', def: 'The part of CTC paid as a yearly bonus, depending on performance. It is not in your monthly in-hand pay.', to: '/app/budget' },
+  { term: 'Employer NPS', def: 'Part of CTC your employer can put in NPS. Deductible up to 14% of basic in the new regime (section 124, old 80CCD(2)); locked until 60.', to: '/app/learn/tax' },
   { term: 'EPF', def: 'Employees’ Provident Fund: 12% of basic pay from you and your employer, earning the rate EPFO declares each year.', to: '/app/learn/retirement' },
   { term: 'SIP step-up', def: 'Raising your monthly SIP by a fixed percentage each year, usually in line with pay rises.', to: '/app/sip' },
 ];

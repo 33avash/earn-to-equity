@@ -13,7 +13,8 @@ import { DEFAULT_ASSUMPTIONS, blankProfile, demoProfile } from '@/state/demo';
 import { computePlan, goalStatusLabel, heroSeries, landingScenarios, scenarioSet, yearInspector, yearOnYear } from '@/state/plan';
 import { homeAffordability, answerWithRules } from '@/services/coach/ruleCoach';
 import { routeMeta } from '@/routeMeta';
-import { DEFAULT_SALARY, salaryBreakdown } from '@/finance/tax';
+import { salaryBreakdown } from '@/finance/tax';
+import { salaryInputs } from '@/finance/income';
 import type { Assumptions, FinancialProfile } from '@/types/profile';
 
 const close = (a: number, b: number, tol = 1e-6) => expect(Math.abs(a - b)).toBeLessThanOrEqual(tol * Math.max(1, Math.abs(b)));
@@ -210,7 +211,7 @@ describe('P1.5 coach home maths come from simulate()', () => {
     close(h.emiShare, (h.emi + h.existingEmi) / h.takeHome);
     // 2031 take-home comes from the 2031 CTC: ₹11.4 L × 1.08^5 × 1.5 after the post-MBA raise.
     const ctc2031 = 1_140_000 * Math.pow(1.08, 5) * 1.5;
-    close(during.income, salaryBreakdown({ ...DEFAULT_SALARY, ctc: ctc2031 }).takeHome, 1e-9);
+    close(during.income, salaryBreakdown(salaryInputs(plan.profile, ctc2031)).takeHome, 1e-9);
     expect(h.emiShare).toBeLessThan(1); // was reported as 248% before the fix
   });
 

@@ -267,8 +267,8 @@ export const MODULES: LearnModule[] = [
     minutes: 6,
     summary: 'How common Indian investments are taxed: equity, debt, EPF, PPF, NPS and ELSS. This is education, not tax advice.',
     body: [
-      'Tax treatment changes with Union Budgets, and from April 2026 provisions may be renumbered under the new Income-tax Act, 2025. The figures in this module are dated reference values you can edit. Always verify with official sources or a qualified professional.',
-      'Since FY 2023-24 the new tax regime has been the default. Many deductions familiar from the old regime, such as Section 80C for ELSS, PPF and EPF, are not available under it.',
+      'Tax treatment changes with Union Budgets, and from 1 April 2026 sections are renumbered under the Income-tax Act, 2025: 80C is now section 123, 80D is section 126 and the new regime is section 202. The figures in this module are dated reference values you can edit. Always verify with official sources or a qualified professional.',
+      'Since FY 2023-24 the new tax regime has been the default. Many deductions familiar from the old regime, such as section 123 (old 80C) for ELSS, PPF and EPF, are not available under it. Employer NPS (section 124) is one that is.',
     ],
     example: {
       title: 'See the Tax Awareness page',
@@ -277,7 +277,7 @@ export const MODULES: LearnModule[] = [
     },
     takeaways: ['Check which tax regime you are in before choosing tax-saving products.', 'Holding period changes how equity gains are taxed.', 'Tax rules change; verify before acting.'],
     quiz: [
-      { q: 'Under the new regime, Section 80C deductions are…', options: ['Fully available', 'Generally not available', 'Doubled', 'Only for ELSS'], answer: 1, explain: 'Most 80C deductions apply only under the old regime.' },
+      { q: 'Under the new regime, section 123 (old 80C) deductions are…', options: ['Fully available', 'Generally not available', 'Doubled', 'Only for ELSS'], answer: 1, explain: 'Section 123 deductions apply only under the old regime.' },
       { q: 'ELSS funds have a lock-in of…', options: ['None', '1 year', '3 years', '15 years'], answer: 2, explain: 'ELSS has a 3-year lock-in.' },
       { q: 'PPF has a maturity period of…', options: ['5 years', '10 years', '15 years', '30 years'], answer: 2, explain: 'PPF matures after 15 years, with extensions possible.' },
     ],

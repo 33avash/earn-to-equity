@@ -111,7 +111,7 @@ function Regimes() {
       <Slider label="Annual CTC" value={ctc} min={600000} max={4000000} step={50000} onChange={setCtc} format={formatCompact} />
       <div className="mt-5 flex flex-col gap-3">
         <Bar label="New regime tax" value={formatINR(b.taxNew)} share={b.taxNew / max} />
-        <Bar label="Old regime tax (full 80C + 80D)" value={formatINR(b.taxOld)} share={b.taxOld / max} tone="violet" />
+        <Bar label="Old regime tax (full Sec 123 + Sec 126)" value={formatINR(b.taxOld)} share={b.taxOld / max} tone="violet" />
       </div>
       <p className="mt-4 text-[12.5px] text-grey">
         <span className="font-medium text-evergreen">{better} regime</span> saves {formatINR(Math.abs(b.taxNew - b.taxOld))} a year here.

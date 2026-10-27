@@ -33,10 +33,15 @@ export interface YearRow {
   capitalGainsTax: number; // tax on investments sold this year
   portfolio: number;
   portfolioBasis: number; // cost of the investments still held
-  retirement: number; // all retirement accounts, incl. EPF
+  retirement: number; // all retirement accounts, incl. EPF and NPS
   epf: number; // EPF part of retirement; locked until 58
   epfContributions: number;
   epfInterest: number;
+  nps: number; // NPS balance built from employer and own contributions during the plan; locked until 60
+  npsContributions: number;
+  gratuity: number; // gratuity earned so far; paid when you leave after the eligibility period, not in net worth
+  /** CTC years: tax under both regimes and the old-regime deductions behind the choice. */
+  tax: { new: number; old: number; homeLoanInterest: number; hraExemption: number; sec123: number; variablePaid: number } | null;
   cash: number; // may be negative = unfunded short-term borrowing
   property: number; // other assets incl. purchased homes
   totalAssets: number;

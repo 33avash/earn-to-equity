@@ -13,6 +13,8 @@ import { ALL_DATED, CPI_LATEST, EPF_RATE, HEALTHCARE_INFLATION, PLANNING_INFLATI
 import { Select } from '@/components/ui';
 import { formatPct } from '@/finance/money';
 import { EngineSettings } from '@/features/coach/EngineSettings';
+import { AdvancedAssumptions } from '@/features/editors/AdvancedAssumptions';
+import { CityField } from '@/features/editors/SalaryEditor';
 import { useCoach } from '@/features/coach/useCoach';
 
 /** One line of "value · as of · source" for the rates-and-rules table. */
@@ -66,7 +68,8 @@ export default function Settings() {
           </Field>
           <Field label="Health cover">{(id) => <MoneyInput id={id} value={p.protection.healthCover} max={1e9} onChange={(v) => s.updateProfile((x) => void (x.protection.healthCover = v))} />}</Field>
           <Field label="Term life cover">{(id) => <MoneyInput id={id} value={p.protection.lifeCover} max={1e10} onChange={(v) => s.updateProfile((x) => void (x.protection.lifeCover = v))} />}</Field>
-          <Field label="City" help="Sets the health-cover benchmark: ₹10 L for one person in a metro, ₹7.5 L in a tier-2 city, ₹5 L elsewhere.">
+          <CityField p={p} update={s.updateProfile} />
+          <Field label="City size" help="Sets the health-cover benchmark: ₹10 L for one person in a metro, ₹7.5 L in a tier-2 city, ₹5 L elsewhere.">
             {(id) => (
               <Select id={id} value={p.about.cityTier ?? 1} onChange={(e) => s.updateProfile((x) => void (x.about.cityTier = Number(e.target.value) as CityTier))}>
                 <option value={1}>Metro (Mumbai, Delhi NCR, Bengaluru, Pune, Hyderabad, Chennai, Kolkata)</option>
@@ -114,6 +117,7 @@ export default function Settings() {
         <div className="mt-6 max-w-xl">
           <Toggle checked={a.sweepExcessCash} onChange={(v) => s.updateAssumptions({ sweepExcessCash: v })} label="Invest surplus cash each year" description="At each year-end, cash above your emergency target is moved into your portfolio. Turn off to let it build up in the bank." />
         </div>
+        <AdvancedAssumptions />
         <Button variant="ghost" size="sm" className="mt-4" icon={<RotateCcw size={14} />} onClick={() => { s.updateAssumptions({ ...structuredClone(DEFAULT_ASSUMPTIONS) }); toast('Assumptions restored to defaults'); }}>Restore default assumptions</Button>
       </Section>
 

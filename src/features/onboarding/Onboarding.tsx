@@ -8,7 +8,8 @@ import { useExploreDemo } from '@/state/useDemo';
 import { blankProfile } from '@/state/demo';
 import { Wordmark } from '@/components/layout/Wordmark';
 import { Atmosphere } from '@/components/motion/Motion';
-import { Button, Field, MoneyInput, NumberInput, PercentInput, Select, Slider, TextInput, Disclaimer, Notice, Badge, toast, AccentTitle } from '@/components/ui';
+import { Button, Field, MoneyInput, NumberInput, PercentInput, Select, Slider, TextInput, Toggle, Disclaimer, Notice, Badge, toast, AccentTitle } from '@/components/ui';
+import { sectionLabel } from '@/finance/sections';
 import { LineItemsEditor } from '@/features/editors/LineItems';
 import { SalaryEditor } from '@/features/editors/SalaryEditor';
 import { LoansEditor } from '@/features/editors/Loans';
@@ -503,6 +504,12 @@ function StepProtection({ p, update }: StepProps) {
         >
           {(id, d) => <MoneyInput id={id} describedBy={d} value={p.protection.lifeCover} max={1e10} onChange={(v) => update((x) => void (x.protection.lifeCover = v))} />}
         </Field>
+        <Field label="Health premium you pay for your parents, a year" optional hint={`Deductible in the old regime (${sectionLabel('80D')}): up to ₹25,000, or ₹50,000 if a parent is 60 or older.`}>
+          {(id, d) => <MoneyInput id={id} describedBy={d} value={p.income.salary?.sec80DParents ?? 0} max={1e6} onChange={(v) => update((x) => void (x.income.salary = { ...(x.income.salary ?? {}), sec80DParents: v }))} />}
+        </Field>
+        <div className="flex items-end">
+          <Toggle checked={p.income.salary?.parentsSenior ?? false} onChange={(v) => update((x) => void (x.income.salary = { ...(x.income.salary ?? {}), parentsSenior: v }))} label="A parent is 60 or older" />
+        </div>
       </section>
       <Disclaimer>We don’t recommend specific insurers or policies. Cover amounts are only used for the educational health score.</Disclaimer>
     </div>

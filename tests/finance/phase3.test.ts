@@ -54,7 +54,8 @@ describe('overview selectors', () => {
     const plan = computePlan(demoProfile(2026), DEFAULT_ASSUMPTIONS);
     const bars = monthWaterfall(plan);
     close(bars[0].value, plan.cashflow.income);
-    close(bars.at(-1)!.value, plan.cashflow.unallocated);
+    // Transfers can't exceed what is left, so an over-committed month ends at zero, not below.
+    close(bars.at(-1)!.value, plan.cashflow.investableSurplus >= 0 ? Math.max(0, plan.cashflow.unallocated) : plan.cashflow.investableSurplus);
   });
   it('KPIs read the same numbers as the rest of the plan', () => {
     const plan = computePlan(demoProfile(2026), DEFAULT_ASSUMPTIONS);

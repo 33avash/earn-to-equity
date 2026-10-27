@@ -93,7 +93,7 @@ export function blankProfile(startYear = new Date().getFullYear()): FinancialPro
   return {
     planStartYear: startYear,
     about: { name: '', age: 25, employment: 'salaried', fiAge: 50, dependents: 0, cityTier: 1 },
-    income: { mode: 'ctc', ctc: 0, salary: { basicShare: 0.4, state: 'MH', regime: 'auto' }, monthlyTakeHome: 0, salaryGrowth: 0.07, otherMonthlyIncome: 0, careerNotes: '' },
+    income: { mode: 'ctc', ctc: 0, salary: { basicShare: 0.5, state: 'MH', regime: 'auto', gratuityInCtc: true },  monthlyTakeHome: 0, salaryGrowth: 0.07, otherMonthlyIncome: 0, careerNotes: '' },
     cashflow: {
       essential: [
         { id: uid(), label: 'Rent / housing', amount: 0 },

@@ -82,6 +82,16 @@ export default function Fi() {
           It counts towards your target, but before 58 you can withdraw EPF only in specific cases, such as unemployment, a home purchase or medical needs. Your other savings must cover the years in between.
         </Notice>
       )}
+      {fi.npsLocked > 0 && (
+        <Notice title={`${money(fi.npsLocked)} of the corpus is NPS, locked until 60`}>
+          Employer and own NPS contributions count towards your target, but most of the balance can’t be withdrawn before 60, and part of it has to buy an annuity when you exit.
+        </Notice>
+      )}
+      {(fi.sim.rows.at(-1)?.gratuity ?? 0) > 0 && (
+        <p className="text-[13px] text-grey">
+          Gratuity (paid when you leave after the eligibility period) of about {money(fi.sim.rows.at(-1)!.gratuity)} has built up by the end of the projection. It isn’t counted in net worth or the FI corpus because you only receive it on leaving a job after 5 years (1 year on a fixed-term contract).
+        </p>
+      )}
       {fi.sim.rows.some((r) => r.flags.includes('borrowing')) && <Notice tone="warning">The projection runs out of liquid assets in some years, so the FI estimate is less reliable. Review your Budget and Life Events.</Notice>}
       <Disclaimer>A withdrawal-rate model is a simplification. It cannot guarantee lifelong financial security. Sequence of returns, healthcare costs, longevity, taxes and changing rules can all make a corpus last a shorter or longer time than this estimate suggests.</Disclaimer>
     </div>

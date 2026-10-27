@@ -3,7 +3,7 @@
  * Each value carries the date it was checked (`asOf`) and the page it was checked against (`source`).
  * Values marked `approximate` could not be confirmed on an official page; the interface says so.
  *
- * Last full review: 18 October 2026.
+ * Last full review: 27 October 2026.
  */
 
 export interface Dated<T> {
@@ -87,7 +87,7 @@ export const TAX_LAW = d({
   asOf: 'Tax year 2026-27',
   source: 'https://www.incometax.gov.in/',
   sourceLabel: 'Income-tax Act, 2025, in force from 1 April 2026',
-  note: 'Budget 2026 left slabs unchanged. Share buybacks are now taxed as capital gains. Section 87A is now section 202.',
+  note: 'Budget 2026 left slabs unchanged. Share buybacks are now taxed as capital gains. Sections are renumbered: the new regime (old 115BAC) is section 202, the rebate (old 87A) is section 156 and 80C is section 123. sections.ts lists every number the app uses.',
 });
 
 export const NEW_REGIME = d({
@@ -116,7 +116,7 @@ export const NEW_REGIME = d({
 
 export const OLD_REGIME = d({
   label: 'Old regime slabs',
-  display: 'Nil to ₹2.5 L, 5% to ₹5 L, 20% to ₹10 L, 30% above; ₹50,000 standard deduction; 80C ₹1.5 L, 80D ₹25,000',
+  display: 'Nil to ₹2.5 L, 5% to ₹5 L, 20% to ₹10 L, 30% above; ₹50,000 standard deduction; Sec 123 (old 80C) ₹1.5 L; Sec 126 (old 80D) ₹25,000, plus ₹25,000 for parents (₹50,000 if a parent is a senior citizen); own NPS ₹50,000; home-loan interest ₹2 L',
   value: {
     slabs: [
       { upTo: 250000, rate: 0 },
@@ -129,11 +129,16 @@ export const OLD_REGIME = d({
     rebateMax: 12500,
     sec80cLimit: 150000,
     sec80dLimit: 25000, // self and family, below 60
+    sec80dParents: 25000, // parents below 60
+    sec80dParentsSenior: 50000, // a parent is a senior citizen
+    nps1bLimit: 50000, // own NPS contribution, over and above the ₹1.5 L limit (old 80CCD(1B))
+    homeLoanInterestLimit: 200000, // self-occupied house (old 24(b), now section 22)
     surchargeCap: 0.37,
   },
   asOf: 'Tax year 2026-27',
   source: 'https://www.incometax.gov.in/iec/foportal/help/individual/return-applicable-1',
   sourceLabel: 'Income Tax Department, tax rates for individuals',
+  note: 'Deduction limits from the section 126 (health insurance) and section 22 (home-loan interest) pages on incometaxindia.gov.in. The ₹50,000 own-NPS limit is the old 80CCD(1B) amount; its new section number is not confirmed, so the interface shows the old label.',
 });
 
 export const SURCHARGE = d({
@@ -172,11 +177,43 @@ export const CAPITAL_GAINS = d({
 
 export const EPF_RULES = d({
   label: 'EPF contributions',
-  display: '12% of basic from you and your employer; 8.33% of up to ₹15,000 a month goes to EPS; locked until 58',
-  value: { employeeRate: 0.12, employerRate: 0.12, epsRate: 0.0833, wageCeiling: 15000, lockUntilAge: 58 },
-  asOf: '2026',
-  source: 'https://www.epfindia.gov.in/',
-  sourceLabel: 'EPFO: 12% of basic each; 8.33% of up to ₹15,000 a month goes to the pension scheme (EPS)',
+  display: '12% of basic from you and your employer; 8.33% of up to ₹25,000 a month goes to EPS; locked until 58',
+  value: { employeeRate: 0.12, employerRate: 0.12, epsRate: 0.0833, wageCeiling: 25000, epsWageCeiling: 25000, lockUntilAge: 58 },
+  asOf: '17 Sep 2026 (S.O. 5109(E))',
+  source: 'https://www.pib.gov.in/PressReleasePage.aspx?PRID=2310811',
+  sourceLabel: 'PIB, Cabinet approves EPFO wage ceiling of ₹25,000 a month (16 Sep 2026); EPFO FAQs on the revised ceiling',
+  note: 'The ceiling rose from ₹15,000 (in place since September 2014) to ₹25,000 from 17 September 2026. EPFO’s FAQ shows the employer’s 8.33% EPS share now applies to wages up to ₹25,000 (₹2,083 a month at the cap); the rest of the employer’s 12% goes to EPF. EPS membership depends on your wage when you first joined; the planner assumes you are a member, the cautious case for your EPF balance.',
+});
+
+export const LABOUR_CODES = d({
+  label: 'Labour Codes: wages at least half of pay',
+  display: 'Basic + DA should be at least 50% of total remuneration',
+  value: { minWageShare: 0.5 },
+  asOf: 'In force from 21 Nov 2025',
+  source: 'https://labour.gov.in/sites/default/files/pib2200433.pdf',
+  sourceLabel: 'Ministry of Labour & Employment (PIB): the four Labour Codes in force from 21 Nov 2025',
+  note: 'Under the Code on Wages, allowances above half of total remuneration are added back to “wages”. That raises PF and gratuity and lowers in-hand pay. The planner defaults basic to 50% of CTC.',
+});
+
+export const GRATUITY = d({
+  label: 'Gratuity',
+  display: '15 days’ wages per year of service (4.81% of basic a year); paid after 5 years, or 1 year on a fixed-term contract',
+  value: { rate: 15 / 26 / 12, eligibilityYears: 5, fixedTermYears: 1 },
+  asOf: 'Code on Social Security, 2020 (in force 21 Nov 2025)',
+  source: 'https://labour.gov.in/sites/default/files/pib2200433.pdf',
+  sourceLabel: 'Code on Social Security, 2020, section 53; Ministry of Labour FAQs',
+  note: '15/26 of a month’s basic + DA for every year of service is 4.81% of basic a year. Regular employees qualify after 5 years of continuous service; fixed-term employees after 1 year, pro rata. The fixed-term rule comes from the Ministry’s FAQ as reported by several firms; we could not open the FAQ itself.',
+  approximate: true,
+});
+
+export const EMPLOYER_NPS = d({
+  label: 'Employer NPS contribution',
+  display: 'Deductible up to 14% of basic + DA in the new regime, 10% in the old (private sector); employer PF + NPS + superannuation above ₹7.5 L a year is taxable',
+  value: { newRegimeCap: 0.14, oldRegimeCap: 0.1, lockUntilAge: 60, retirementPerquisiteCap: 750000 },
+  asOf: 'Tax year 2026-27',
+  source: 'https://www.incometaxindia.gov.in/w/section-124-98',
+  sourceLabel: 'Income-tax Act, 2025, section 124 (old 80CCD(2)); the ₹7.5 L perquisite cap is in section 17',
+  note: 'The employer’s NPS contribution is part of CTC, counts as salary and is then deducted. It stays in NPS until 60.',
 });
 
 export type StateCode = 'MH' | 'KA' | 'TS' | 'TN' | 'WB' | 'GJ' | 'DL' | 'HR' | 'UP' | 'OTHER';
@@ -202,6 +239,22 @@ export const PROFESSIONAL_TAX = d({
   source: 'https://hrone.cloud/blog/professional-tax-slab-rates-2026-27/',
   sourceLabel: 'State notifications, cross-checked against HROne’s 2026-27 table',
   note: 'Maharashtra ₹2,500 is consistent across sources. Karnataka, Tamil Nadu and West Bengal figures differ between sources by up to ₹100.',
+  approximate: true,
+});
+
+export const HRA_RULES = d({
+  label: 'HRA exemption (old regime)',
+  display: 'Least of HRA received, rent − 10% of basic, and 50% of basic in Delhi, Mumbai, Kolkata, Chennai, Bengaluru, Hyderabad, Pune or Ahmedabad (40% elsewhere)',
+  value: {
+    rentFloorShare: 0.1,
+    metroShare: 0.5,
+    otherShare: 0.4,
+    metroCities: ['Delhi', 'Mumbai', 'Kolkata', 'Chennai', 'Bengaluru', 'Hyderabad', 'Pune', 'Ahmedabad'],
+  },
+  asOf: 'Tax year 2026-27 (Income-tax Rules, 2026, notified 20 Mar 2026)',
+  source: 'https://www.incometaxindia.gov.in/documents/d/guest/en-notified-it-rules-2026-20-03-2026-pdf',
+  sourceLabel: 'Income-tax Rules, 2026; the four added cities confirmed in KPMG GMS Flash Alert 2026-081',
+  note: 'Bengaluru, Hyderabad, Pune and Ahmedabad moved from 40% to 50% from 1 April 2026. We could not open the gazette PDF itself, and the new section number for HRA is not confirmed, so the interface shows the old label 10(13A).',
   approximate: true,
 });
 
@@ -334,6 +387,47 @@ export const GOLD_PRICES = d({
   approximate: true,
 });
 
+/* ---------- Portfolio conventions ---------- */
+
+export const CORRELATIONS = d({
+  label: 'Correlation between asset classes',
+  display: 'Indian–international equity 0.5; debt–government schemes 0.6; equity–debt, equity–gold and anything with cash 0',
+  // Rows and columns in ASSET_CLASSES order: Indian equity, international equity, debt, government schemes, gold, cash, other.
+  value: [
+    [1, 0.5, 0, 0, 0, 0, 0],
+    [0.5, 1, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0.6, 0, 0, 0],
+    [0, 0, 0.6, 1, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 1],
+  ] as number[][],
+  asOf: 'Planning convention',
+  source: 'https://www.niftyindices.com/reports/historical-data',
+  sourceLabel: 'Planning convention; check it against index history from NSE Indices',
+  note: 'Rounded figures to compare mixes, not a forecast. Editable in Settings; the matrix has to stay positive semi-definite.',
+});
+
+export const REGULAR_PLAN_DRAG = d({
+  label: 'Extra cost of regular mutual-fund plans',
+  display: '+0.75 percentage points a year on equity funds, +0.4 on debt funds, against direct plans',
+  value: { equity: 0.0075, debt: 0.004 },
+  asOf: 'October 2026',
+  source: 'https://www.amfiindia.com/ter-of-mf-schemes',
+  sourceLabel: 'AMFI, total expense ratio (TER) disclosures for direct and regular plans',
+  note: 'Regular plans pay distributor commission out of the fund, so their TER is higher than the direct plan of the same scheme. The gap varies by scheme; these are typical round figures. Editable.',
+  approximate: true,
+});
+
+export const INR_DEPRECIATION = d({
+  label: 'Rupee depreciation against the US dollar (default)',
+  value: 0,
+  asOf: 'Planning convention',
+  source: 'https://data.ecb.europa.eu/data/datasets/EXR',
+  sourceLabel: 'ECB reference rates (USD and INR); default 0 to stay cautious',
+  note: 'International funds earn their dollar return plus any fall in the rupee. The rupee has weakened by a few percent a year over long periods, but the default adds nothing. Editable in Settings.',
+});
+
 /** Every dated value, for the Settings page. */
 export const ALL_DATED: Dated<unknown>[] = [
   CPI_LATEST,
@@ -349,6 +443,10 @@ export const ALL_DATED: Dated<unknown>[] = [
   CESS,
   CAPITAL_GAINS,
   EPF_RULES,
+  LABOUR_CODES,
+  GRATUITY,
+  EMPLOYER_NPS,
+  HRA_RULES,
   PROFESSIONAL_TAX,
   PROPERTY_CHARGES,
   UNDER_CONSTRUCTION_GST,
@@ -360,4 +458,7 @@ export const ALL_DATED: Dated<unknown>[] = [
   MSCI_WORLD,
   GOLD_PRICES,
   INDEX_HISTORY,
+  CORRELATIONS,
+  REGULAR_PLAN_DRAG,
+  INR_DEPRECIATION,
 ];
