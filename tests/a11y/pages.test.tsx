@@ -73,3 +73,24 @@ describe.each(['light', 'dark'])('%s theme', (theme) => {
     expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(' | ')}`)).toEqual([]);
   }, 20000);
 });
+
+describe('coach side panel', () => {
+  it('opens over a planner screen with no axe violations', async () => {
+    localStorage.setItem('e2e:theme', 'light');
+    useStore.getState().setCoachOpen(true);
+    render(
+      <ThemeProvider>
+        <MemoryRouter initialEntries={['/app/goals']}>
+          <App />
+        </MemoryRouter>
+      </ThemeProvider>,
+    );
+    const dialog = await screen.findByRole('dialog', { name: 'Coach' }, { timeout: 8000 });
+    expect(await screen.findByLabelText('Ask the coach')).toBeTruthy();
+    // Page-aware suggestions: on Goals, the first one is about goals.
+    expect(dialog.textContent).toMatch(/short\?|behind my financial goal/);
+    const results = await axe(dialog, { rules: { 'color-contrast': { enabled: false }, region: { enabled: false } } });
+    expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(' | ')}`)).toEqual([]);
+    useStore.getState().setCoachOpen(false);
+  }, 20000);
+});

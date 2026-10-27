@@ -2,17 +2,17 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { useNavigate } from 'react-router-dom';
 import { Command } from 'cmdk';
 import { motion, useReducedMotion } from 'motion/react';
-import { ChevronsUpDown, Monitor, Moon, Search, Sun, Plus, FlaskConical, CalendarRange, Download, ArrowRightLeft, Home, Compass, LayoutGrid, Calculator, GraduationCap, Info, BookOpen, Hash, Gauge, Target, Sparkles } from 'lucide-react';
+import { ChevronsUpDown, Monitor, Moon, Search, Sun, Plus, FlaskConical, CalendarRange, Download, ArrowRightLeft, Home, Compass, LayoutGrid, Calculator, GraduationCap, Info, BookOpen, Hash, Gauge, Target, Sparkles, MessageSquareText } from 'lucide-react';
 import { useTheme, type ThemePref } from '@/theme/ThemeProvider';
 import { useStore } from '@/state/store';
 import { useMoney, usePlan } from '@/state/selectors';
 import { useExploreDemo } from '@/state/useDemo';
 import { exportSummary } from '@/services/export';
 import { MODULES } from '@/features/learn/modules';
-import { DEFINITIONS } from '@/components/ui/definitions';
+import { GLOSSARY } from '@/components/ui/definitions';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/shadcn/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/shadcn/menu';
-import { APP_NAV } from './nav';
+import { ALL_APP_PAGES } from './nav';
 
 const THEME_ICON = { light: Sun, dark: Moon, system: Monitor };
 
@@ -101,24 +101,6 @@ const PUBLIC_PAGES = [
   { to: '/about', label: 'About', icon: Info },
 ];
 
-/** Plain-language terms, each with the screen where it matters. */
-const GLOSSARY: { term: string; def: string; to: string }[] = [
-  { term: 'Net worth', def: DEFINITIONS.netWorth, to: '/app' },
-  { term: 'Investable surplus', def: DEFINITIONS.surplus, to: '/app/budget' },
-  { term: 'Savings rate', def: DEFINITIONS.savingsRate, to: '/app/budget' },
-  { term: 'Emergency coverage', def: DEFINITIONS.emergencyCoverage, to: '/app/emergency-debt' },
-  { term: 'EMI-to-income (DTI)', def: DEFINITIONS.dti, to: '/app/emergency-debt' },
-  { term: 'Today’s rupees (real value)', def: DEFINITIONS.real, to: '/app/simulator' },
-  { term: 'FI target', def: DEFINITIONS.fiTarget, to: '/app/fi' },
-  { term: 'Weighted return', def: DEFINITIONS.weightedReturn, to: '/app/portfolio' },
-  { term: 'Volatility', def: DEFINITIONS.volatility, to: '/app/risk-lab' },
-  { term: 'Future cost of a goal', def: DEFINITIONS.futureCost, to: '/app/goals' },
-  { term: 'LTCG', def: 'Long-term capital gains: profit on equity held over 12 months, taxed at 12.5% above ₹1.25 lakh a year.', to: '/app/learn/tax' },
-  { term: 'Section 80C', def: 'Old-regime deduction of up to ₹1.5 lakh a year for EPF, PPF, ELSS, life cover and similar. Not available in the new regime.', to: '/app/learn/tax' },
-  { term: 'EPF', def: 'Employees’ Provident Fund: 12% of basic pay from you and your employer, earning the rate EPFO declares each year.', to: '/app/learn/retirement' },
-  { term: 'SIP step-up', def: 'Raising your monthly SIP by a fixed percentage each year, usually in line with pay rises.', to: '/app/sip' },
-];
-
 /**
  * ⌘K / Ctrl+K. On the public site it searches pages, lessons and terms; in the planner it adds actions,
  * your goals and your own figures. A highlight glides between results as you move.
@@ -131,6 +113,7 @@ export function CommandPalette({ open, onOpenChange, mode = 'app' }: { open: boo
   const hasOwn = useStore((s) => s.ownPlan !== null);
   const loadDemo = useStore((s) => s.loadDemo);
   const switchToOwn = useStore((s) => s.switchToOwnPlan);
+  const setCoachOpen = useStore((s) => s.setCoachOpen);
   const money = useMoney();
   const [selected, setSelected] = useState('');
   const app = mode === 'app';
@@ -164,6 +147,7 @@ export function CommandPalette({ open, onOpenChange, mode = 'app' }: { open: boo
               <Command.Group heading="Actions" className={group}>
                 <Item value="action add goal" onSelect={() => go('/app/goals?new=1')}><Plus size={15} aria-hidden /> Add goal</Item>
                 <Item value="action add life event" onSelect={() => go('/app/life-events?new=1')}><CalendarRange size={15} aria-hidden /> Add life event</Item>
+                <Item value="action ask the coach" onSelect={() => run(() => setCoachOpen(true))}><MessageSquareText size={15} aria-hidden /> Ask the coach</Item>
                 <Item value="action stress test crash" onSelect={() => go('/app/risk-lab?preset=crash')}><FlaskConical size={15} aria-hidden /> Run stress test: 2008-style crash</Item>
                 <ExportItem run={run} />
                 {isDemo && hasOwn && <Item value="action switch to my plan" onSelect={() => run(switchToOwn)}><ArrowRightLeft size={15} aria-hidden /> Switch to my plan</Item>}
@@ -177,7 +161,7 @@ export function CommandPalette({ open, onOpenChange, mode = 'app' }: { open: boo
               </Command.Group>
             )}
             <Command.Group heading={app ? 'Modules' : 'Pages'} className={group}>
-              {(app ? APP_NAV.flatMap((g) => g.items) : PUBLIC_PAGES).map(({ to, label, icon: Icon }) => (
+              {(app ? ALL_APP_PAGES : PUBLIC_PAGES).map(({ to, label, icon: Icon }) => (
                 <Item key={to} value={`page ${label}`} onSelect={() => go(to)}>
                   <Icon size={15} aria-hidden /> {label}
                 </Item>

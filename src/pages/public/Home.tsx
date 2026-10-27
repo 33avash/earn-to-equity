@@ -8,6 +8,7 @@ import { HeroGraphic } from '@/features/landing/HeroGraphic';
 import { MicroLessons } from '@/features/landing/MicroLessons';
 import { SipPreview } from '@/features/sip/SipPreview';
 import { LifeScenarios } from '@/features/landing/LifeScenarios';
+import { CoachShowcase } from '@/features/landing/CoachShowcase';
 import { GoalTimeline, PLAN_STATUS } from '@/features/goals/GoalTimeline';
 import { computePlan, heroSeries, type Plan } from '@/state/selectors';
 import { DEFAULT_ASSUMPTIONS, demoProfile } from '@/state/demo';
@@ -74,7 +75,7 @@ export default function Home() {
             </h1>
             <Reveal delay={350}>
               <p className="mt-8 max-w-[34rem] text-[17px] leading-relaxed text-grey">
-                Enter your CTC, spending, loans and goals. Get a year-by-year plan to {series.end.year} with income tax, EPF, inflation, EMIs and market crashes built in. Free, and it never leaves your browser.
+                Enter your CTC, spending, loans and goals. Get a year-by-year plan to {series.end.year} with income tax, EPF, inflation, EMIs and market crashes built in. Free, no sign-up, and your plan is saved only in your browser.
               </p>
             </Reveal>
             <Reveal delay={450}>
@@ -89,7 +90,7 @@ export default function Home() {
             </Reveal>
             <Reveal delay={550}>
               <ul className="mt-10 flex flex-wrap gap-2" aria-label="What the plan models">
-                {['Tax year 2026-27', 'EPF 8.25%', '1,000-path Monte Carlo', 'No sign-up'].map((c) => (
+                {['Tax year 2026-27', 'EPF 8.25%', '1,000-path Monte Carlo', 'Free AI coach', 'No sign-up'].map((c) => (
                   <li key={c} className="chip">
                     <Check size={13} className="text-forest" aria-hidden /> {c}
                   </li>
@@ -174,6 +175,27 @@ export default function Home() {
             </span>
           ))}
         </Marquee>
+      </section>
+
+      {/* AI COACH: the on-device model, with answers calculated on the sample plan */}
+      <section aria-labelledby="coach-h">
+        <div className={section}>
+          <Reveal>
+            <SectionHead
+              id="coach-h"
+              title={
+                <>
+                  Ask your plan <span className="text-gradient">anything</span>
+                </>
+              }
+            >
+              <p>An AI model running in your browser explains your own projection in plain words and answers follow-up questions. The planner’s engine works out every figure first.</p>
+            </SectionHead>
+          </Reveal>
+          <Reveal>
+            <CoachShowcase plan={sample} />
+          </Reveal>
+        </div>
       </section>
 
       {/* MICRO-LESSONS */}

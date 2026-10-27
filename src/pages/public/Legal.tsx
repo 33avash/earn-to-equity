@@ -41,7 +41,7 @@ export default function Legal() {
             <h2 className="text-[26px] font-semibold tracking-[-0.03em]">Privacy</h2>
             <div className="mt-6 space-y-4 text-[15px] leading-relaxed text-charcoal/90">
               <p>Your profile, goals, budgets and settings are stored only in your browser’s local storage on this device. Nothing is sent to an Earn to Equity server, because there isn’t one holding your data.</p>
-              <p>If the AI Wealth Coach is configured with a Gemini key by whoever runs this deployment, your question is sent to Google’s Gemini API together with a summary of calculated figures from your plan. No name is included. If it is not configured, the coach runs entirely in your browser.</p>
+              <p>The coach’s AI model runs on your device: in the browser (downloaded from Hugging Face the first time you ask a question), Chrome’s built-in model, or Ollama on your computer. Your questions stay on the device. If whoever runs a deployment sets up Gemini, your question is sent to Google’s Gemini API together with a summary of calculated figures from your plan; no name is included. Rule-based answers, which never use a model, are always available in the coach’s AI settings.</p>
               <p>We never ask for bank credentials, card numbers, PAN, Aadhaar or other identity documents. Local storage is not encrypted and offers no multi-device sync. You can erase everything at any time from Settings → Data.</p>
             </div>
           </Bezel>

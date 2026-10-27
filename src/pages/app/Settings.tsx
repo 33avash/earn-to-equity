@@ -12,6 +12,8 @@ import { DEFAULT_ASSUMPTIONS } from '@/state/demo';
 import { ALL_DATED, CPI_LATEST, EPF_RATE, HEALTHCARE_INFLATION, PLANNING_INFLATION, SMALL_SAVINGS, WITHDRAWAL_RATE, type CityTier, type Dated } from '@/finance/assumptions';
 import { Select } from '@/components/ui';
 import { formatPct } from '@/finance/money';
+import { EngineSettings } from '@/features/coach/EngineSettings';
+import { useCoach } from '@/features/coach/useCoach';
 
 /** One line of "value · as of · source" for the rates-and-rules table. */
 function datedValue(d: Dated<unknown>): string {
@@ -158,8 +160,14 @@ export default function Settings() {
         </div>
       </Section>
 
+      <Section title="AI coach" description="Choose which model explains your plan. The planner’s engine calculates every figure either way.">
+        <div className="max-w-2xl">
+          <CoachSettings />
+        </div>
+      </Section>
+
       <Section title="Privacy">
-        <p className="max-w-2xl text-sm leading-relaxed text-grey">Earn to Equity never asks for bank passwords, card numbers, PAN or Aadhaar. If the AI coach is configured, questions and a summary of calculated figures (without your name) are sent to Google’s Gemini API through a server endpoint. Otherwise everything runs in your browser.</p>
+        <p className="max-w-2xl text-sm leading-relaxed text-grey">Earn to Equity never asks for bank passwords, card numbers, PAN or Aadhaar. The coach’s AI model runs in your browser (or Chrome’s built-in model, or Ollama on your computer), so your questions stay on this device; only the model files are downloaded. If this site has Gemini set up, your questions and a summary of calculated figures (without your name) are sent to Google’s Gemini API instead. Choose Rule-based in the AI settings to never use a model.</p>
       </Section>
 
       <Section title="Financial disclaimer">
@@ -167,4 +175,8 @@ export default function Settings() {
       </Section>
     </div>
   );
+}
+
+function CoachSettings() {
+  return <EngineSettings coach={useCoach()} />;
 }

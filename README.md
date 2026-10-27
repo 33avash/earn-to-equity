@@ -94,13 +94,13 @@ Goals receive money in priority order. You can drag them to reorder, and the pri
 
 **Portfolio.** A target mix across seven asset classes (Indian equity, international equity, debt, government schemes such as PPF, gold, cash, other), with four example mixes from conservative to aggressive. It shows the expected return after fund costs, an estimated volatility, how far your current holdings have drifted from the target, and how to rebalance using new SIP money only (no selling).
 
+**Life events.** Promotions, career breaks, a wedding, a home purchase or any one-off cost, each with its before-and-after effect on net worth. Buying a home includes the state's stamp duty and registration, GST on an under-construction flat, interiors, and a check against the 50% limit lenders put on EMIs as a share of take-home.
+
 **SIP.** A monthly SIP projection with an optional lump sum, a yearly step-up, a choice of investing at the start or end of each month, and a comparison of a flat SIP against a stepped-up one. Results are shown before and after long-term capital-gains tax.
 
-### Explore
+### What if
 
 **Wealth simulator.** The full year-by-year projection. Edit salary growth, inflation, SIP step-up and portfolio return and every module updates. Click any year on the chart or the table to open a year inspector showing that year's income, tax, spending, EMIs, investments, EPF, goals paid and events. It also has three scenarios (conservative, base, high growth) with a breakdown of how much of the difference each assumption causes, a tornado chart ranking which assumption moves the outcome most, and a CSV export.
-
-**Life events.** Promotions, career breaks, a wedding, a home purchase or any one-off cost, each with its before-and-after effect on net worth. Buying a home includes the state's stamp duty and registration, GST on an under-construction flat, interiors, and a check against the 50% limit lenders put on EMIs as a share of take-home.
 
 **Risk lab.** Stress tests run through the same engine as your plan, shown against your baseline year by year. One-click presets: a 2008-style crash in year 4, a six-month job loss, 8% inflation for three years, raises half as big, and a ₹5 L medical bill next year. You can also move each control yourself (salary growth, inflation, extra savings, lifestyle creep, SIP step-up, a delayed FI date, career breaks and purchases). A Monte Carlo section runs 1,000 market paths and shows the 10th, 50th and 90th percentile of net worth each year, the probability that each goal gets paid, and the probability of reaching your FI target. It includes your income, spending and event tests, but not the single market decline, which is shown separately.
 
@@ -108,13 +108,13 @@ Goals receive money in priority order. You can drag them to reorder, and the pri
 
 ### Learn
 
-**Coach.** Ask questions about your plan in plain language ("Can I afford a flat in 2035?", "Why is my savings rate low?"). Answers quote figures from your own projection. See [the coach](#the-coach) for how it works.
+**Coach.** Ask questions about your plan in plain language ("Can I afford a flat in 2035?", "What is a SIP step-up?"). A language model running in your browser explains figures the engine has calculated for you. It opens as a side panel from **Ask coach** in the top bar (or ⌘K) on every screen, with suggested questions for the screen you're on, and as a full page. See [the coach](#the-coach) for how it works.
 
 **Learning centre.** Eleven lessons of 4 to 8 minutes each, with a worked example from the planner's engine, key points and a three-question check: budgeting, compounding, inflation, SIPs and step-ups, asset allocation, diversification, volatility and drawdowns, good and costly debt, tax awareness, EPF/PPF/NPS, and financial independence. A separate tax reference lists every dated rate with its official source.
 
 ### Public pages
 
-The landing page has six one-minute interactive lessons, a live SIP calculator, three what-if scenarios and the real planner panels running on the demo plan. There are also How it works, Features, Calculators (SIP, loan EMI, inflation), Learn, About and Legal pages.
+The landing page has a live preview of the coach on the demo plan, six one-minute interactive lessons, a live SIP calculator, three what-if scenarios and the real planner panels running on the demo plan. There are also How it works, Features, Calculators (SIP, loan EMI, inflation), Learn, About and Legal pages.
 
 ## How the numbers are worked out
 
@@ -189,9 +189,27 @@ FI target = (yearly living costs + extra healthcare after FI) ÷ the withdrawal 
 
 ### The coach
 
-By default the coach is rule-based. It reads the figures your plan has already calculated and recognises six kinds of question: whether you can afford a home (and when), why a goal is behind, what a different salary growth rate would do, what a market fall in a given year would do, how much more to save, and an explanation of your projection. Anything else gets a summary of your key figures and examples of what to ask. It needs no network connection and is what the live site uses.
+The engine always does the maths; a language model, when one is available, explains the result.
 
-You can switch it to Google's Gemini on your own machine (see [Running it locally](#running-it-locally)). In that mode the browser sends your question and a compact summary of figures the engine has already calculated (no name) to a small server-side handler, which calls Gemini. The model is told to use only those figures, quote them exactly, state the assumptions behind them, say what is missing if it can't answer, and not recommend specific funds or insurers. The API key stays on the server and is never bundled into the site. Requests over 64 KB are rejected. If Gemini isn't configured or fails, the rule-based coach answers instead and the page says so.
+1. Every question first goes through the rule-based coach. It recognises six kinds of question (whether you can afford a home and when, why a goal is behind, a different salary growth rate, a market fall in a given year, how much more to save, and an explanation of your projection) and, for those, runs the real calculation with your numbers: a fresh simulation for a salary or crash what-if, the home-affordability check for a flat.
+2. That calculated answer goes to the model as **FACTS**, together with a compact summary of your plan (no name) and, for concept questions such as "what is 80C?", the matching glossary entries and lesson notes. The model is told to use only those figures, quote them exactly, state the assumptions behind them, say what is missing if it can't answer, and not recommend specific funds or insurers. The last four turns are kept so follow-up questions work.
+3. Every rupee amount and percentage in the model's answer is checked against those figures (₹12.4 L, ₹12.4 lakh and ₹12,40,000 all count as the same figure). Anything that doesn't match is listed under the answer, and the calculated answer is always one click away.
+
+Which model answers depends on what is available. **Automatic** (the default) picks the first that is ready:
+
+| Engine | Where it runs | Limits | Notes |
+|---|---|---|---|
+| Gemini | Google, through `server/coach.ts` or `worker/coach.ts` | Your API key's free quota | Only where the deployment has set a key (see below). Falls back to the next engine if the quota runs out. |
+| Chrome built-in AI | On the device (Gemini Nano, managed by Chrome) | None | Used when Chrome's Prompt API is available. |
+| Ollama | Your own computer | None | Off until switched on in AI settings; never contacts `localhost` otherwise. |
+| In-browser model | In the browser over WebGPU ([WebLLM](https://github.com/mlc-ai/web-llm)), in a Web Worker | None | **Recommended** (default): Gemma 2 2B, about 1.5 GB. **Smaller**: Qwen 2.5 1.5B, about 0.9 GB, used automatically if a device can't load Gemma. |
+| Rule-based | In the browser | None | Always available, offline. |
+
+Nothing needs setting up. When no model is ready, the first question starts downloading the in-browser model: that question is answered from the calculations, with a note and a progress bar, and the model answers from then on. The download happens once; later visits load the model from the browser's cache. Browsers without WebGPU get the rule-based coach, and the coach says why.
+
+The default was picked by running the same four grounded questions through five WebLLM models (Qwen 2.5 1.5B and 3B, Qwen 3 1.7B, Gemma 2 2B, Llama 3.2 3B) and checking every figure each one quoted. Gemma 2 2B was the only one with none that failed the check, at about 16 seconds an answer; the 3B models were slower and still invented numbers. Tested end to end in Edge on Windows with integrated graphics (AMD Radeon 780M): first question, automatic download, answers, stopping an answer part-way and a follow-up, and loading from the cache on a second visit.
+
+The engine choice, model size and Ollama options are in the coach's **AI settings** and on the Settings page. If a model fails or returns nothing, the rule-based answer is shown instead.
 
 ## Default assumptions
 
@@ -236,7 +254,7 @@ We would rather list these than have them found later:
 - **Lock-ins.** EPF counts towards FI but is flagged as locked until 58. Lock-in periods on PPF and NPS are not enforced in the projection.
 - **Insurance.** The plan checks your health and term cover against benchmarks. Premiums are whatever you enter as expenses, and claims being paid out are not modelled.
 - **Data.** There is no import yet. The JSON export is a copy for your records, but you can't load it back into the app.
-- **Coach.** The live site always uses the rule-based coach. Gemini needs the dev or preview server described below.
+- **Coach.** The in-browser model needs WebGPU and a one-time download of about 1.5 GB; without WebGPU the coach gives rule-based answers. Gemini needs a key on the server (dev or preview server, or the Cloudflare Worker described below), and on Google's free tier an answer currently takes about 20 seconds. The figure check compares values, not meaning, so a real figure quoted about the wrong thing passes it.
 
 ## Your data
 
@@ -244,7 +262,7 @@ We would rather list these than have them found later:
 - Local storage isn't encrypted and doesn't sync between devices or browsers. Clearing site data deletes your plan.
 - The app never asks for bank logins, card numbers, PAN, Aadhaar or other identity documents.
 - From Settings you can download a summary (`.txt`), the full data (`.json`) or the year-by-year projection (`.csv`), reset to the demo plan, or erase everything.
-- The only time anything leaves your browser is if you run the Gemini coach yourself, as described above.
+- The coach's on-device, Chrome and Ollama models run on your own device, so your questions stay there; only the model files are downloaded (from Hugging Face for the on-device model). Plan data leaves your browser only on a deployment that has Gemini set up: Automatic then uses Gemini first, sending your question and a summary of calculated figures (no name) to Google. Choose another engine in AI settings to keep everything on the device.
 
 ## Running it locally
 
@@ -267,13 +285,28 @@ Then open http://localhost:5173.
 | `npm run build` | Type-check and build for production into `dist/` |
 | `npm run preview` | Serve the production build locally |
 
-### Optional: the Gemini coach
+### Optional: other coach engines
+
+**Gemini on your machine.**
 
 ```bash
 cp .env.example .env
 ```
 
-Set `GEMINI_API_KEY` in `.env` (and optionally `GEMINI_MODEL`). The key is read only by `server/coach.ts`, which the dev and preview servers mount at `/api/coach`. Don't prefix it with `VITE_`, or Vite would put it into the browser bundle. Without a key, the coach stays rule-based.
+Set `GEMINI_API_KEY` in `.env` (a free key from [Google AI Studio](https://aistudio.google.com/apikey)). The key is read only by `server/coach.ts`, which the dev and preview servers mount at `/api/coach`. Don't prefix it with `VITE_`, or Vite would put it into the browser bundle.
+
+**Gemini on the live site.** GitHub Pages can't keep a key secret, so the key lives in a free [Cloudflare Worker](https://developers.cloudflare.com/workers/) (`worker/coach.ts`), which only answers requests from the origins listed in `worker/wrangler.toml`:
+
+```bash
+cd worker
+npx wrangler login
+npx wrangler secret put GEMINI_API_KEY
+npx wrangler deploy
+```
+
+Then add the worker's URL (for example `https://earn-to-equity-coach.<you>.workers.dev`) as a repository variable named `COACH_API_URL` (Settings → Secrets and variables → Actions → Variables) and push. The deploy workflow passes it to the build as `VITE_COACH_API_URL`. Both handlers share `server/handler.ts`, add their own system prompt (from `src/services/coach/prompt.ts`) and cap requests at 64 KB. The handler uses `gemini-flash-lite-latest` (set `GEMINI_MODEL` to change it) and retries once on `gemini-flash-latest` if the first model is busy, out of quota or takes longer than 35 seconds. Google's free tier is shared by every visitor; when it runs out, the coach moves on to the in-browser model.
+
+**Ollama.** Install [Ollama](https://ollama.com), run `ollama pull gemma3:4b`, then switch on **Use Ollama on this computer** in the coach's AI settings. To use it from the hosted site rather than `localhost`, start Ollama with `OLLAMA_ORIGINS=https://33avash.github.io`.
 
 ## Project layout
 
@@ -285,28 +318,30 @@ src/
                 turn a profile into a computed plan.
   types/        The FinancialProfile model and simulation types.
   components/   UI primitives, charts, layout (public site and planner shell) and motion helpers.
-  features/     Larger pieces: onboarding, editors, landing-page sections, lessons.
+  features/     Larger pieces: onboarding, editors, the coach chat and side panel, landing-page sections, lessons.
   pages/        The public pages and the thirteen planner screens.
-  services/     The coach (rule-based and Gemini client) and data export.
+  services/     The coach (rule-based answers, prompt, retrieval, figure check and model engines) and data export.
   theme/        Light, dark and system theme handling.
-server/         The optional Gemini handler.
+server/         The optional Gemini handler (shared logic, plus the dev/preview middleware).
+worker/         The same handler as a Cloudflare Worker, for Gemini on the live site.
 tests/          Engine, accessibility and copy tests.
 docs/           Screenshots used in this README.
 ```
 
-Built with React 18, TypeScript, Vite, Tailwind CSS, Radix UI, Recharts, Zustand, Motion, cmdk and Lucide icons. Tested with Vitest, Testing Library and axe.
+Built with React 18, TypeScript, Vite, Tailwind CSS, Radix UI, Recharts, Zustand, Motion, cmdk, WebLLM and Lucide icons. Tested with Vitest, Testing Library and axe.
 
 ## Tests
 
-`npm test` runs 246 tests across eight files:
+`npm test` runs 266 tests across nine files:
 
 - **Engine (`tests/finance`).** Formula checks for tax, EMIs, SIPs and inflation; invariants that must always hold, such as net worth equalling assets minus liabilities in every year and a zero-return run giving back exactly what was put in; goal funding, shortfalls and linked events; and a saved snapshot of the demo plan's 21-point projection, so any change to the numbers is caught and has to be reviewed on purpose.
-- **Accessibility (`tests/a11y`).** Every public page and planner screen is rendered and checked with axe in both light and dark themes, and colour contrast is computed from the theme tokens (at least 4.5:1 for text and 3:1 for controls).
+- **Accessibility (`tests/a11y`).** Every public page and planner screen, and the coach side panel, is rendered and checked with axe in both light and dark themes, and colour contrast is computed from the theme tokens (at least 4.5:1 for text and 3:1 for controls).
+- **Coach (`tests/coach`).** The figure check (accepts quoted figures in any rupee format, flags invented ones, passes every figure in the engine's own answers), the prompt (facts added for recognised questions, history trimmed, no name in the context), reference retrieval, the order engines are chosen in, and answer formatting.
 - **Copy (`tests/copy`).** Fails the build if retired taglines or banned words come back into the interface.
 
 ## Deployment
 
-Every push to `main` runs the tests, builds the site and publishes it to GitHub Pages through `.github/workflows/deploy.yml`. The build sets `BASE_PATH=/earn-to-equity/` so assets and routes work under the repository path, and copies `index.html` to `404.html` so links straight to a planner page (such as `/app/goals`) still load. GitHub Pages only serves static files, so the live site always uses the rule-based coach.
+Every push to `main` runs the tests, builds the site and publishes it to GitHub Pages through `.github/workflows/deploy.yml`. The build sets `BASE_PATH=/earn-to-equity/` so assets and routes work under the repository path, and copies `index.html` to `404.html` so links straight to a planner page (such as `/app/goals`) still load. GitHub Pages only serves static files, so Gemini there needs the optional worker described above; the in-browser model, Chrome's built-in model and Ollama work without it.
 
 ## Team
 

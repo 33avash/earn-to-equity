@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { ChevronRight, Menu, Search, Settings, PanelLeftClose, PanelLeftOpen, Sparkles } from 'lucide-react';
+import { ChevronRight, Menu, Search, Settings, PanelLeftClose, PanelLeftOpen, Sparkles, LayoutDashboard, Target, LineChart, MessageSquareText, MoreHorizontal } from 'lucide-react';
 import { Wordmark } from './Wordmark';
-import { APP_NAV } from './nav';
+import { APP_NAV, MODULE_GROUPS } from './nav';
 import { CommandPalette, PlanSwitcher, ThemeToggle, useCommandShortcut } from './ShellControls';
 import { useStore } from '@/state/store';
-import { ButtonLink } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
+import { CoachPanel } from '@/features/coach/CoachPanel';
 import { Dialog, DialogTitle, SheetContent } from '@/components/ui/shadcn/dialog';
 import { PageTransition } from '@/components/motion/Motion';
 import { ScoreButton } from '@/components/ui/ScoreRing';
@@ -62,9 +63,9 @@ function crumbs(pathname: string): [string, string] {
   if (pathname.startsWith('/app/settings')) return ['Account', 'Settings'];
   let best: [string, string] = ['Today', 'Overview'];
   let len = 0;
-  for (const g of APP_NAV)
+  for (const g of MODULE_GROUPS)
     for (const i of g.items) {
-      const hit = i.end ? pathname === i.to || pathname === `${i.to}/` : pathname.startsWith(i.to);
+      const hit = 'end' in i && i.end ? pathname === i.to || pathname === `${i.to}/` : pathname.startsWith(i.to);
       if (hit && i.to.length > len) {
         best = [g.group, i.label];
         len = i.to.length;
@@ -85,13 +86,18 @@ export function AppShell() {
   const [paletteOpen, setPaletteOpen] = useCommandShortcut();
   const { pathname } = useLocation();
   const isDemo = useStore((s) => s.isDemo);
+  const setCoachOpen = useStore((s) => s.setCoachOpen);
   const plan = usePlan();
+  const onCoachPage = pathname.startsWith('/app/coach');
   const [group, page] = crumbs(pathname);
 
   useEffect(() => {
     setDrawer(false);
     window.scrollTo(0, 0);
   }, [pathname]);
+  useEffect(() => {
+    if (onCoachPage) setCoachOpen(false);
+  }, [onCoachPage, setCoachOpen]);
   const toggleCollapsed = () =>
     setCollapsed((c) => {
       try {
@@ -174,9 +180,11 @@ export function AppShell() {
               </button>
               <ScoreButton health={plan.health} />
               <ThemeToggle />
-              <ButtonLink to="/app/coach" size="sm" className="hidden sm:inline-flex">
-                <Sparkles size={14} aria-hidden /> Ask coach
-              </ButtonLink>
+              {!onCoachPage && (
+                <Button size="sm" className="hidden sm:inline-flex" onClick={() => setCoachOpen(true)}>
+                  <Sparkles size={14} aria-hidden /> Ask coach
+                </Button>
+              )}
             </div>
           </div>
           {isDemo && (
@@ -190,15 +198,53 @@ export function AppShell() {
           )}
         </header>
 
-        <main id="app-main" className="mx-auto max-w-[1440px] px-4 pb-20 pt-8 sm:px-6 lg:px-8">
+        <main id="app-main" className="mx-auto max-w-[1440px] px-4 pb-28 pt-8 sm:px-6 lg:px-8 lg:pb-20">
           <PageTransition id={pathname}>
             <Outlet />
           </PageTransition>
         </main>
       </div>
 
+      <MobileTabBar onMore={() => setDrawer(true)} onCoach={() => setCoachOpen(true)} onCoachPage={onCoachPage} />
+      <CoachPanel />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
+  );
+}
+
+/** Bottom tab bar on phones and narrow windows: the three most used screens, the coach, and the full menu. */
+function MobileTabBar({ onMore, onCoach, onCoachPage }: { onMore: () => void; onCoach: () => void; onCoachPage: boolean }) {
+  const tab = 'tap flex h-14 flex-1 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors';
+  const tabs = [
+    { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true },
+    { to: '/app/goals', label: 'Goals', icon: Target },
+    { to: '/app/simulator', label: 'Simulator', icon: LineChart },
+  ];
+  return (
+    <nav aria-label="Quick navigation" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">
+      <ul className="mx-auto flex max-w-lg">
+        {tabs.map(({ to, label, icon: Icon, end }) => (
+          <li key={to} className="flex flex-1">
+            <NavLink to={to} end={end} className={({ isActive }) => `${tab} ${isActive ? 'text-forest' : 'text-grey hover:text-evergreen'}`}>
+              <Icon size={19} strokeWidth={1.75} aria-hidden />
+              {label}
+            </NavLink>
+          </li>
+        ))}
+        <li className="flex flex-1">
+          <button type="button" onClick={onCoach} disabled={onCoachPage} className={`${tab} ${onCoachPage ? 'text-forest' : 'text-grey hover:text-evergreen'}`}>
+            <MessageSquareText size={19} strokeWidth={1.75} aria-hidden />
+            Coach
+          </button>
+        </li>
+        <li className="flex flex-1">
+          <button type="button" onClick={onMore} className={`${tab} text-grey hover:text-evergreen`}>
+            <MoreHorizontal size={19} strokeWidth={1.75} aria-hidden />
+            More
+          </button>
+        </li>
+      </ul>
+    </nav>
   );
 }
 

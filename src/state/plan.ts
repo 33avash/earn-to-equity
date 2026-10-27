@@ -180,6 +180,14 @@ export function heroSeries(plan: Plan) {
   const points = sim.points.map((x) => x.netWorthReal);
   const last = sim.points.length - 1;
   const milestones: HeroMilestone[] = [{ index: 0, label: 'First SIP', year: p.planStartYear, age: ageInYear(p, p.planStartYear) }];
+  // A career break pulls net worth down for a few years; label the low point so the dip is explained.
+  const brk = p.lifeEvents.find((e) => e.kind === 'careerBreak' && e.year - p.planStartYear > 0 && e.year - p.planStartYear < last);
+  if (brk) {
+    const from = brk.year - p.planStartYear;
+    const window = points.slice(from, Math.min(last, from + 4) + 1);
+    const index = from + window.indexOf(Math.min(...window));
+    milestones.push({ index, label: brk.label, year: p.planStartYear + index, age: ageInYear(p, p.planStartYear + index) });
+  }
   const home = p.lifeEvents.find((e) => e.kind === 'homePurchase' && !sim.skippedEvents.some((s) => s.eventId === e.id));
   if (home && home.year - p.planStartYear <= last) milestones.push({ index: home.year - p.planStartYear, label: 'First home', year: home.year, age: ageInYear(p, home.year) });
   const fiIndex = fi.fiYear === null ? null : fi.fiYear - p.planStartYear;
@@ -289,6 +297,8 @@ export interface Kpi {
   /** Change over the next 12 months of the projection. */
   delta: { value: number; kind: 'money' | 'pct' | 'pts' } | null;
   note?: string;
+  /** Shown in place of the value when it is null. */
+  emptyLabel?: string;
 }
 
 /** The Overview KPI strip, read from the projection. */
@@ -310,6 +320,7 @@ export function kpis(plan: Plan): Kpi[] {
       spark: fi.sim.rows.slice(0, fi.yearsToTarget).map((r) => Math.min(1.2, r.financialAssetsAfterTax / r.fiTarget)),
       delta: { value: fi.progress, kind: 'pct' },
       note: `of target by ${fi.targetAge}`,
+      emptyLabel: `After ${fi.sim.points[fi.sim.points.length - 1].age}`,
     },
     { key: 'health', label: 'Plan health', value: health.score, kind: 'score', spark: [], delta: null, note: health.score >= 80 ? 'Strong' : health.score >= 60 ? 'Solid, with gaps' : health.score >= 40 ? 'Needs attention' : 'Fragile' },
   ];

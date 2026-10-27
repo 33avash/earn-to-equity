@@ -35,7 +35,7 @@ function Card({ id, title, to, linkLabel, className = '', children }: { id: stri
 export default function Overview() {
   const plan = usePlan();
   const money = useMoney();
-  const { profile, cashflow: cf, sheet, headline, unfundedGoals } = plan;
+  const { profile, cashflow: cf, sheet, headline, unfundedGoals, fi } = plan;
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,6 +49,11 @@ export default function Overview() {
           <p className="mt-1.5 max-w-2xl text-[14px] leading-relaxed text-grey">
             You keep <strong className="font-semibold text-evergreen">{formatPct(cf.savingsRate, 0)}</strong> of your take-home after spending and EMIs. On today’s assumptions you reach{' '}
             <strong className="font-semibold text-evergreen">{money(headline.netWorthReal)}</strong> in today’s rupees by {headline.year}, at {headline.age}.
+            {fi.fiAge !== null ? (
+              <> Financial independence comes at <strong className="font-semibold text-evergreen">{fi.fiAge}</strong>{fi.fiAge <= fi.targetAge ? `, on or before your target of ${fi.targetAge}` : `, after your target of ${fi.targetAge}`}.</>
+            ) : (
+              <> By your FI target age of {fi.targetAge}, the plan reaches <strong className="font-semibold text-evergreen">{formatPct(fi.progress, 0)}</strong> of the corpus you would need.</>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

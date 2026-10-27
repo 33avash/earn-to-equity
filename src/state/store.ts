@@ -3,15 +3,37 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type { Assumptions, FinancialProfile, ScenarioDeltas, ScenarioKey } from '@/types/profile';
 import { DEFAULT_SCENARIO_DELTAS } from '@/finance/scenarios';
 import { DEFAULT_TAX, type TaxAssumptions } from '@/features/learn/tax';
+import type { EngineId } from '@/services/coach/engines/types';
+import { DEFAULT_WEBLLM_MODEL, WEBLLM_MODELS } from '@/services/coach/engines/webllm';
+import { DEFAULT_OLLAMA_MODEL } from '@/services/coach/engines/ollama';
 import { DEFAULT_ASSUMPTIONS, blankProfile, demoProfile } from './demo';
-
 
 export interface CoachMessage {
   id: string;
   role: 'user' | 'coach';
   text: string;
-  source?: 'rules' | 'gemini';
+  source?: 'rules' | CoachEngineId;
+  /** Model answers only: figures that don't appear in the plan's numbers. */
+  unverified?: string[];
+  /** Model answers only: the rule-based answer computed by the engine for the same question. */
+  engineText?: string;
+  /** Model answers only: the engine recognised the question and calculated the answer (engineText is a real answer, not a summary). */
+  engineAnswered?: boolean;
+  /** Rule-based answers only: why no model answered. */
+  note?: string;
 }
+
+export type CoachEngineId = EngineId;
+
+export interface CoachSettings {
+  /** auto picks the best engine that is ready; rules never uses a language model. */
+  engine: 'auto' | 'rules' | CoachEngineId;
+  webllmModel: string;
+  ollamaEnabled: boolean;
+  ollamaModel: string;
+}
+
+export const defaultCoachSettings = (): CoachSettings => ({ engine: 'auto', webllmModel: DEFAULT_WEBLLM_MODEL, ollamaEnabled: false, ollamaModel: DEFAULT_OLLAMA_MODEL });
 
 export interface RiskLabSettings {
   salaryGrowthDelta: number;
@@ -52,6 +74,9 @@ export interface AppState {
   riskLab: RiskLabSettings;
   tax: TaxAssumptions;
   coach: CoachMessage[];
+  coachSettings: CoachSettings;
+  /** The coach side panel. Not saved. */
+  coachOpen: boolean;
   learnProgress: Record<string, number>; // module id → best quiz score
 
   updateProfile: (fn: (draft: FinancialProfile) => void) => void;
@@ -71,6 +96,8 @@ export interface AppState {
   setTax: (patch: Partial<TaxAssumptions>) => void;
   pushCoach: (m: CoachMessage) => void;
   clearCoach: () => void;
+  setCoachSettings: (patch: Partial<CoachSettings>) => void;
+  setCoachOpen: (open: boolean) => void;
   setLearnScore: (id: string, score: number) => void;
   clearAll: () => void;
 }
@@ -113,6 +140,8 @@ const initial = () => ({
   riskLab: defaultRiskLab(),
   tax: structuredClone(DEFAULT_TAX),
   coach: [] as CoachMessage[],
+  coachSettings: defaultCoachSettings(),
+  coachOpen: false,
   learnProgress: {} as Record<string, number>,
 });
 
@@ -161,6 +190,8 @@ export const useStore = create<AppState>()(
       setTax: (patch) => set((s) => ({ tax: { ...s.tax, ...patch } })),
       pushCoach: (m) => set((s) => ({ coach: [...s.coach, m].slice(-40) })),
       clearCoach: () => set({ coach: [] }),
+      setCoachSettings: (patch) => set((s) => ({ coachSettings: { ...s.coachSettings, ...patch } })),
+      setCoachOpen: (open) => set({ coachOpen: open }),
       setLearnScore: (id, score) => set((s) => ({ learnProgress: { ...s.learnProgress, [id]: Math.max(score, s.learnProgress[id] ?? 0) } })),
       clearAll: () => set({ ...initial() }),
     }),
@@ -197,6 +228,7 @@ export const useStore = create<AppState>()(
         riskLab: s.riskLab,
         tax: s.tax,
         coach: s.coach,
+        coachSettings: s.coachSettings,
         learnProgress: s.learnProgress,
       }),
       // Merge persisted data over fresh defaults so newly added fields always exist.
@@ -208,6 +240,12 @@ export const useStore = create<AppState>()(
           assumptions: { ...current.assumptions, ...(p.assumptions ?? {}) },
           settings: { ...current.settings, ...(p.settings ?? {}) },
           riskLab: { ...current.riskLab, ...(p.riskLab ?? {}) },
+          coachSettings: (() => {
+            const c = { ...current.coachSettings, ...(p.coachSettings ?? {}) };
+            // A model that is no longer offered falls back to the current default.
+            return WEBLLM_MODELS.some((m) => m.id === c.webllmModel) ? c : { ...c, webllmModel: current.coachSettings.webllmModel };
+          })(),
+          coachOpen: false,
           // Reference dates and rates always come from the current assumptions file, never an old save.
           tax: { ...current.tax, ...(p.tax ?? {}), asOf: current.tax.asOf, ppfRate: current.tax.ppfRate, epfRate: current.tax.epfRate },
         };

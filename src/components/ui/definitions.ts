@@ -21,3 +21,21 @@ export const DEFINITIONS = {
 } as const;
 
 export type DefinitionKey = keyof typeof DEFINITIONS;
+
+/** Plain-language terms, each with the screen where it matters. */
+export const GLOSSARY: { term: string; def: string; to: string }[] = [
+  { term: 'Net worth', def: DEFINITIONS.netWorth, to: '/app' },
+  { term: 'Investable surplus', def: DEFINITIONS.surplus, to: '/app/budget' },
+  { term: 'Savings rate', def: DEFINITIONS.savingsRate, to: '/app/budget' },
+  { term: 'Emergency coverage', def: DEFINITIONS.emergencyCoverage, to: '/app/emergency-debt' },
+  { term: 'EMI-to-income (DTI)', def: DEFINITIONS.dti, to: '/app/emergency-debt' },
+  { term: 'Today’s rupees (real value)', def: DEFINITIONS.real, to: '/app/simulator' },
+  { term: 'FI target', def: DEFINITIONS.fiTarget, to: '/app/fi' },
+  { term: 'Weighted return', def: DEFINITIONS.weightedReturn, to: '/app/portfolio' },
+  { term: 'Volatility', def: DEFINITIONS.volatility, to: '/app/risk-lab' },
+  { term: 'Future cost of a goal', def: DEFINITIONS.futureCost, to: '/app/goals' },
+  { term: 'LTCG', def: 'Long-term capital gains: profit on equity held over 12 months, taxed at 12.5% above ₹1.25 lakh a year.', to: '/app/learn/tax' },
+  { term: 'Section 80C', def: 'Old-regime deduction of up to ₹1.5 lakh a year for EPF, PPF, ELSS, life cover and similar. Not available in the new regime.', to: '/app/learn/tax' },
+  { term: 'EPF', def: 'Employees’ Provident Fund: 12% of basic pay from you and your employer, earning the rate EPFO declares each year.', to: '/app/learn/retirement' },
+  { term: 'SIP step-up', def: 'Raising your monthly SIP by a fixed percentage each year, usually in line with pay rises.', to: '/app/sip' },
+];

@@ -11,8 +11,12 @@ import { homePurchaseCosts } from '@/finance/simulate';
  * Rule-based educational coach. Every figure comes from the financial engine.
  * The coach only selects, explains and compares. It never invents numbers.
  */
+export type CoachIntent = 'home' | 'behind' | 'salary' | 'crash' | 'saveMore' | 'explain';
+
 export interface CoachAnswer {
   text: string;
+  /** The question type recognised, or null when the answer is the generic summary. */
+  intent: CoachIntent | null;
 }
 
 const assumptionsLine = (plan: Plan) =>
@@ -214,21 +218,31 @@ ${plan.profile.lifeEvents.length ? `It already includes your ${plan.profile.life
 
 export function answerWithRules(question: string, plan: Plan): CoachAnswer {
   const q = question.toLowerCase();
-  if (/\b(home|house|flat|apartment|property)\b/.test(q)) return { text: home(plan, q) };
-  if (/behind|why.*(goal|short)|not on track|shortfall/.test(q)) return { text: behind(plan) };
-  if (/salary|income|raise|increment/.test(q) && /\d/.test(q)) return { text: salary(plan, q) };
-  if (/market|crash|fall|drop|decline/.test(q)) return { text: crash(plan, q) };
-  if (/save|saving|invest more|how much more|target/.test(q)) return { text: saveMore(plan) };
-  if (/explain|simple|projected|projection|wealth|net worth/.test(q)) return { text: explain(plan) };
+  if (/\b(home|house|flat|apartment|property)\b/.test(q)) return { intent: 'home', text: home(plan, q) };
+  if (/behind|why.*(goal|short)|not on track|shortfall/.test(q)) return { intent: 'behind', text: behind(plan) };
+  if (/salary|income|raise|increment/.test(q) && /\d/.test(q)) return { intent: 'salary', text: salary(plan, q) };
+  if (/market|crash|fall|drop|decline/.test(q)) return { intent: 'crash', text: crash(plan, q) };
+  if (/save|saving|invest more|how much more|target/.test(q)) return { intent: 'saveMore', text: saveMore(plan) };
+  if (/explain|simple|projected|projection|wealth|net worth/.test(q)) return { intent: 'explain', text: explain(plan) };
   return {
+    intent: null,
     text: `I can explain figures from your plan. Here is a quick summary: net worth ${c(plan.sheet.netWorth)}, monthly surplus ${c(plan.cashflow.investableSurplus)} (${formatPct(plan.cashflow.savingsRate, 0)} of income), projected net worth ${c(plan.headline.netWorth)} by ${plan.headline.year} (${c(plan.headline.netWorthReal)} in today’s rupees).
 
 Try asking about affording a home, why a goal is behind, slower salary growth (e.g. “what if my salary grows 5%?”), how much more to save, or a market fall in a given year.`,
   };
 }
 
-/** Compact, pre-formatted context sent to the optional Gemini endpoint. Contains no name. */
-export function coachContext(plan: Plan) {
+/**
+ * Compact, pre-formatted context sent to the language-model engines. Contains no name. `brief` keeps only the
+ * assumptions and today's figures, for questions the engine has already answered in FACTS: small models
+ * confuse the long projection with the figures that matter.
+ */
+export function coachContext(plan: Plan, { brief = false } = {}) {
+  const full = fullContext(plan);
+  return brief ? { currency: full.currency, profile: full.profile, assumptions: full.assumptions, today: full.today } : full;
+}
+
+function fullContext(plan: Plan) {
   return {
     currency: 'INR',
     profile: { age: plan.profile.about.age, ageConvention: 'age on 1 January of each year', fiTargetAge: plan.profile.about.fiAge, dependents: plan.profile.about.dependents, planStartYear: plan.profile.planStartYear },

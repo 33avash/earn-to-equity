@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
-import { APP_NAV } from '@/components/layout/nav';
+import { MODULE_GROUPS } from '@/components/layout/nav';
 import { PublicHero } from '@/components/layout/PublicHero';
 import { Button } from '@/components/ui/Button';
 import { Reveal } from '@/components/motion/Motion';
@@ -19,7 +19,7 @@ const DESCRIPTIONS: Record<string, string> = {
   '/app/life-events': 'Promotions, breaks, a wedding or a home, with stamp duty and the lender’s 50% limit checked.',
   '/app/risk-lab': 'One-click stress tests and 1,000 market paths using fat-tailed returns or Nifty 50 history.',
   '/app/fi': 'Your FI target with healthcare, the corpus after tax, and the extra SIP needed to reach it.',
-  '/app/coach': 'Answers about your plan that quote figures from your own projection.',
+  '/app/coach': 'Questions about your plan, answered by a free AI model that runs in your browser, with nothing to set up. The engine works out every figure; the model explains it.',
   '/app/learn': 'Eleven short lessons with worked examples, plus tax notes for 2026-27.',
 };
 
@@ -33,7 +33,7 @@ export default function Features() {
       </PublicHero>
 
       <div className="container-x flex flex-col gap-24 lg:gap-36">
-        {APP_NAV.map((g, gi) => (
+        {MODULE_GROUPS.map((g, gi) => (
           <section key={g.group} aria-labelledby={`grp-${gi}`} className="grid gap-10 lg:grid-cols-12">
             <div className="lg:col-span-4">
               <div className="lg:sticky lg:top-36">

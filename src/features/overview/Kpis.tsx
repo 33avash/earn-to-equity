@@ -63,7 +63,7 @@ export function KpiStrip({ plan }: { plan: Plan }) {
             </span>
             <span className="flex flex-wrap items-end justify-between gap-x-2 gap-y-3">
               <span className={`whitespace-nowrap text-[22px] font-semibold sm:text-[24px] leading-none tracking-[-0.03em] [&_.num]:font-sans ${k.value !== null && k.kind === 'money' && k.value < 0 ? 'text-danger' : 'text-evergreen'}`}>
-                {k.value === null ? <span className="text-[20px]">Not reached</span> : <AnimatedNumber value={k.value} format={fmt(k)} />}
+                {k.value === null ? <span className="text-[20px]">{k.emptyLabel ?? 'Not reached'}</span> : <AnimatedNumber value={k.value} format={fmt(k)} />}
                 {k.kind === 'score' && <span className="text-[13px] font-normal text-grey">/100</span>}
               </span>
               {k.kind === 'score' && k.value !== null ? <ScoreRing score={k.value} size={40} stroke={3.5} showValue={false} /> : <Sparkline values={k.spark} className="hidden shrink-0 text-forest sm:block" />}
