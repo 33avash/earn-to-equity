@@ -554,6 +554,25 @@ svg.lucide {
   }
 }
 
+/* Markets strip: a slow scroll on narrow screens only. Hover, focus or a touch pauses it; wide screens and
+   reduced motion show a still row. The second copy exists only for the loop. */
+.ticker-track {
+  animation: marquee var(--marquee-duration, 70s) linear infinite;
+}
+.ticker:hover .ticker-track,
+.ticker:focus-within .ticker-track,
+.ticker[data-paused='true'] .ticker-track {
+  animation-play-state: paused;
+}
+@media (min-width: 768px) {
+  .ticker-track {
+    animation: none;
+  }
+  .ticker-copy {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .aurora::before,
   .aurora::after,
@@ -561,8 +580,12 @@ svg.lucide {
   .float-slow,
   .float-slower,
   .skeleton,
-  .marquee-track {
+  .marquee-track,
+  .ticker-track {
     animation: none !important;
+  }
+  .ticker-copy {
+    display: none;
   }
   .lift:hover,
   .btn:hover > svg {

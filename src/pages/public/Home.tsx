@@ -14,6 +14,7 @@ import { Mark } from '@/components/layout/Wordmark';
 import { AnimatedNumber, Reveal } from '@/components/motion/Motion';
 import { TextReveal } from '@/components/motion/TextReveal';
 import { DISCLAIMER_SHORT } from '@/pages/public/Legal';
+import { MarketsStrip } from '@/features/markets/MarketsStrip';
 import demoFix from '@/content/demoFix.json';
 
 const section = 'container-x py-16 sm:py-24';
@@ -79,6 +80,10 @@ export default function Home() {
         </div>
       </section>
 
+      <div className="container-x">
+        <MarketsStrip className="rounded-2xl bg-surface/70 ring-1 ring-inset ring-line" />
+      </div>
+
       {/* 2. CTC → REAL IN-HAND */}
       <section aria-labelledby="ctc-h">
         <div className={section}>
@@ -95,7 +100,14 @@ export default function Home() {
       <section aria-labelledby="fix-h">
         <div className={section}>
           <SectionHead id="fix-h" title={<>Riya’s plan, <span className="text-gradient">fixed</span></>}>
-            <p>Her MBA and first car land a year apart, her emergency fund is short and her employer puts nothing in NPS. These are the planner’s changes, each tested on her projection and 300 market paths.</p>
+            <p>
+              Riya is the demo: a made-up {sample.profile.about.age}-year-old software analyst in Pune on {formatCompact(sample.profile.income.ctc ?? 0)} CTC. She sends money home to her parents,
+              is paying off an education loan, and wants a part-time MBA, a first car, a wedding and a flat over the next {sample.profile.lifeEvents.reduce((m, e) => Math.max(m, e.year), 0) - demoFix.planStartYear} years.
+            </p>
+            <p className="mt-3">
+              Her plan has the gaps most first plans have. The MBA and the car land a year apart and her savings can’t pay for both, her emergency fund is short, a credit card charges 36%, and her
+              employer puts nothing into NPS. Below is what the planner’s changes do, each one tested on her projection and {demoFix.paths} simulated market paths.
+            </p>
           </SectionHead>
           <Frame size="xl" className="flex flex-col gap-6 p-6 sm:p-10">
             <BeforeAfter before={demoFix.before} after={demoFix.after} targetAge={demoFix.targetAge} endYear={demoFix.endYear} money={formatCompact} />

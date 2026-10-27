@@ -14,6 +14,7 @@ It runs entirely in your browser. There is no sign-up and no server holding your
 
 - [Why we built it](#why-we-built-it)
 - [Using it](#using-it)
+- [The demo: Riya's plan](#the-demo-riyas-plan)
 - [What the planner does](#what-the-planner-does)
 - [How the numbers are worked out](#how-the-numbers-are-worked-out)
 - [Default assumptions](#default-assumptions)
@@ -39,13 +40,11 @@ Earn to Equity puts all of that into one model. Every screen reads from the same
 
 There are two ways in:
 
-- **See the demo plan.** Loads a fictional profile (Riya, 26, a software analyst in Pune on ₹11.5 L CTC with 10% variable pay) so you can look around without typing anything. Her plan has gaps on purpose: a part-time MBA and a first car a year apart that savings can't both pay for, a short emergency reserve, a ₹22,000 credit-card balance at 36%, no employer NPS, and no term cover for the parents she supports. **Fix my plan** shows what closing them does. A banner across the top reminds you it is demo data.
+- **See the demo plan.** Loads a made-up person, Riya, so you can look around without typing anything. Her plan has gaps on purpose, and **Fix my plan** shows what closing them does. See [the demo](#the-demo-riyas-plan) below for who she is and why her plan looks the way it does.
 - **Start in 2 minutes.** Five answers on one screen: age, CTC (or monthly take-home), city, monthly spending (rent can be split out) and one top goal. Everything else starts from defaults: the Labour Codes salary structure, the cheaper tax regime each year, a six-month emergency target. Overview then shows a **plan accuracy** meter and links to each missing detail, with how far it could move your FI age.
 - **Detailed setup.** The eight-step setup (`/start/detailed`): about you, income and career, monthly cash flow, what you own and owe, protection, goals, investment mix, and a review. Every step says why it asks what it asks.
 
 The planner opens in **simple mode**: Overview, Salary & offers, Goals, My plan and Learn. **Advanced tools** at the foot of the sidebar adds Budget, Emergency & debt, Portfolio, SIP, Life events, the full Simulator, Risk lab, Financial independence, Financial health and News. Search (⌘K) finds every screen in either mode.
-
-If you already have a plan and open the demo, your own plan is set aside, not overwritten. The plan switcher at the top of the sidebar brings it back.
 
 Press **⌘K** (or **Ctrl+K**) anywhere to search pages, lessons, glossary terms, your goals and your own figures, or to run actions such as adding a goal or starting a stress test.
 
@@ -59,6 +58,49 @@ Press **⌘K** (or **Ctrl+K**) anywhere to search pages, lessons, glossary terms
     <td><img src="docs/screenshots/risk-lab.png" alt="Risk lab" /></td>
   </tr>
 </table>
+
+## The demo: Riya's plan
+
+The planner opens on a demo so that someone seeing it for the first time can watch it work before entering anything about themselves. The demo is a single made-up person, Riya. Every figure is illustrative, and none of it comes from a real person. The profile is in [`src/state/demo.ts`](src/state/demo.ts).
+
+**Who she is.** Riya is 26 and works as a software analyst in Pune. Her CTC is ₹11.5 L under the new Labour Codes pay structure, with 10% of it as variable pay. After PF, tax and the rest of CTC, about ₹72,200 a month reaches her bank.
+
+| Each month | Amount |
+|---|---|
+| Take-home pay | ₹72,200 |
+| Spending (₹17,000 rent and ₹5,000 sent to her parents included) | ₹44,800 |
+| EMIs: education loan and credit card | ₹11,000 |
+| SIPs | ₹15,000 |
+| Savings | ₹3,000 |
+
+She already has about ₹4.95 L invested (Indian and international equity, debt, PPF, gold), ₹2.8 L in EPF, and ₹1.25 L between her savings account and emergency fund. She owes ₹2.8 L on an education loan at 9.5% and ₹22,000 on a credit card at 36%. She has ₹10 L of health cover and no term life cover.
+
+**What she's planning.** Her goals and life events, in the order they fall:
+
+| Year | Plan |
+|---|---|
+| 2027 | Trip to Japan, ₹2 L |
+| 2029 | Part-time MBA, ₹10.5 L |
+| 2030 | First car, ₹8 L |
+| 2031 | A new role after the MBA, with pay up 40% |
+| 2033 | Wedding, ₹6 L |
+| 2039 | A ₹60 L flat in Pune, with a 20% down payment and a 20-year loan |
+
+She wants to be financially independent by 55. (Years shift with the current year: the demo always starts this year.)
+
+**Where her plan falls short, on purpose.** The demo is tuned, using real engine runs, to have the gaps most first plans have:
+
+- The MBA and the car are a year apart, and savings can't pay for both. The car is about ₹4.3 L short in 2030.
+- Her emergency reserve covers about 2.7 months of essential bills and EMIs against a 6-month target.
+- The credit card charges 36%, the most expensive money in her plan.
+- Her employer puts nothing into NPS, although up to 14% of basic paid that way is not taxed.
+- Her parents rely on the money she sends home, but she has no term life cover.
+
+**What "Fix my plan" does with it.** It tries each change on her projection and on 300 simulated market paths, then shows what each one moves before anything is applied. The changes are: clear the card, pause part of the SIP to fill the reserve, ask HR for employer NPS, move the car a year or let a loan cover the gap, and keep lifestyle creep down. Applied together, the result reported on the landing page ([`src/content/demoFix.json`](src/content/demoFix.json)) is: no unpaid goals (from one), the chance of reaching FI by 55 goes from 43% to 68%, and plan health goes from 62 to 78.
+
+**How it looks in the app.** A banner on every planner screen says the plan is a demo. Its **Who is Riya?** link opens the summary above, and Overview shows the same summary as a card you can fold away. The summary reads the live plan, so it stays correct if you edit the demo: a gap you close drops off the list. If you already have your own plan, opening the demo sets it aside instead of overwriting it, and the plan switcher at the top of the sidebar brings it back. **Settings → Reset to demo** puts every gap back.
+
+The demo also anchors the tests: a saved snapshot of its 21-point projection catches any change to the numbers, and a test checks that the summary names each gap.
 
 ## What the planner does
 
@@ -98,6 +140,10 @@ The score is an educational measure. It is not a credit score.
 Goals receive money in priority order. You can drag them to reorder, and the priority labels follow the position. Each goal shows its cost today, its cost in the target year, and how much comes from savings, from a loan, or is still unpaid. There are list, board and timeline views.
 
 **Portfolio.** A target mix across seven asset classes (Indian equity, international equity, debt, government schemes such as PPF, gold, cash, other), with four example mixes from conservative to aggressive. It shows the expected return after fund costs, an estimated volatility, how far your current holdings have drifted from the target, and how to rebalance using new SIP money only (no selling).
+
+**Fund check** (on Portfolio). Search for a mutual fund you hold by name and add it. Each fund shows its AMFI category, the asset class it counts as, whether it is a direct or regular plan, and its 1-, 3- and 5-year past returns from NAV history. Enter what each fund is worth and those values fill your holdings, and the share in regular plans sets the extra cost the projection charges. A regular-plan fund also shows roughly what that cost adds up to over the plan on its amount. It describes funds you already hold; it never ranks them or suggests one.
+
+**Markets strip.** A row under the top bar (and on the landing page) with live figures from Yahoo Finance: the Nifty 50, the Sensex, international gold in rupees per 10 g (before Indian import duty and GST) and USD/INR. It refreshes every minute while the page is open, and also shows the RBI repo rate and the latest CPI inflation. If the Yahoo endpoint can't be reached, the Nifty 50 and gold are read from the NAV of a fund that tracks each one, and the rupee from the ECB's daily reference rate. Each figure shows its time and source and links to the screen it affects. Changes are small signed numbers, not red and green. On phones the row scrolls slowly and stops when touched; wider screens and reduced motion show it still.
 
 **Life events.** Promotions, career breaks, a wedding, a home purchase or any one-off cost, each with its before-and-after effect on net worth. Buying a home includes the state's stamp duty and registration, GST on an under-construction flat, interiors, and a check against the 50% limit lenders put on EMIs as a share of take-home.
 
@@ -281,6 +327,7 @@ We would rather list these than have them found later:
 - Your profile, goals, events, assumptions and settings are saved in your browser's local storage on this device, under the key `e2e:v1` (the theme choice is under `e2e:theme`). Nothing is sent to an Earn to Equity server, because there isn't one.
 - Local storage isn't encrypted and doesn't sync between devices or browsers. Clearing site data deletes your plan.
 - The app never asks for bank logins, card numbers, PAN, Aadhaar or other identity documents.
+- The markets strip and fund check read free public sources: Yahoo Finance's chart data (through `/api/markets` or the Worker; nothing is sent, the endpoint fetches a fixed list of four symbols), [MFapi.in](https://www.mfapi.in/) for fund search and NAV history, AMFI's daily NAV file (through `/api/amfi` or the Worker), [Frankfurter](https://frankfurter.dev/) for the ECB rate and the World Bank for CPI. Only what you type in the fund search and scheme codes are sent, never anything from your plan. Results are cached for up to 12 hours under `e2e:data:` keys, and dated copies committed in `src/services/data/snapshots/` are shown, marked as saved copies, when a source can't be reached. See [docs/data-sources.md](docs/data-sources.md).
 - From Settings you can download a summary (`.txt`), the full data (`.json`) or the year-by-year projection (`.csv`), reset to the demo plan, or erase everything.
 - The coach's on-device, Chrome and Ollama models run on your own device, so your questions stay there; only the model files are downloaded (from Hugging Face for the on-device model). Plan data leaves your browser only on a deployment that has Gemini set up: Automatic then uses Gemini first, sending your question and a summary of calculated figures (no name) to Google. Choose another engine in AI settings to keep everything on the device.
 
@@ -328,9 +375,13 @@ Then add the worker's URL (for example `https://earn-to-equity-coach.<you>.worke
 
 **Ollama.** Install [Ollama](https://ollama.com), run `ollama pull gemma3:4b`, then switch on **Use Ollama on this computer** in the coach's AI settings. To use it from the hosted site rather than `localhost`, start Ollama with `OLLAMA_ORIGINS=https://33avash.github.io`.
 
-### Optional: news on the live site
+### Optional: news and live markets on the live site
 
 Indian headlines come from the publishers' RSS feeds, which need no key but can't be read by a browser on another site. `server/news.ts` fetches and merges them; the dev and preview servers mount it at `/api/news`, and the Cloudflare Worker serves it at `/news`. Once the worker is deployed and `COACH_API_URL` is set, the hosted site uses it automatically (or set `VITE_NEWS_API_URL` to point elsewhere). Results are cached for 10 minutes. Without the worker, the News page still offers Finnhub's global headlines with a reader's own key.
+
+The same worker serves the live market figures at `/markets` (the dev and preview servers at `/api/markets`). `server/markets.ts` reads Yahoo Finance's chart data for the Nifty 50, Sensex, gold and USD/INR and caches it for a minute. Yahoo sends no CORS headers, so the browser can't read it directly. Without the worker, the strip falls back to fund NAVs and the ECB rate.
+
+It also serves AMFI's official NAV file at `/amfi?codes=…` (the dev and preview servers at `/api/amfi`); `server/amfi.ts` fetches the 1.5 MB file, keeps it for 12 hours and returns only the scheme codes asked for. The fund check uses it to read each fund's plan type, and falls back to the scheme name without it. To refresh the committed fallback snapshots, run `node scripts/refresh-snapshots.mjs`.
 
 ## Project layout
 

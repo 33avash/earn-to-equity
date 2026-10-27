@@ -8,6 +8,7 @@ import { TrajectoryPanel, AllocationPanel, FiPanel } from '@/features/overview/P
 import { KpiStrip, MonthWaterfall, NextStepsChecklist } from '@/features/overview/Kpis';
 import { GoalTimeline } from '@/features/goals/GoalTimeline';
 import { AccuracyCard } from '@/features/overview/AccuracyCard';
+import { DemoIntroCard } from '@/features/demo/DemoBrief';
 import { useRanges } from '@/features/overview/useRanges';
 import { RANGE_NOTE } from '@/finance/ranges';
 import { formatPct } from '@/finance/money';
@@ -86,6 +87,8 @@ export default function Overview() {
           {isDemo && plan.fixes.length > 0 && <p className="text-[12.5px] text-grey">Riya’s plan has gaps. Try Fix my plan.</p>}
         </div>
       </header>
+
+      {isDemo && <DemoIntroCard plan={plan} />}
 
       <KpiStrip plan={plan} />
 

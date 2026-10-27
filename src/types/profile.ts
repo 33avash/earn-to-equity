@@ -192,6 +192,8 @@ export interface FinancialProfile {
     epf?: { balance: number };
     otherAssets: number; // e.g. vehicle, property already owned (not invested)
     elssLocked?: number; // ELSS units bought in the last 3 years, inside Indian equity; cannot be sold yet
+    /** Mutual funds you hold, added in the fund check (facts only). They fill holdings and the regular-plan share. */
+    funds?: { code: number; name: string; category: string; plan: 'Direct' | 'Regular' | null; amount: number }[];
   };
   liabilities: Liability[];
   protection: {

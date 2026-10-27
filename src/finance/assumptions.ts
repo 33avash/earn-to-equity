@@ -68,6 +68,15 @@ export const SMALL_SAVINGS = {
   poSavings: d({ label: 'Post office savings account', value: 0.04, asOf: 'Oct–Dec 2026', source: 'https://www.nsiindia.gov.in/', sourceLabel: 'Ministry of Finance notification, 30 Sep 2026' }),
 };
 
+export const REPO_RATE = d({
+  label: 'RBI policy repo rate',
+  value: 0.055,
+  asOf: '7 Oct 2026',
+  source: 'https://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=63742',
+  sourceLabel: 'RBI Monetary Policy Statement, 5–7 Oct 2026: repo up 25 bps to 5.50%',
+  note: 'Stance changed to calibrated tightening. Loans linked to the repo rate reset from their next reset date.',
+});
+
 export const HOME_LOAN_RATE = d({
   label: 'Home-loan rate (planning default)',
   value: 0.08,
@@ -437,7 +446,7 @@ export type SourceGroup = 'Tax' | 'Salary & EPF' | 'Rates' | 'Markets' | 'Proper
 export const SOURCE_GROUPS: { group: SourceGroup; items: Dated<unknown>[] }[] = [
   { group: 'Tax', items: [TAX_LAW, NEW_REGIME, OLD_REGIME, SURCHARGE, CESS, CAPITAL_GAINS, HRA_RULES, EMPLOYER_NPS] },
   { group: 'Salary & EPF', items: [EPF_RULES, EPF_RATE, LABOUR_CODES, GRATUITY, PROFESSIONAL_TAX] },
-  { group: 'Rates', items: [CPI_LATEST, PLANNING_INFLATION, EDUCATION_INFLATION, ...Object.values(SMALL_SAVINGS), HOME_LOAN_RATE] },
+  { group: 'Rates', items: [REPO_RATE, CPI_LATEST, PLANNING_INFLATION, EDUCATION_INFLATION, ...Object.values(SMALL_SAVINGS), HOME_LOAN_RATE] },
   { group: 'Markets', items: [NIFTY50_TRI, MSCI_WORLD, GOLD_PRICES, INDEX_HISTORY, CORRELATIONS, REGULAR_PLAN_DRAG, INR_DEPRECIATION, WITHDRAWAL_RATE] },
   { group: 'Property', items: [PROPERTY_CHARGES, UNDER_CONSTRUCTION_GST] },
   { group: 'Protection', items: [HEALTH_COVER_BENCHMARK, TERM_COVER_MULTIPLE, HEALTHCARE_INFLATION] },
@@ -451,6 +460,7 @@ export const ALL_DATED: Dated<unknown>[] = [
   EPF_RATE,
   ...Object.values(SMALL_SAVINGS),
   HOME_LOAN_RATE,
+  REPO_RATE,
   TAX_LAW,
   NEW_REGIME,
   OLD_REGIME,

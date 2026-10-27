@@ -9,6 +9,7 @@ import { familySupportMonthly } from '@/finance/household';
 import { exportData, exportSummary } from '@/services/export';
 import { DISCLAIMER_TEXT } from '@/pages/public/Legal';
 import { DEFAULT_ASSUMPTIONS } from '@/state/demo';
+import { CpiHistoryNote } from '@/features/markets/CpiHistory';
 import { CPI_LATEST, EPF_RATE, HEALTHCARE_INFLATION, LAST_REVIEW, PLANNING_INFLATION, SMALL_SAVINGS, WITHDRAWAL_RATE, type CityTier } from '@/finance/assumptions';
 import { SourcesList } from '@/features/sources/SourcesList';
 import { Select } from '@/components/ui';
@@ -88,7 +89,10 @@ export default function Settings() {
 
       <Section title="Financial assumptions" description="Illustrative inputs used by every projection. Asset-class returns are edited in the Portfolio Builder.">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <Field label="Inflation" hint={`Default ${formatPct(PLANNING_INFLATION.value, 0)}. Latest CPI: ${formatPct(CPI_LATEST.value, 2)}, ${CPI_LATEST.asOf}.`}>{(id, d) => <PercentInput id={id} describedBy={d} value={a.inflation} max={20} onChange={(v) => s.updateAssumptions({ inflation: v })} />}</Field>
+          <div className="flex flex-col gap-1.5">
+            <Field label="Inflation" hint={`Default ${formatPct(PLANNING_INFLATION.value, 0)}. Latest CPI: ${formatPct(CPI_LATEST.value, 2)}, ${CPI_LATEST.asOf}.`}>{(id, d) => <PercentInput id={id} describedBy={d} value={a.inflation} max={20} onChange={(v) => s.updateAssumptions({ inflation: v })} />}</Field>
+            <CpiHistoryNote />
+          </div>
           <Field label="Salary growth">{(id) => <PercentInput id={id} value={p.income.salaryGrowth} min={-20} max={50} onChange={(v) => s.updateProfile((x) => void (x.income.salaryGrowth = v))} />}</Field>
           <Field label="Annual SIP step-up">{(id) => <PercentInput id={id} value={a.sipStepUp} max={50} onChange={(v) => s.updateAssumptions({ sipStepUp: v })} />}</Field>
           <Field label="FI withdrawal rate" help={WITHDRAWAL_RATE.note}>{(id) => <PercentInput id={id} value={a.withdrawalRate} min={0.1} max={10} onChange={(v) => s.updateAssumptions({ withdrawalRate: v })} />}</Field>

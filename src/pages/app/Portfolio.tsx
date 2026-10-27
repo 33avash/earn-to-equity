@@ -6,6 +6,7 @@ import { useStore } from '@/state/store';
 import { PageHeader, Section, Stat, Notice, Disclaimer, MoneyInput, PercentInput, Button, Field, toast } from '@/components/ui';
 import { AllocationEditor } from '@/features/editors/Allocation';
 import { RegularPlansToggle } from '@/features/editors/RegularPlans';
+import { FundCheck } from '@/features/funds/FundCheck';
 import { AllocationBar } from '@/components/charts/Bars';
 import { ContribGainsChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
@@ -104,6 +105,10 @@ export default function Portfolio() {
         <div className="mt-6 border-t border-line pt-5">
           <RegularPlansToggle />
         </div>
+      </Section>
+
+      <Section title="Funds you hold" description="Add the mutual funds you own to see each one’s category, whether it is a direct or regular plan, and its past returns. Their values fill your holdings below.">
+        <FundCheck />
       </Section>
 
       <Section title="Current vs target, and rebalancing" description="Edit current values to match your statements. Rebalancing uses new SIP money only: under-weight classes get your monthly investment until the mix is back on target. Nothing is sold.">

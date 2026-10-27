@@ -8,6 +8,8 @@ import { useStore } from '@/state/store';
 import { Button } from '@/components/ui/Button';
 import { CoachPanel } from '@/features/coach/CoachPanel';
 import { FixPlanSheet } from '@/features/fixplan/FixPlanSheet';
+import { MarketsStrip } from '@/features/markets/MarketsStrip';
+import { DemoBriefDialog } from '@/features/demo/DemoBrief';
 import { Dialog, DialogTitle, SheetContent } from '@/components/ui/shadcn/dialog';
 import { PageTransition } from '@/components/motion/Motion';
 import { ScoreButton } from '@/components/ui/ScoreRing';
@@ -105,6 +107,7 @@ function crumbs(pathname: string): [string, string] {
 
 export function AppShell() {
   const [drawer, setDrawer] = useState(false);
+  const [briefOpen, setBriefOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(SIDEBAR_KEY) === '1';
@@ -230,10 +233,14 @@ export function AppShell() {
               )}
             </div>
           </div>
+          <MarketsStrip className="border-t border-line bg-background/60" />
           {isDemo && (
             <p className="flex flex-wrap items-center gap-x-2 border-t border-champagne/25 bg-champagne/10 px-4 py-1.5 text-[12.5px] text-charcoal sm:px-6 lg:px-8">
               <span className="h-1.5 w-1.5 rounded-full bg-champagne" aria-hidden />
-              You’re viewing a fictional demo plan.
+              You’re viewing {plan.profile.about.name ? `${plan.profile.about.name}’s plan, ` : ''}a made-up demo. No figure here is real.
+              <button type="button" onClick={() => setBriefOpen(true)} className="link font-medium">
+                Who is {plan.profile.about.name || 'this'}?
+              </button>
               <Link to="/start" className="link">
                 Build your own
               </Link>
@@ -251,6 +258,7 @@ export function AppShell() {
       <MobileTabBar onMore={() => setDrawer(true)} onCoach={() => setCoachOpen(true)} onCoachPage={onCoachPage} />
       <CoachPanel />
       <FixPlanSheet />
+      {isDemo && <DemoBriefDialog plan={plan} open={briefOpen} onOpenChange={setBriefOpen} />}
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );
