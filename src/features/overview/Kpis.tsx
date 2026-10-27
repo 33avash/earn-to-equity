@@ -109,6 +109,7 @@ export function MonthWaterfall({ plan }: { plan: Plan }) {
 export function NextStepsChecklist({ plan, limit = 6 }: { plan: Plan; limit?: number }) {
   const done = useStore((s) => s.doneSteps);
   const toggle = useStore((s) => s.toggleStep);
+  const openFix = useStore((s) => s.setFixOpen);
   const items = [...plan.insights.slice(0, limit)].sort((a, b) => Number(!!done[a.id]) - Number(!!done[b.id]));
   if (!items.length) return <p className="text-sm text-grey">Nothing urgent. Try a stress test in the Risk Lab.</p>;
   return (
@@ -131,11 +132,16 @@ export function NextStepsChecklist({ plan, limit = 6 }: { plan: Plan; limit?: nu
               <p className={`text-[14px] font-medium ${isDone ? 'text-grey line-through' : 'text-evergreen'}`}>{i.title}</p>
               {!isDone && <p className="mt-1 text-[13px] leading-relaxed text-grey">{i.detail}</p>}
             </div>
-            {!isDone && (
-              <Link to={i.link} className="hit shrink-0 self-center text-[13px] font-medium text-forest hover:underline">
-                Open
-              </Link>
-            )}
+            {!isDone &&
+              (i.fix ? (
+                <button type="button" onClick={() => openFix(true)} className="hit shrink-0 self-center text-[13px] font-medium text-forest hover:underline">
+                  See fix
+                </button>
+              ) : (
+                <Link to={i.link} className="hit shrink-0 self-center text-[13px] font-medium text-forest hover:underline">
+                  Open
+                </Link>
+              ))}
           </li>
         );
       })}

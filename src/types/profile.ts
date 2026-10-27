@@ -176,6 +176,8 @@ export interface FinancialProfile {
     lifestyle: LineItem[];
     monthlyInvestments: number; // SIPs etc. — a transfer, not an expense
     monthlySavings: number; // transfer to bank savings / emergency fund — not an expense
+    /** Part of the SIP sent to the emergency fund for the first `months` months of the plan, then restored. */
+    sipPause?: { amount: number; months: number };
   };
   position: {
     cashSavings: number; // bank balance outside the emergency fund

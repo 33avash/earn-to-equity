@@ -4,7 +4,9 @@ import { runScenario, DEFAULT_SCENARIO_DELTAS, attributeScenario } from '@/finan
 import { fiAnalysis } from '@/finance/fi';
 import { monteCarlo } from '@/finance/montecarlo';
 import { emptyAssetMap } from '@/finance/portfolio';
-import { DEFAULT_ASSUMPTIONS, blankProfile, demoProfile } from '@/state/demo';
+import { DEFAULT_ASSUMPTIONS, blankProfile } from '@/state/demo';
+// Engine mechanics are hand-checked against the previous demo persona (see tests/fixtures/legacyDemo.ts).
+import { legacyDemoProfile as demoProfile } from '../fixtures/legacyDemo';
 import type { Assumptions, FinancialProfile } from '@/types/profile';
 
 const close = (a: number, b: number, tol = 1e-6) => expect(Math.abs(a - b)).toBeLessThanOrEqual(tol * Math.max(1, Math.abs(b)));

@@ -78,6 +78,8 @@ export interface AppState {
   coachSettings: CoachSettings;
   /** The coach side panel. Not saved. */
   coachOpen: boolean;
+  /** The "Fix my plan" sheet. Not saved. */
+  fixOpen: boolean;
   learnProgress: Record<string, number>; // module id → best quiz score
 
   updateProfile: (fn: (draft: FinancialProfile) => void) => void;
@@ -88,6 +90,11 @@ export interface AppState {
   switchToOwnPlan: () => void;
   toggleStep: (id: string) => void;
   saveBaseline: (label: string) => void;
+  /** Saves a given plan (not the current one) as the comparison scenario. */
+  saveBaselineFrom: (label: string, profile: FinancialProfile, assumptions: Assumptions) => void;
+  /** Replaces the profile and assumptions; returns what was there, for Undo. */
+  replacePlan: (profile: FinancialProfile, assumptions: Assumptions) => { profile: FinancialProfile; assumptions: Assumptions };
+  setFixOpen: (open: boolean) => void;
   clearBaseline: () => void;
   startOnboarding: (fromCurrent?: boolean) => void;
   saveDraft: (draft: FinancialProfile, step: number) => void;
@@ -143,12 +150,13 @@ const initial = () => ({
   coach: [] as CoachMessage[],
   coachSettings: defaultCoachSettings(),
   coachOpen: false,
+  fixOpen: false,
   learnProgress: {} as Record<string, number>,
 });
 
 export const useStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...initial(),
       updateProfile: (fn) =>
         set((s) => {
@@ -175,6 +183,13 @@ export const useStore = create<AppState>()(
         set((s) => (s.ownPlan ? { profile: s.ownPlan.profile, assumptions: s.ownPlan.assumptions, ownPlan: null, isDemo: false, hasPlan: true, coach: [] } : {})),
       toggleStep: (id) => set((s) => ({ doneSteps: { ...s.doneSteps, [id]: !s.doneSteps[id] } })),
       saveBaseline: (label) => set((s) => ({ baseline: { profile: structuredClone(s.profile), assumptions: structuredClone(s.assumptions), savedAt: new Date().toISOString(), label } })),
+      saveBaselineFrom: (label, profile, assumptions) => set({ baseline: { profile: structuredClone(profile), assumptions: structuredClone(assumptions), savedAt: new Date().toISOString(), label } }),
+      replacePlan: (profile, assumptions) => {
+        const prev = { profile: get().profile, assumptions: get().assumptions };
+        set({ profile: structuredClone(profile), assumptions: structuredClone(assumptions) });
+        return prev;
+      },
+      setFixOpen: (open) => set({ fixOpen: open }),
       clearBaseline: () => set({ baseline: null }),
       startOnboarding: (fromCurrent = false) =>
         set((s) => ({
@@ -250,6 +265,7 @@ export const useStore = create<AppState>()(
             return WEBLLM_MODELS.some((m) => m.id === c.webllmModel) ? c : { ...c, webllmModel: current.coachSettings.webllmModel };
           })(),
           coachOpen: false,
+          fixOpen: false,
           // Reference dates and rates always come from the current assumptions file, never an old save.
           tax: { ...current.tax, ...(p.tax ?? {}), asOf: current.tax.asOf, ppfRate: current.tax.ppfRate, epfRate: current.tax.epfRate },
         };

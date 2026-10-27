@@ -327,7 +327,7 @@ export function ConfirmDialog({
 
 /* ---------- Toasts (sonner) ---------- */
 
-export const toast = (text: string) => sonnerToast(text);
+export const toast = (text: string, opts?: { action?: { label: string; onClick: () => void }; duration?: number }) => sonnerToast(text, opts);
 
 export function Toaster() {
   const { resolved } = useTheme();

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useSearchParams } from 'react-router-dom';
 import { ChevronRight, Menu, Search, Settings, PanelLeftClose, PanelLeftOpen, Sparkles, LayoutDashboard, Target, LineChart, MessageSquareText, MoreHorizontal } from 'lucide-react';
 import { Wordmark } from './Wordmark';
 import { APP_NAV, MODULE_GROUPS } from './nav';
@@ -7,6 +7,7 @@ import { CommandPalette, PlanSwitcher, ThemeToggle, useCommandShortcut } from '.
 import { useStore } from '@/state/store';
 import { Button } from '@/components/ui/Button';
 import { CoachPanel } from '@/features/coach/CoachPanel';
+import { FixPlanSheet } from '@/features/fixplan/FixPlanSheet';
 import { Dialog, DialogTitle, SheetContent } from '@/components/ui/shadcn/dialog';
 import { PageTransition } from '@/components/motion/Motion';
 import { ScoreButton } from '@/components/ui/ScoreRing';
@@ -89,6 +90,16 @@ export function AppShell() {
   const setCoachOpen = useStore((s) => s.setCoachOpen);
   const plan = usePlan();
   const onCoachPage = pathname.startsWith('/app/coach');
+  const [search, setSearch] = useSearchParams();
+  const setFixOpen = useStore((s) => s.setFixOpen);
+  // ?fix=1 opens "Fix my plan" (from Next steps, the landing page and shared links).
+  useEffect(() => {
+    if (search.get('fix') !== '1') return;
+    setFixOpen(true);
+    const next = new URLSearchParams(search);
+    next.delete('fix');
+    setSearch(next, { replace: true });
+  }, [search, setSearch, setFixOpen]);
   const [group, page] = crumbs(pathname);
 
   useEffect(() => {
@@ -207,6 +218,7 @@ export function AppShell() {
 
       <MobileTabBar onMore={() => setDrawer(true)} onCoach={() => setCoachOpen(true)} onCoachPage={onCoachPage} />
       <CoachPanel />
+      <FixPlanSheet />
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );

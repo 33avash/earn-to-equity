@@ -8,6 +8,7 @@ import { currentSalary } from './income';
 import { healthCoverBenchmark, termCoverBenchmark } from './protection';
 import { formatCompact, formatMonths, formatPct } from './money';
 import { allocationDrift, maxDrift } from './portfolio';
+import type { FixCandidate, FixId } from './fixPlan';
 
 export interface Insight {
   id: string;
@@ -15,6 +16,22 @@ export interface Insight {
   title: string;
   detail: string;
   link: string; // app route
+  /** This step is one of the fixes in "Fix my plan". */
+  fix?: boolean;
+}
+
+const FIX_PRIORITY: Record<FixId, number> = { 'clear-debt': 1, 'goal-loan': 1, 'move-goal': 1, 'fill-reserve': 2, 'employer-nps': 3, 'auto-regime': 3, 'direct-plans': 4, 'step-up': 5, 'creep': 6 };
+/** Insights a fix replaces, so the same problem isn't listed twice. */
+const REPLACES: Partial<Record<FixId, string[]>> = { 'clear-debt': ['costly-debt'], 'fill-reserve': ['emergency'], 'goal-loan': ['goal-gap'], 'move-goal': ['goal-gap'] };
+
+/**
+ * Next steps for Overview: the plan's fixes (the same ones "Fix my plan" offers, so the two never disagree),
+ * then the rule-based insights the fixes don't cover.
+ */
+export function stepsWithFixes(fixes: FixCandidate[], insights: Insight[]): Insight[] {
+  const replaced = new Set(fixes.flatMap((f) => REPLACES[f.id] ?? []));
+  const fromFixes: Insight[] = fixes.map((f) => ({ id: f.key, priority: FIX_PRIORITY[f.id], title: f.title, detail: f.why, link: '/app?fix=1', fix: true }));
+  return [...fromFixes, ...insights.filter((i) => !replaced.has(i.id))].sort((a, b) => a.priority - b.priority);
 }
 
 /** Rule-based next steps derived only from calculated figures. */

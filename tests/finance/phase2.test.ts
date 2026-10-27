@@ -9,7 +9,9 @@ import { healthCoverBenchmark, termCoverBenchmark } from '@/finance/protection';
 import { maxEligibleLoan } from '@/finance/rates';
 import { projectSip } from '@/finance/sip';
 import { DEFAULT_SCENARIO_DELTAS, tornado } from '@/finance/scenarios';
-import { DEFAULT_ASSUMPTIONS, blankProfile, demoProfile } from '@/state/demo';
+import { DEFAULT_ASSUMPTIONS, blankProfile, demoProfile as liveDemoProfile } from '@/state/demo';
+// Engine mechanics are hand-checked against the previous demo persona (see tests/fixtures/legacyDemo.ts).
+import { legacyDemoProfile as demoProfile } from '../fixtures/legacyDemo';
 import type { Assumptions, FinancialProfile } from '@/types/profile';
 
 const close = (a: number, b: number, tol = 1e-6) => expect(Math.abs(a - b)).toBeLessThanOrEqual(tol * Math.max(1, Math.abs(b)));
@@ -253,20 +255,25 @@ describe('scenario tornado', () => {
 
 describe('golden file: demo profile, 2026–2046', () => {
   /*
-   * Hand-verified rows:
-   *  - 2026: take-home ₹10,06,136.92 (CTC ₹11.4 L − employer PF ₹54,720 − gratuity ₹21,923.08 − employee PF ₹54,720
-   *          − PT ₹2,500, no tax); EPF ₹3,91,323.86 (₹2,80,000 + ₹84,450 credits + ₹26,873.86 interest).
-   *  - 2027: Japan trip ₹2,50,000 × 1.06 = ₹2,65,000, paid from savings.
-   *  - 2029: MBA ₹18,00,000 × 1.08³ = ₹22,67,481.60, all on an education loan (savings are kept for the 21-month break);
-   *          no salary that year.
+   * The live demo (Riya, ₹11.5 L CTC, basic 50%, gratuity in CTC, 10% variable at 80% payout). Hand-verified rows:
+   *  - 2026: basic ₹5,75,000; employer PF ₹69,000, gratuity ₹27,644.23 and the ₹1,15,000 variable target come out of
+   *          CTC, leaving fixed pay ₹9,38,355.77; variable paid ₹92,000. Cash = ₹10,30,355.77 − your PF ₹69,000 −
+   *          PT ₹2,500 = ₹9,58,855.77, no tax (new regime, under the ₹12 L rebate).
+   *          EPF: credits 2 × ₹69,000 − EPS 8.33% of ₹3,00,000 = ₹1,13,010; interest 0.006875 × (12 × ₹2,80,000 +
+   *          ₹9,417.50 × 78) = ₹28,150.13; balance ₹4,21,160.13.
+   *  - 2027: Japan trip ₹2,00,000 × 1.06 = ₹2,12,000, paid from savings.
+   *  - 2029: part-time MBA ₹10,50,000 × 1.08³ = ₹13,22,697.60.
+   *  - 2030: the first car can't be paid from savings: the one unpaid goal "Fix my plan" closes.
    */
   it('matches the snapshot', () => {
-    const r = simulate(demoProfile(2026), DEFAULT_ASSUMPTIONS);
-    close(r.rows[0].income, 1_140_000 - 54_720 - (456_000 * 15) / 26 / 12 - 54_720 - 2_500, 1e-12);
-    close(r.rows[1].goals[0].cost, 265_000, 1e-12);
+    const r = simulate(liveDemoProfile(2026), DEFAULT_ASSUMPTIONS);
+    close(r.rows[0].income, 1_150_000 - 69_000 - (575_000 * 15) / 26 / 12 - 115_000 + 92_000 - 69_000 - 2_500, 1e-12);
+    expect(r.rows[0].incomeTax).toBe(0);
+    close(r.rows[0].epf, 280_000 + 113_010 + 0.006875 * (12 * 280_000 + 9_417.5 * 78), 1e-9);
+    close(r.rows[1].goals[0].cost, 212_000, 1e-12);
     expect(r.rows[1].goals[0].status).toBe('funded');
-    close(r.rows[3].goals[0].loan, 2_267_481.6, 1e-12);
-    expect(r.rows[3].income).toBe(0);
+    close(r.rows[3].goals[0].cost, 1_322_697.6, 1e-12);
+    expect(r.rows[4].goals[0]).toMatchObject({ goalId: 'car', status: 'shortfall' });
     const table = r.points.map((pt) => ({
       year: pt.year,
       age: pt.age,

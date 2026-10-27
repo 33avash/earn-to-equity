@@ -11,6 +11,8 @@ export interface EmergencyPlan {
   gap: number;
   monthlyContribution: number;
   monthsToTarget: number | null; // null = no contribution, never reached
+  /** Top-up already scheduled by a SIP pause, up to the gap. */
+  scheduled: number;
 }
 
 /**
@@ -26,7 +28,9 @@ export function emergencyPlan(p: FinancialProfile, opts?: { targetMonths?: numbe
   const eligibleLiquid = Math.max(0, p.position.emergencyFund) + (includeCash ? Math.max(0, p.position.cashSavings) : 0);
   const coverageMonths = monthlyNeed > 0 ? eligibleLiquid / monthlyNeed : eligibleLiquid > 0 ? Infinity : 0;
   const gap = Math.max(0, recommendedReserve - eligibleLiquid);
-  const monthlyContribution = Math.max(0, opts?.monthlyContribution ?? p.cashflow.monthlySavings);
+  const pause = p.cashflow.sipPause;
+  const monthlyContribution = Math.max(0, opts?.monthlyContribution ?? p.cashflow.monthlySavings + (pause && pause.months > 0 ? Math.min(pause.amount, p.cashflow.monthlyInvestments) : 0));
   const monthsToTarget = gap === 0 ? 0 : monthlyContribution > 0 ? gap / monthlyContribution : null;
-  return { targetMonths, monthlyNeed, recommendedReserve, eligibleLiquid, coverageMonths, gap, monthlyContribution, monthsToTarget };
+  const scheduled = pause ? Math.min(gap, Math.max(0, Math.min(pause.amount, p.cashflow.monthlyInvestments)) * Math.max(0, pause.months)) : 0;
+  return { targetMonths, monthlyNeed, recommendedReserve, eligibleLiquid, coverageMonths, gap, monthlyContribution, monthsToTarget, scheduled };
 }

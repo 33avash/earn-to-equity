@@ -9,7 +9,8 @@ import { HOME_DEFAULTS } from '@/finance/assumptions';
 import { emi, maxEligibleLoan } from '@/finance/rates';
 import { fiAnalysis } from '@/finance/fi';
 import { healthScore } from '@/finance/health';
-import { nextSteps } from '@/finance/insights';
+import { nextSteps, stepsWithFixes } from '@/finance/insights';
+import { candidateFixes } from '@/finance/fixPlan';
 import { currentWeights, netReturns, portfolioVolatility, weightedReturn } from '@/finance/portfolio';
 import { runScenario } from '@/finance/scenarios';
 import { ageInYear } from '@/finance/timeline';
@@ -88,7 +89,8 @@ export function computePlan(profile: FinancialProfile, assumptions: Assumptions)
   const sim = simulate(profile, assumptions);
   const fi = fiAnalysis(profile, assumptions);
   const health = healthScore(profile, assumptions);
-  const insights = nextSteps(profile, cashflow, emergency, goals, fi, sim);
+  const fixes = candidateFixes(profile, assumptions);
+  const insights = stepsWithFixes(fixes, nextSteps(profile, cashflow, emergency, goals, fi, sim));
   // After fund costs; the return every projection uses.
   const portfolioReturn = weightedReturn(profile.preferences.targetAllocation, netReturns(assumptions, profile.preferences.regularPlanShare));
   const portfolioReturnGross = weightedReturn(profile.preferences.targetAllocation, assumptions.returns);
@@ -124,6 +126,7 @@ export function computePlan(profile: FinancialProfile, assumptions: Assumptions)
     headline,
     fi,
     health,
+    fixes,
     insights,
     portfolioReturn,
     portfolioReturnGross,

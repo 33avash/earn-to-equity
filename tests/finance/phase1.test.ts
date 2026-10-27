@@ -9,7 +9,9 @@ import { healthScore } from '@/finance/health';
 import { hasDependents } from '@/finance/household';
 import { ageError, fiAgeError, validateProfile } from '@/finance/validate';
 import { DEFAULT_SCENARIO_DELTAS } from '@/finance/scenarios';
-import { DEFAULT_ASSUMPTIONS, blankProfile, demoProfile } from '@/state/demo';
+import { DEFAULT_ASSUMPTIONS, blankProfile } from '@/state/demo';
+// Engine mechanics are hand-checked against the previous demo persona (see tests/fixtures/legacyDemo.ts).
+import { legacyDemoProfile as demoProfile } from '../fixtures/legacyDemo';
 import { computePlan, goalStatusLabel, heroSeries, landingScenarios, scenarioSet, yearInspector, yearOnYear } from '@/state/plan';
 import { homeAffordability, answerWithRules } from '@/services/coach/ruleCoach';
 import { routeMeta } from '@/routeMeta';

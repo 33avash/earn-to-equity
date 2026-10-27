@@ -10,7 +10,9 @@ import { PRESETS, isValidAllocation, weightedReturn, allocationDrift } from '@/f
 import { healthScore } from '@/finance/health';
 import { checkNumber, checkRate, validateProfile } from '@/finance/validate';
 import { formatCompact, formatINR } from '@/finance/money';
-import { DEFAULT_ASSUMPTIONS, demoProfile } from '@/state/demo';
+import { DEFAULT_ASSUMPTIONS } from '@/state/demo';
+// Engine mechanics are hand-checked against the previous demo persona (see tests/fixtures/legacyDemo.ts).
+import { legacyDemoProfile as demoProfile } from '../fixtures/legacyDemo';
 
 const close = (a: number, b: number, tol = 1e-6) => expect(Math.abs(a - b)).toBeLessThanOrEqual(tol * Math.max(1, Math.abs(b)));
 

@@ -39,7 +39,7 @@ Earn to Equity puts all of that into one model. Every screen reads from the same
 
 There are two ways in:
 
-- **See the demo plan.** Loads a fictional profile (Riya, 26, a software analyst in Pune on ₹11.4 L CTC) so you can look around without typing anything. A banner across the top reminds you it is demo data.
+- **See the demo plan.** Loads a fictional profile (Riya, 26, a software analyst in Pune on ₹11.5 L CTC with 10% variable pay) so you can look around without typing anything. Her plan has gaps on purpose: a part-time MBA and a first car a year apart that savings can't both pay for, a short emergency reserve, a ₹22,000 credit-card balance at 36%, no employer NPS, and no term cover for the parents she supports. **Fix my plan** shows what closing them does. A banner across the top reminds you it is demo data.
 - **Build your plan.** An eight-step setup: about you, income and career, monthly cash flow, what you own and owe, protection (emergency fund and insurance), goals, investment mix, and a review. Every step says why it asks what it asks. Optional fields can be skipped, and anything can be changed later.
 
 If you already have a plan and open the demo, your own plan is set aside, not overwritten. The plan switcher at the top of the sidebar brings it back.
@@ -71,10 +71,10 @@ The planner lives at `/app` and has fourteen modules in four groups.
 
 | Part | Weight | How it is scored |
 |---|---|---|
-| Emergency preparedness | 20 | Liquid savings ÷ your emergency target. Full marks at or above target. |
-| Savings rate | 20 | Income left after expenses and repayments. 0 at 0%, full marks at 30%. |
+| Emergency preparedness | 20 | Liquid savings, plus any top-up already scheduled from a SIP pause, ÷ your emergency target. Full marks at or above target. |
+| Savings rate | 20 | Income left after expenses and repayments; NPS paid from your CTC counts as income and as savings. 0 at 0%, full marks at 30%. |
 | Debt burden | 15 | EMIs as a share of income. Full marks at 10% or less, 0 at 50%. |
-| Investment consistency | 15 | Monthly investing as a share of income. 0 at 0%, full marks at 20%. |
+| Investment consistency | 15 | Monthly investing, including NPS paid from your CTC, as a share of income. 0 at 0%, full marks at 20%. |
 | Goal readiness | 15 | Average share of each goal's required monthly contribution your surplus covers. 50 if you have no goals. |
 | Protection | 15 | Half for health cover at or above the benchmark for your city and household, half for term cover of 10× annual income (given automatically if nobody depends on your income). |
 

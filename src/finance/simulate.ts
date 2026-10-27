@@ -407,7 +407,9 @@ function run(p: FinancialProfile, a: Assumptions, o: SimOverrides, skip: Set<str
       const surplus = monthIncome - monthExpenses - monthDebt;
       // While short-term borrowing is outstanding, the surplus repays it before any SIP is made.
       const borrowing = cash < 0;
-      const planned = monthSalary > 0 && !borrowing ? sip : 0;
+      // A scheduled SIP pause keeps part of the SIP in cash (the emergency fund) for its first months.
+      const paused = p.cashflow.sipPause && (y - 1) * 12 + m < p.cashflow.sipPause.months ? Math.max(0, p.cashflow.sipPause.amount) : 0;
+      const planned = monthSalary > 0 && !borrowing ? Math.max(0, sip - paused) : 0;
       const fromBudget = Math.min(planned, Math.max(0, surplus));
       const invest = fromBudget + (monthSalary > 0 && !borrowing ? extraInvest : 0);
       const toCash = surplus - fromBudget;

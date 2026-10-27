@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Plus } from 'lucide-react';
+import { ArrowRight, Plus, Wand2 } from 'lucide-react';
+import { useStore } from '@/state/store';
+import { Button } from '@/components/ui/Button';
 import { usePlan, useMoney } from '@/state/selectors';
 import { Disclaimer, EmptyState, ButtonLink, Notice } from '@/components/ui';
 import { TrajectoryPanel, AllocationPanel, FiPanel } from '@/features/overview/Panels';
@@ -36,6 +38,8 @@ export default function Overview() {
   const plan = usePlan();
   const money = useMoney();
   const { profile, cashflow: cf, sheet, headline, unfundedGoals, fi } = plan;
+  const setFixOpen = useStore((s) => s.setFixOpen);
+  const isDemo = useStore((s) => s.isDemo);
 
   return (
     <div className="flex flex-col gap-6">
@@ -56,37 +60,45 @@ export default function Overview() {
             )}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <ButtonLink to="/app/simulator" size="sm" variant="secondary">
-            Open simulator
-          </ButtonLink>
-          <ButtonLink to="/app/goals?new=1" size="sm">
-            <Plus size={14} aria-hidden /> Add goal
-          </ButtonLink>
+        <div className="flex flex-col items-start gap-2 md:items-end">
+          <div className="flex flex-wrap items-center gap-2">
+            <ButtonLink to="/app/goals?new=1" size="sm" variant="secondary">
+              <Plus size={14} aria-hidden /> Add goal
+            </ButtonLink>
+            <Button size="sm" onClick={() => setFixOpen(true)}>
+              <Wand2 size={14} aria-hidden /> Fix my plan
+            </Button>
+          </div>
+          {isDemo && plan.fixes.length > 0 && <p className="text-[12.5px] text-grey">Riya’s plan has gaps. Try Fix my plan.</p>}
         </div>
       </header>
 
       <KpiStrip plan={plan} />
 
-      {unfundedGoals.map((u) => (
-        <Notice
-          key={u.goalId}
-          tone="error"
-          title={u.droppedEvents.length || u.keptEvents.length ? `Your plan assumes the ${u.name} happens but doesn’t pay for it.` : `Your plan can’t pay for ${u.name} in ${u.year}.`}
-          action={
-            <ButtonLink to="/app/goals" size="sm" variant="secondary">
-              Fix in Goals
-            </ButtonLink>
-          }
-        >
-          {money(u.shortfall)} short in {u.year}.{' '}
-          {u.keptEvents.length > 0
-            ? `${u.keptEvents.join(' and ')} ${u.keptEvents.length === 1 ? 'is' : 'are'} still in the projection because you chose to keep ${u.keptEvents.length === 1 ? 'it' : 'them'}.`
-            : u.droppedEvents.length > 0
-              ? `${u.droppedEvents.join(' and ')} ${u.droppedEvents.length === 1 ? 'has' : 'have'} been left out of the projection until the goal is paid for.`
-              : 'Allow a loan for the gap, move the date, or lower the cost.'}
-        </Notice>
-      ))}
+      {unfundedGoals.length > 0 &&
+        (() => {
+          // One warning at a time, pointing to the fix.
+          const u = unfundedGoals[0];
+          return (
+            <Notice
+              tone="error"
+              title={u.droppedEvents.length || u.keptEvents.length ? `Your plan assumes the ${u.name} happens but doesn’t pay for it.` : `Your plan can’t pay for ${u.name} in ${u.year}.`}
+              action={
+                <Button size="sm" variant="secondary" onClick={() => setFixOpen(true)}>
+                  Fix my plan
+                </Button>
+              }
+            >
+              {money(u.shortfall)} short in {u.year}.{' '}
+              {u.keptEvents.length > 0
+                ? `${u.keptEvents.join(' and ')} ${u.keptEvents.length === 1 ? 'is' : 'are'} still in the projection because you chose to keep ${u.keptEvents.length === 1 ? 'it' : 'them'}.`
+                : u.droppedEvents.length > 0
+                  ? `${u.droppedEvents.join(' and ')} ${u.droppedEvents.length === 1 ? 'has' : 'have'} been left out of the projection until the goal is paid for.`
+                  : 'Allow a loan for the gap, move the date, or lower the cost.'}
+              {unfundedGoals.length > 1 && ` ${unfundedGoals.length - 1} more goal${unfundedGoals.length > 2 ? 's are' : ' is'} short too.`}
+            </Notice>
+          );
+        })()}
 
       <div className="grid gap-6 lg:grid-cols-12">
         <Card id="traj-h" title={`Net worth to ${headline.year}`} to="/app/simulator" linkLabel="Inspect any year" className="lg:col-span-8">

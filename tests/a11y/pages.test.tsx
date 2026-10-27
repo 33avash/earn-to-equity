@@ -95,3 +95,25 @@ describe('coach side panel', () => {
     useStore.getState().setCoachOpen(false);
   }, 20000);
 });
+
+describe('Fix my plan sheet', () => {
+  it.each(['light', 'dark'])('opens on Overview with the demo’s fixes and no axe violations (%s)', async (theme) => {
+    localStorage.setItem('e2e:theme', theme);
+    useStore.getState().loadDemo();
+    useStore.getState().setFixOpen(true);
+    render(
+      <ThemeProvider>
+        <MemoryRouter initialEntries={['/app']}>
+          <App />
+        </MemoryRouter>
+      </ThemeProvider>,
+    );
+    const dialog = await screen.findByRole('dialog', { name: 'Fix my plan' }, { timeout: 8000 });
+    await screen.findByRole('button', { name: 'Apply to my plan' }, { timeout: 20000 });
+    expect(dialog.textContent).toMatch(/Ask HR to put 14% of basic into NPS/);
+    expect(dialog.textContent).toMatch(/Chance of FI by 55/);
+    const results = await axe(dialog, { rules: { 'color-contrast': { enabled: false }, region: { enabled: false } } });
+    expect(results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).slice(0, 3).join(' | ')}`)).toEqual([]);
+    useStore.getState().setFixOpen(false);
+  }, 40000);
+});
