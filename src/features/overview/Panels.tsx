@@ -8,6 +8,8 @@ import { WealthChart, WealthLegend, type WealthMode } from '@/components/charts/
 import { AllocationBar, AllocationLegend } from '@/components/charts/Bars';
 import { Progress, Segmented } from '@/components/ui';
 import { AnimatedNumber } from '@/components/motion/Motion';
+import { useRanges } from './useRanges';
+import { RANGE_NOTE } from '@/finance/ranges';
 
 export function TrajectoryPanel({ plan, height = 320, interactive = true }: { plan: Plan; height?: number; interactive?: boolean }) {
   const [mode, setMode] = useState<WealthMode>('both');
@@ -22,7 +24,7 @@ export function TrajectoryPanel({ plan, height = 320, interactive = true }: { pl
         <div className="flex flex-wrap gap-x-8 gap-y-3">
           <div>
             <p className="text-[12px] font-medium text-grey">
-              Projected, {end.year} · age {end.age}
+              Base case, {end.year} · age {end.age}
             </p>
             <p className="mt-1 text-[28px] font-semibold leading-none tracking-[-0.03em] text-evergreen [&_.num]:font-sans">
               <AnimatedNumber value={end.netWorth} format={money} />
@@ -73,6 +75,7 @@ export function TrajectoryPanel({ plan, height = 320, interactive = true }: { pl
 export function FiPanel({ plan }: { plan: Plan }) {
   const money = useMoney();
   const fi = plan.fi;
+  const { data: ranges } = useRanges(plan);
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-baseline justify-between gap-3">
@@ -95,8 +98,13 @@ export function FiPanel({ plan }: { plan: Plan }) {
           <dd className={`num font-semibold ${fi.gap > 0 ? 'text-danger' : 'text-forest'}`}>{fi.gap > 0 ? money(fi.gap) : 'None'}</dd>
         </div>
         <div>
-          <dt className="text-xs text-grey">Estimated FI age</dt>
+          <dt className="text-xs text-grey">Estimated FI age (base case)</dt>
           <dd className="num font-semibold text-evergreen">{fi.fiAge ? `${fi.fiAge} (${fi.fiYear})` : 'Not reached'}</dd>
+        </div>
+        <div className="col-span-2">
+          <dt className="text-xs text-grey">Chance of reaching FI by {fi.targetAge}</dt>
+          <dd className="num font-semibold text-evergreen">{ranges ? formatPct(ranges.fiByTarget, 0) : '…'}</dd>
+          <dd className="text-[11px] text-grey">{RANGE_NOTE}</dd>
         </div>
       </dl>
     </div>

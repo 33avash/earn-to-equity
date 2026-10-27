@@ -16,6 +16,8 @@ interface Props {
   showFiTarget?: boolean;
   ariaLabel?: string;
   topPad?: number; // extra space above the plot, e.g. for an overlaid read-out
+  /** P10–P90 range from simulated market paths, by point year, in the same rupees as the main line. */
+  band?: Map<number, { p10: number; p90: number }>;
 }
 
 /**
@@ -23,10 +25,14 @@ interface Props {
  * rupees (dashed line), one point per 1 January. Life events are marked at the start of the year
  * they happen; clicking a point selects the year that ended there.
  */
-export function WealthChart({ points, mode = 'both', height = 320, selectedYear, onSelectYear, showEvents = true, showFiTarget = false, ariaLabel, topPad = 16 }: Props) {
+export function WealthChart({ points, mode = 'both', height = 320, selectedYear, onSelectYear, showEvents = true, showFiTarget = false, ariaLabel, topPad = 16, band }: Props) {
   const t = useChartTheme();
   const money = useMoney();
-  const data = points.map((pt, i) => ({ year: pt.year, age: pt.age, today: i === 0, netWorth: pt.netWorth, real: pt.netWorthReal, fiTarget: pt.fiTarget, events: pt.events, row: pt.row }));
+  const data = points.map((pt, i) => {
+    const b = band?.get(pt.year);
+    const start = mode === 'real' ? pt.netWorthReal : pt.netWorth;
+    return { year: pt.year, age: pt.age, today: i === 0, netWorth: pt.netWorth, real: pt.netWorthReal, fiTarget: pt.fiTarget, events: pt.events, row: pt.row, band: b ? [b.p10, b.p90] : band && i === 0 ? [start, start] : undefined, p10: b?.p10, p90: b?.p90 };
+  });
   const rows = points.flatMap((pt) => (pt.row ? [pt.row] : []));
   const startYear = points[0].year;
   const showNominal = mode !== 'real';
@@ -84,6 +90,14 @@ export function WealthChart({ points, mode = 'both', height = 320, selectedYear,
                       <span className="font-semibold">{money(d.real)}</span>
                     </p>
                   )}
+                  {d.p10 !== undefined && d.p90 !== undefined && (
+                    <p className="num flex justify-between gap-6">
+                      <span className="text-grey">Range (P10–P90)</span>
+                      <span>
+                        {money(d.p10)}–{money(d.p90)}
+                      </span>
+                    </p>
+                  )}
                   {showFiTarget && d.fiTarget && (
                     <p className="num flex justify-between gap-6">
                       <span className="text-grey">FI target</span>
@@ -108,6 +122,7 @@ export function WealthChart({ points, mode = 'both', height = 320, selectedYear,
               />
             ))}
           {selectedYear && <ReferenceLine x={selectedYear + 1} stroke={t.primary} strokeWidth={1.5} />}
+          {band && <Area isAnimationActive={false} type="monotone" dataKey="band" stroke="none" fill={t.primaryFill} fillOpacity={0.14} name="Range (P10–P90)" activeDot={false} />}
           {showFiTarget && <Line animationDuration={900} animationEasing="ease-out" type="monotone" dataKey="fiTarget" stroke={t.secondary} strokeWidth={1.5} dot={false} name="FI target" connectNulls />}
           {showNominal && (
             <Area animationDuration={900} animationEasing="ease-out" type="monotone" dataKey="netWorth" stroke={t.primary} strokeWidth={2} fill={`url(#${gid})`} name="Net worth" activeDot={{ r: 4, stroke: t.surface, strokeWidth: 2 }} />
@@ -121,7 +136,7 @@ export function WealthChart({ points, mode = 'both', height = 320, selectedYear,
   );
 }
 
-export function WealthLegend({ mode, fi }: { mode: WealthMode; fi?: boolean }) {
+export function WealthLegend({ mode, fi, band }: { mode: WealthMode; fi?: boolean; band?: boolean }) {
   const t = useChartTheme();
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-grey">
@@ -138,6 +153,11 @@ export function WealthLegend({ mode, fi }: { mode: WealthMode; fi?: boolean }) {
       {fi && (
         <span className="flex items-center gap-1.5">
           <span className="h-0.5 w-4" style={{ background: t.secondary }} /> FI target
+        </span>
+      )}
+      {band && (
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-4 rounded-sm" style={{ background: t.primaryFill, opacity: 0.3 }} /> Range of outcomes (10th–90th percentile)
         </span>
       )}
     </div>

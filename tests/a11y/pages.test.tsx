@@ -35,6 +35,7 @@ const ROUTES = [
   '/how-it-works',
   '/features',
   '/tools',
+  '/tools/offer',
   '/learn',
   '/legal',
   '/about',

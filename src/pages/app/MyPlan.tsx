@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { ChevronDown, Wand2 } from 'lucide-react';
 import { usePlan, useMoney } from '@/state/selectors';
 import { useStore } from '@/state/store';
-import { PageHeader, Section, Segmented, Disclaimer, Button } from '@/components/ui';
+import { PageHeader, Section, Segmented, Disclaimer, Button, Toggle } from '@/components/ui';
 import { WealthChart, WealthLegend, type WealthMode } from '@/components/charts/WealthChart';
 import { YearInspector, ScenarioSection } from '@/features/simulator/Sections';
 import { ProjectionTable } from '@/features/simulator/ProjectionTable';
+import { RegimeTimeline } from '@/features/tax/RegimeTimeline';
+import { useRanges } from '@/features/overview/useRanges';
+import { bandByYear, RANGE_NOTE } from '@/finance/ranges';
 
 /**
  * My plan: the projection, a year inspector and Fix my plan, with the scenario table and tornado behind
@@ -18,6 +21,9 @@ export default function MyPlan() {
   const [mode, setMode] = useState<WealthMode>('real');
   const [selected, setSelected] = useState<number | null>(plan.profile.planStartYear + 4);
   const [details, setDetails] = useState(false);
+  const [showBand, setShowBand] = useState(true);
+  const { data: ranges } = useRanges(plan);
+  const band = ranges && showBand ? bandByYear(ranges, mode === 'real', plan.profile.planStartYear, plan.assumptions.inflation) : undefined;
   const close = plan.sim.points.at(-1)!;
 
   return (
@@ -33,14 +39,19 @@ export default function MyPlan() {
       />
 
       <Section
-        title="Projected net worth (base case)"
-        description="Base case: every year earns the assumed return."
+        title="Projected net worth"
+        description={`The line is the base case: every year earns the assumed return. The shaded band is the 10th–90th percentile. ${RANGE_NOTE}`}
         actions={<Segmented label="Values shown" size="sm" value={mode} onChange={setMode} options={[{ value: 'real', label: 'Today’s ₹' }, { value: 'nominal', label: 'Future ₹' }, { value: 'both', label: 'Both' }]} />}
       >
-        <WealthChart points={plan.sim.points} mode={mode} height={340} selectedYear={selected} onSelectYear={setSelected} showFiTarget />
-        <div className="mt-3">
-          <WealthLegend mode={mode} fi />
+        <WealthChart points={plan.sim.points} mode={mode} height={340} selectedYear={selected} onSelectYear={setSelected} showFiTarget band={band} />
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <WealthLegend mode={mode} fi band={!!band} />
+          <Toggle checked={showBand} onChange={setShowBand} label="Show range" />
         </div>
+      </Section>
+
+      <Section title="Tax regime, year by year" description="The cheaper regime for each year your plan has a salary.">
+        <RegimeTimeline sim={plan.sim} />
       </Section>
 
       <YearInspector plan={plan} selected={selected} setSelected={setSelected} />

@@ -2,11 +2,13 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePlan, useMoney, baselineComparison } from '@/state/selectors';
 import { ScenarioSection, YearInspector } from '@/features/simulator/Sections';
+import { useRanges } from '@/features/overview/useRanges';
+import { bandByYear, RANGE_NOTE } from '@/finance/ranges';
 import { ProjectionTable } from '@/features/simulator/ProjectionTable';
 import { exportProjectionCsv } from '@/services/export';
 import { Bookmark, Download } from 'lucide-react';
 import { useStore } from '@/state/store';
-import { PageHeader, Section, Field, PercentInput, Segmented, Disclaimer, Button, toast } from '@/components/ui';
+import { PageHeader, Section, Field, PercentInput, Segmented, Disclaimer, Button, Toggle, toast } from '@/components/ui';
 import { WealthChart, WealthLegend, type WealthMode } from '@/components/charts/WealthChart';
 import { MultiLineChart } from '@/components/charts/SeriesCharts';
 import { useChartTheme } from '@/components/charts/theme';
@@ -24,6 +26,9 @@ export default function Simulator() {
   const { profile: p, assumptions: a } = plan;
   const [mode, setMode] = useState<WealthMode>('both');
   const [selected, setSelected] = useState<number | null>(p.planStartYear + 4);
+  const [showBand, setShowBand] = useState(true);
+  const { data: ranges } = useRanges(plan);
+  const band = ranges && showBand ? bandByYear(ranges, mode === 'real', p.planStartYear, a.inflation) : undefined;
 
   const cmp = useMemo(() => (baseline ? baselineComparison(plan, baseline) : null), [plan, baseline]);
   const rows = plan.sim.rows;
@@ -49,8 +54,12 @@ export default function Simulator() {
         description="Click any year on the chart or in the table to inspect it."
         actions={<Segmented label="Values shown" size="sm" value={mode} onChange={setMode} options={[{ value: 'both', label: 'Both' }, { value: 'nominal', label: 'Future ₹' }, { value: 'real', label: 'Today’s ₹' }]} />}
       >
-        <WealthChart points={plan.sim.points} mode={mode} height={360} selectedYear={selected} onSelectYear={setSelected} showFiTarget />
-        <div className="mt-3"><WealthLegend mode={mode} fi /></div>
+        <WealthChart points={plan.sim.points} mode={mode} height={360} selectedYear={selected} onSelectYear={setSelected} showFiTarget band={band} />
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <WealthLegend mode={mode} fi band={!!band} />
+          <Toggle checked={showBand} onChange={setShowBand} label="Show range (10th–90th percentile)" />
+        </div>
+        <p className="mt-2 text-xs text-grey">The line is the base case. {RANGE_NOTE}</p>
       </Section>
 
       <YearInspector plan={plan} selected={selected} setSelected={setSelected} />

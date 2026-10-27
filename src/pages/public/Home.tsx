@@ -86,7 +86,7 @@ export default function Home() {
             <p>PF, gratuity and variable pay all sit inside CTC. Here is what arrives each month under this year’s rules.</p>
           </SectionHead>
           <Frame size="xl" className="p-6 sm:p-10">
-            <CtcCalculator offerLink="/tools" />
+            <CtcCalculator />
           </Frame>
         </div>
       </section>

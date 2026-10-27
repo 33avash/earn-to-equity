@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
@@ -70,6 +71,11 @@ export default function Tools() {
     <>
       <PublicHero title={<span className="serif-accent">Calculators</span>}>
         <p>An SIP, a loan EMI and inflation, without building a plan first. The planner uses the same formulas.</p>
+        <p className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
+          <Link className="link font-medium" to="/tools/offer">
+            Decode and compare job offers →
+          </Link>
+        </p>
       </PublicHero>
 
       <div className="container-x flex flex-col gap-20 lg:gap-28">

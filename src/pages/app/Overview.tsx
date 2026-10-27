@@ -8,6 +8,8 @@ import { TrajectoryPanel, AllocationPanel, FiPanel } from '@/features/overview/P
 import { KpiStrip, MonthWaterfall, NextStepsChecklist } from '@/features/overview/Kpis';
 import { GoalTimeline } from '@/features/goals/GoalTimeline';
 import { AccuracyCard } from '@/features/overview/AccuracyCard';
+import { useRanges } from '@/features/overview/useRanges';
+import { RANGE_NOTE } from '@/finance/ranges';
 import { formatPct } from '@/finance/money';
 import type { ReactNode } from 'react';
 
@@ -41,6 +43,7 @@ export default function Overview() {
   const { profile, cashflow: cf, sheet, headline, unfundedGoals, fi } = plan;
   const setFixOpen = useStore((s) => s.setFixOpen);
   const isDemo = useStore((s) => s.isDemo);
+  const { data: ranges, loading: rangesLoading } = useRanges(plan);
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,14 +55,24 @@ export default function Overview() {
             {profile.about.name ? `, ${profile.about.name}` : ''}
           </h1>
           <p className="mt-1.5 max-w-2xl text-[14px] leading-relaxed text-grey">
-            You keep <strong className="font-semibold text-evergreen">{formatPct(cf.savingsRate, 0)}</strong> of your take-home after spending and EMIs. On today’s assumptions you reach{' '}
-            <strong className="font-semibold text-evergreen">{money(headline.netWorthReal)}</strong> in today’s rupees by {headline.year}, at {headline.age}.
-            {fi.fiAge !== null ? (
-              <> Financial independence comes at <strong className="font-semibold text-evergreen">{fi.fiAge}</strong>{fi.fiAge <= fi.targetAge ? `, on or before your target of ${fi.targetAge}` : `, after your target of ${fi.targetAge}`}.</>
+            You keep <strong className="font-semibold text-evergreen">{formatPct(cf.savingsRate, 0)}</strong> of your take-home after spending and EMIs.{' '}
+            {ranges ? (
+              <>
+                By {headline.year}, at {headline.age}, your net worth is likely{' '}
+                <strong className="font-semibold text-evergreen">
+                  {money(ranges.netWorthReal.p10)}–{money(ranges.netWorthReal.p90)}
+                </strong>{' '}
+                in today’s rupees, most likely <strong className="font-semibold text-evergreen">{money(ranges.netWorthReal.p50)}</strong>. Chance of reaching FI by {ranges.targetAge}:{' '}
+                <strong className="font-semibold text-evergreen">{formatPct(ranges.fiByTarget, 0)}</strong>.
+              </>
             ) : (
-              <> By your FI target age of {fi.targetAge}, the plan reaches <strong className="font-semibold text-evergreen">{formatPct(fi.progress, 0)}</strong> of the corpus you would need.</>
+              <>
+                In the base case you reach <strong className="font-semibold text-evergreen">{money(headline.netWorthReal)}</strong> in today’s rupees by {headline.year}, at {headline.age}.
+              </>
             )}
+            {fi.fiAge !== null ? <> Base case: FI at {fi.fiAge}.</> : <> Base case: {formatPct(fi.progress, 0)} of the FI corpus by {fi.targetAge}.</>}
           </p>
+          <p className="mt-1 text-[12px] text-grey">{rangesLoading && !ranges ? 'Working out the range of outcomes…' : RANGE_NOTE}</p>
         </div>
         <div className="flex flex-col items-start gap-2 md:items-end">
           <div className="flex flex-wrap items-center gap-2">
@@ -102,7 +115,7 @@ export default function Overview() {
         })()}
 
       <div className="grid gap-6 lg:grid-cols-12">
-        <Card id="traj-h" title={`Net worth to ${headline.year}`} to="/app/simulator" linkLabel="Inspect any year" className="lg:col-span-8">
+        <Card id="traj-h" title={`Net worth to ${headline.year} (base case)`} to="/app/plan" linkLabel="Inspect any year" className="lg:col-span-8">
           <TrajectoryPanel plan={plan} height={300} />
         </Card>
         <Card id="month-h" title="This month" to="/app/budget" linkLabel="Budget" className="lg:col-span-4">

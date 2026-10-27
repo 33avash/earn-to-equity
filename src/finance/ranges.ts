@@ -32,3 +32,16 @@ export function outcomeRanges(p: FinancialProfile, a: Assumptions, paths = RANGE
     targetAge: p.about.fiAge,
   };
 }
+
+/** The yearly band keyed by point year, in future rupees or (for "real") today's rupees. */
+export function bandByYear(r: OutcomeRanges, real: boolean, startYear: number, inflation: number): Map<number, { p10: number; p90: number }> {
+  return new Map(
+    r.band.map((b) => {
+      const k = real ? Math.pow(1 + inflation, b.year - startYear) : 1;
+      return [b.year, { p10: b.p10 / k, p90: b.p90 / k }];
+    }),
+  );
+}
+
+/** One line under every range. */
+export const RANGE_NOTE = 'Range of outcomes across 300 simulated market paths. Not a forecast.';

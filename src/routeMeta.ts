@@ -15,6 +15,7 @@ const META: Record<string, RouteMeta> = {
   '/legal': { title: 'Privacy, terms and disclaimers', description: 'Where your data is stored, the terms of use, and what Earn to Equity is not: a SEBI-registered adviser or a tax professional.' },
   '/about': { title: 'About', description: 'Who built Earn to Equity and why.' },
   '/sources': { title: 'Rates, rules and sources', description: 'Every tax rule, rate and planning assumption the planner uses, dated and linked to its official source.' },
+  '/tools/offer': { title: 'Offer decoder', description: 'Turn a CTC into monthly in-hand pay under the 2026-27 rules and the Labour Codes, and compare up to three offers side by side.' },
   '/faq': { title: 'FAQ', description: 'Is this advice? Where is my data? How accurate is the tax? Why ranges? Why no stock tips?' },
   '/start': { title: 'Start your plan', description: 'Five numbers: age, CTC, city, monthly spending and one goal. About two minutes.' },
   '/start/detailed': { title: 'Detailed setup', description: 'Eight short steps: income, spending, savings, loans, protection, goals and investments. About eight minutes.' },

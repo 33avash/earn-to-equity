@@ -15,6 +15,7 @@ const Legal = lazy(() => import('@/pages/public/Legal'));
 const About = lazy(() => import('@/pages/public/About'));
 const Sources = lazy(() => import('@/pages/public/Sources'));
 const Faq = lazy(() => import('@/pages/public/Faq'));
+const OfferTool = lazy(() => import('@/pages/public/OfferTool'));
 const Onboarding = lazy(() => import('@/features/onboarding/Onboarding'));
 const QuickStart = lazy(() => import('@/features/onboarding/QuickStart'));
 
@@ -85,6 +86,7 @@ export function App() {
           <Route path="how-it-works" element={<S><HowItWorks /></S>} />
           <Route path="features" element={<S><Features /></S>} />
           <Route path="tools" element={<S><Tools /></S>} />
+          <Route path="tools/offer" element={<S><OfferTool /></S>} />
           <Route path="learn" element={<S><LearnPublic /></S>} />
           {/* No accounts yet: keep old links working without a dead-end page. */}
           <Route path="sign-in" element={<Navigate to="/" replace />} />
