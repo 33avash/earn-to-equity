@@ -26,7 +26,7 @@ export const CPI_LATEST = d({
   label: 'CPI inflation, latest print',
   value: 0.0554,
   asOf: 'September 2026 (released 12 Oct 2026)',
-  source: 'https://www.mospi.gov.in/',
+  source: 'https://www.mospi.gov.in/cpi',
   sourceLabel: 'MoSPI CPI press release, September 2026',
   note: 'All-India CPI (base 2024), provisional. August 2026 was 4.83%.',
 });
@@ -44,8 +44,8 @@ export const EDUCATION_INFLATION = d({
   label: 'Education cost inflation (default)',
   value: 0.09,
   asOf: 'Planning convention',
-  source: 'https://www.mospi.gov.in/',
-  sourceLabel: 'Planning range 8–10%; editable per goal',
+  source: 'https://www.mospi.gov.in/cpi',
+  sourceLabel: 'MoSPI CPI (education sub-index); planning range 8–10%, editable per goal',
 });
 
 export const EPF_RATE = d({
@@ -163,8 +163,8 @@ export const CAPITAL_GAINS = d({
     otherLtcg: 0.125, // gold, international funds, other non-debt assets held > 24 months
   },
   asOf: 'Tax year 2026-27 (rates from 23 Jul 2024)',
-  source: 'https://www.indiabudget.gov.in/',
-  sourceLabel: 'Union Budget 2024-25; unchanged in Budgets 2025 and 2026',
+  source: 'https://www.indiabudget.gov.in/doc/Budget_Speech.pdf',
+  sourceLabel: 'Union Budget speech; rates set in Budget 2024-25, unchanged in Budgets 2025 and 2026',
   note: 'Debt funds bought on or after 1 April 2023 are taxed at your slab rate, whatever the holding period.',
 });
 
@@ -237,7 +237,7 @@ export const UNDER_CONSTRUCTION_GST = d({
   label: 'GST on under-construction homes',
   value: 0.05,
   asOf: '2026',
-  source: 'https://cbic-gst.gov.in/',
+  source: 'https://cbic-gst.gov.in/gst-goods-services-rates.html',
   sourceLabel: 'CBIC GST rates for residential construction (non-affordable)',
   note: 'Ready-to-move homes with a completion certificate carry no GST.',
 });
@@ -291,6 +291,49 @@ export const HEALTHCARE_INFLATION = d({
   sourceLabel: 'Planning convention; medical costs in India have risen faster than CPI',
 });
 
+/* ---------- Market benchmarks behind the default returns ---------- */
+
+export const NIFTY50_TRI = d({
+  label: 'Nifty 50 Total Return Index',
+  display: '12.12% a year since Nov 1995; 6.38% over 5 years; −7.09% over 1 year',
+  value: 0.1212,
+  asOf: '30 Sep 2026',
+  source: 'https://www.niftyindices.com/Factsheet/ind_nifty50.pdf',
+  sourceLabel: 'NSE Indices, Nifty 50 factsheet, September 2026',
+  note: 'Basis for the 11% Indian equity default: about 1 point below the 30-year total return, before fund costs. Price-only return over the same period is 10.61%. Annualised volatility 22.39% since inception, 13.82% over 5 years.',
+});
+
+export const MSCI_WORLD = d({
+  label: 'MSCI World (gross, USD)',
+  display: '9.02% a year since Dec 1987; 13.37% over 10 years; worst fall −57.5% (Oct 2007 – Mar 2009)',
+  value: 0.0902,
+  asOf: '30 Sep 2026',
+  source: 'https://www.msci.com/documents/10199/178e6643-6ae6-47b9-82be-e1fc565ededb',
+  sourceLabel: 'MSCI World Index factsheet, September 2026',
+  note: 'Basis for the 9% international equity default. Returns are in dollars; a weakening rupee has added to them for Indian investors, which the default leaves out to stay cautious. 10-year volatility 14.88%.',
+});
+
+export const INDEX_HISTORY = d({
+  label: 'Index history for your own checks',
+  display: 'Daily closes for Nifty equity, G-Sec and gold indices',
+  value: 'NSE Indices historical data',
+  asOf: 'Updated daily',
+  source: 'https://www.niftyindices.com/reports/historical-data',
+  sourceLabel: 'NSE Indices, historical price and total return data',
+  note: 'Download any index to test the return and volatility defaults over a period you choose.',
+});
+
+export const GOLD_PRICES = d({
+  label: 'Gold price history (INR)',
+  display: 'Default 7.5% a year',
+  value: 0.075,
+  asOf: 'Planning convention, 2026',
+  source: 'https://www.gold.org/goldhub/data/gold-prices',
+  sourceLabel: 'World Gold Council, gold prices by currency (select INR)',
+  note: 'Gold’s rupee return swings widely by decade. The default sits below its long-run rupee growth on purpose.',
+  approximate: true,
+});
+
 /** Every dated value, for the Settings page. */
 export const ALL_DATED: Dated<unknown>[] = [
   CPI_LATEST,
@@ -313,4 +356,8 @@ export const ALL_DATED: Dated<unknown>[] = [
   TERM_COVER_MULTIPLE,
   WITHDRAWAL_RATE,
   HEALTHCARE_INFLATION,
+  NIFTY50_TRI,
+  MSCI_WORLD,
+  GOLD_PRICES,
+  INDEX_HISTORY,
 ];

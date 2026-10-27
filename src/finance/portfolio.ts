@@ -21,7 +21,10 @@ export const ASSET_SHORT: Record<AssetClass, string> = {
   other: 'Other',
 };
 
-/** Illustrative long-run assumptions — editable in Settings and the Portfolio Builder. */
+/**
+ * Long-run assumptions, editable in Settings and the Portfolio Builder. Equity defaults sit just below the
+ * benchmarks in `assumptions.ts` (Nifty 50 TRI 12.12% since 1995; MSCI World 9.02% in USD since 1987).
+ */
 export const DEFAULT_RETURNS: AssetMap = {
   indianEquity: 0.11,
   intlEquity: 0.09,
