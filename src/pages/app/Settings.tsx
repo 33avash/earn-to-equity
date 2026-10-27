@@ -9,22 +9,14 @@ import { familySupportMonthly } from '@/finance/household';
 import { exportData, exportSummary } from '@/services/export';
 import { DISCLAIMER_TEXT } from '@/pages/public/Legal';
 import { DEFAULT_ASSUMPTIONS } from '@/state/demo';
-import { ALL_DATED, CPI_LATEST, EPF_RATE, HEALTHCARE_INFLATION, PLANNING_INFLATION, SMALL_SAVINGS, WITHDRAWAL_RATE, type CityTier, type Dated } from '@/finance/assumptions';
+import { CPI_LATEST, EPF_RATE, HEALTHCARE_INFLATION, LAST_REVIEW, PLANNING_INFLATION, SMALL_SAVINGS, WITHDRAWAL_RATE, type CityTier } from '@/finance/assumptions';
+import { SourcesList } from '@/features/sources/SourcesList';
 import { Select } from '@/components/ui';
 import { formatPct } from '@/finance/money';
 import { EngineSettings } from '@/features/coach/EngineSettings';
 import { AdvancedAssumptions } from '@/features/editors/AdvancedAssumptions';
 import { CityField } from '@/features/editors/SalaryEditor';
 import { useCoach } from '@/features/coach/useCoach';
-
-/** One line of "value · as of · source" for the rates-and-rules table. */
-function datedValue(d: Dated<unknown>): string {
-  const v = d.value;
-  if (d.display) return d.display;
-  if (typeof v === 'number') return v < 1 ? formatPct(v, 2) : v.toLocaleString('en-IN');
-  if (typeof v === 'string') return v;
-  return 'See source';
-}
 
 export default function Settings() {
   const plan = usePlan();
@@ -91,7 +83,7 @@ export default function Settings() {
             />
           </div>
         )}
-        <ButtonLink to="/start" variant="secondary" className="mt-6" onClick={() => s.startOnboarding(true)}>Re-run guided setup</ButtonLink>
+        <ButtonLink to="/start/detailed" variant="secondary" className="mt-6" onClick={() => s.startOnboarding(true)}>Detailed setup</ButtonLink>
       </Section>
 
       <Section title="Financial assumptions" description="Illustrative inputs used by every projection. Asset-class returns are edited in the Portfolio Builder.">
@@ -121,29 +113,11 @@ export default function Settings() {
         <Button variant="ghost" size="sm" className="mt-4" icon={<RotateCcw size={14} />} onClick={() => { s.updateAssumptions({ ...structuredClone(DEFAULT_ASSUMPTIONS) }); toast('Assumptions restored to defaults'); }}>Restore default assumptions</Button>
       </Section>
 
-      <Section title="Rates and rules used" description="Every dated value the projections rely on, with the date it was checked and its source. Values marked approximate differ between sources; check them before relying on them.">
-        <div className="-mx-1 overflow-x-auto px-1">
-          <table className="table-fin w-full min-w-[720px]">
-            <thead>
-              <tr><th scope="col">Item</th><th scope="col">Value</th><th scope="col">As of</th><th scope="col">Source</th></tr>
-            </thead>
-            <tbody>
-              {ALL_DATED.map((d) => (
-                <tr key={d.label}>
-                  <td className="font-sans text-[13px] font-medium text-evergreen">
-                    {d.label}
-                    {d.approximate && <span className="ml-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-champagne">Approximate</span>}
-                    {d.note && <span className="mt-0.5 block text-xs font-normal text-grey">{d.note}</span>}
-                  </td>
-                  <td>{datedValue(d)}</td>
-                  <td className="font-sans text-[13px] text-grey">{d.asOf}</td>
-                  <td className="font-sans text-[13px]"><a className="link" href={d.source} target="_blank" rel="noreferrer noopener">{d.sourceLabel}</a></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Section>
+      <div id="sources" className="scroll-mt-24">
+        <Section title="Sources" description={`Every dated rule and rate the projections rely on, grouped, with the date it was checked and its source. Approximate values differ between sources or couldn’t be confirmed on an official page. Last full review: ${LAST_REVIEW}.`}>
+          <SourcesList />
+        </Section>
+      </div>
 
       <Section title="Display">
         <div className="flex max-w-xl flex-col gap-6">

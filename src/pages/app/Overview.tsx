@@ -7,6 +7,7 @@ import { Disclaimer, EmptyState, ButtonLink, Notice } from '@/components/ui';
 import { TrajectoryPanel, AllocationPanel, FiPanel } from '@/features/overview/Panels';
 import { KpiStrip, MonthWaterfall, NextStepsChecklist } from '@/features/overview/Kpis';
 import { GoalTimeline } from '@/features/goals/GoalTimeline';
+import { AccuracyCard } from '@/features/overview/AccuracyCard';
 import { formatPct } from '@/finance/money';
 import type { ReactNode } from 'react';
 
@@ -114,7 +115,13 @@ export default function Overview() {
         <Card id="steps-h" title="Next steps" className="lg:col-span-7">
           <NextStepsChecklist plan={plan} />
         </Card>
-        <Card id="goals-h" title="Goals" to="/app/goals" linkLabel="All goals" className="lg:col-span-5">
+        <div className="lg:col-span-5">
+          <AccuracyCard plan={plan} />
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-12">
+        <Card id="goals-h" title="Goals" to="/app/goals" linkLabel="All goals" className="lg:col-span-12">
           {plan.goals.goals.length ? (
             <GoalTimeline goals={plan.goalViews} />
           ) : (

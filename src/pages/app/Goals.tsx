@@ -294,7 +294,7 @@ export default function Goals() {
             <Stat label="Unpaid" value={String(counts.unpaid)} tone={counts.unpaid > 0 ? 'negative' : undefined} />
           </div>
           <div className="bezel p-5 sm:p-6">
-            <Stat label="Monthly surplus" value={money(summary.capacity)} def="surplus" sub={`Dedicated plans need ${money(summary.totalRequired)}`} />
+            <Stat label="Left after bills" value={money(summary.capacity)} def="surplus" sub={`Dedicated plans need ${money(summary.totalRequired)}`} />
           </div>
         </div>
       )}

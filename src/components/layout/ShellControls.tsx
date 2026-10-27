@@ -86,7 +86,7 @@ export function PlanSwitcher() {
           <DropdownMenuRadioItem value="demo">Demo (Riya, 26)</DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => navigate('/start')}>Re-run guided setup</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate('/start/detailed')}>Detailed setup</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -219,7 +219,7 @@ function NumbersItems({ go, money }: { go: (to: string) => void; money: (v: numb
   const plan = usePlan();
   const rows = [
     { label: 'Net worth today', value: money(plan.sheet.netWorth), to: '/app' },
-    { label: 'Monthly surplus', value: money(plan.cashflow.investableSurplus), to: '/app/budget' },
+    { label: 'Left after bills', value: money(plan.cashflow.investableSurplus), to: '/app/budget' },
     { label: 'Plan score', value: `${Math.round(plan.health.score)} / 100`, to: '/app/health' },
     { label: 'Financial independence', value: plan.fi.fiAge ? `age ${plan.fi.fiAge}` : 'beyond the plan', to: '/app/fi' },
     { label: `Net worth in ${plan.headline.year}`, value: money(plan.headline.netWorthReal), to: '/app/simulator' },

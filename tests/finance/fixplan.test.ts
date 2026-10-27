@@ -1,3 +1,4 @@
+import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { applyPatch, candidateFixes, combineFixes, evaluatePlan, revertPatch, suggestFixes, type Fix } from '@/finance/fixPlan';
 import { simulate } from '@/finance/simulate';
@@ -150,5 +151,24 @@ describe('next steps and Fix my plan agree', () => {
     // The insights the fixes replace aren’t listed twice.
     expect(keys).not.toContain('costly-debt');
     expect(keys).not.toContain('emergency');
+  });
+});
+
+describe('landing page snapshot of Riya’s before and after', () => {
+  it('src/content/demoFix.json matches the engine (UPDATE_DEMO_SNAPSHOT=1 rewrites it)', () => {
+    const round = (m: typeof combined.before) => ({ fiAge: m.fiAge, fiSuccess: Math.round(m.fiSuccess * 100) / 100, unpaidGoals: m.unpaidGoals, netWorthReal: Math.round(m.netWorthReal / 1000) * 1000, health: Math.round(m.health) });
+    const byKey = new Map(fixes.map((f) => [f.key, f]));
+    const snap = {
+      planStartYear: p.planStartYear,
+      endYear: p.planStartYear + a.horizonYears,
+      targetAge: p.about.fiAge,
+      paths: 300,
+      before: round(combined.before),
+      after: round(combined.after),
+      fixes: combined.applied.map((k) => ({ key: k, title: byKey.get(k)!.title, before: round(byKey.get(k)!.impact.before), after: round(byKey.get(k)!.impact.after) })),
+    };
+    const path = 'src/content/demoFix.json';
+    if (process.env.UPDATE_DEMO_SNAPSHOT) writeFileSync(path, `${JSON.stringify(snap, null, 2)}\n`);
+    expect(JSON.parse(readFileSync(path, 'utf8'))).toEqual(snap);
   });
 });

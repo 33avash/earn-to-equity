@@ -20,6 +20,9 @@ export interface Dated<T> {
 
 const d = <T>(x: Dated<T>) => x;
 
+/** Date of the last full review of every value in this file. */
+export const LAST_REVIEW = '27 October 2026';
+
 /* ---------- Prices and returns ---------- */
 
 export const CPI_LATEST = d({
@@ -427,6 +430,18 @@ export const INR_DEPRECIATION = d({
   sourceLabel: 'ECB reference rates (USD and INR); default 0 to stay cautious',
   note: 'International funds earn their dollar return plus any fall in the rupee. The rupee has weakened by a few percent a year over long periods, but the default adds nothing. Editable in Settings.',
 });
+
+export type SourceGroup = 'Tax' | 'Salary & EPF' | 'Rates' | 'Markets' | 'Property' | 'Protection';
+
+/** Every dated value by group, for the Sources list in Settings and on /sources. */
+export const SOURCE_GROUPS: { group: SourceGroup; items: Dated<unknown>[] }[] = [
+  { group: 'Tax', items: [TAX_LAW, NEW_REGIME, OLD_REGIME, SURCHARGE, CESS, CAPITAL_GAINS, HRA_RULES, EMPLOYER_NPS] },
+  { group: 'Salary & EPF', items: [EPF_RULES, EPF_RATE, LABOUR_CODES, GRATUITY, PROFESSIONAL_TAX] },
+  { group: 'Rates', items: [CPI_LATEST, PLANNING_INFLATION, EDUCATION_INFLATION, ...Object.values(SMALL_SAVINGS), HOME_LOAN_RATE] },
+  { group: 'Markets', items: [NIFTY50_TRI, MSCI_WORLD, GOLD_PRICES, INDEX_HISTORY, CORRELATIONS, REGULAR_PLAN_DRAG, INR_DEPRECIATION, WITHDRAWAL_RATE] },
+  { group: 'Property', items: [PROPERTY_CHARGES, UNDER_CONSTRUCTION_GST] },
+  { group: 'Protection', items: [HEALTH_COVER_BENCHMARK, TERM_COVER_MULTIPLE, HEALTHCARE_INFLATION] },
+];
 
 /** Every dated value, for the Settings page. */
 export const ALL_DATED: Dated<unknown>[] = [

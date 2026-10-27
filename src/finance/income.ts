@@ -7,9 +7,12 @@ export function usesCtc(p: FinancialProfile): boolean {
   return p.income.mode === 'ctc' && (p.income.ctc ?? 0) > 0;
 }
 
-/** The rent line in essential spending, if there is one (matched by id or label). */
+/**
+ * The rent line in essential spending, if there is one: id "rent", or a label that starts with "Rent" and isn't a
+ * combined line such as "Rent and other spending" (which would overstate HRA).
+ */
 export function rentMonthly(p: FinancialProfile): number {
-  const item = p.cashflow.essential.find((l) => l.id === 'rent' || /\brent\b/i.test(l.label));
+  const item = p.cashflow.essential.find((l) => l.id === 'rent' || (/^\s*rent\b/i.test(l.label) && !/\band\b|other/i.test(l.label)));
   return Math.max(0, item?.amount ?? 0);
 }
 

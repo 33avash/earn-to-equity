@@ -1,0 +1,112 @@
+{
+  "planStartYear": 2026,
+  "endYear": 2046,
+  "targetAge": 55,
+  "paths": 300,
+  "before": {
+    "fiAge": 56,
+    "fiSuccess": 0.43,
+    "unpaidGoals": 1,
+    "netWorthReal": 14569000,
+    "health": 62
+  },
+  "after": {
+    "fiAge": 54,
+    "fiSuccess": 0.68,
+    "unpaidGoals": 0,
+    "netWorthReal": 14534000,
+    "health": 78
+  },
+  "fixes": [
+    {
+      "key": "move-goal:car",
+      "title": "Move First car to 2031",
+      "before": {
+        "fiAge": 56,
+        "fiSuccess": 0.43,
+        "unpaidGoals": 1,
+        "netWorthReal": 14569000,
+        "health": 62
+      },
+      "after": {
+        "fiAge": 57,
+        "fiSuccess": 0.31,
+        "unpaidGoals": 0,
+        "netWorthReal": 13392000,
+        "health": 62
+      }
+    },
+    {
+      "key": "employer-nps",
+      "title": "Ask HR to put 14% of basic into NPS",
+      "before": {
+        "fiAge": 56,
+        "fiSuccess": 0.43,
+        "unpaidGoals": 1,
+        "netWorthReal": 14569000,
+        "health": 62
+      },
+      "after": {
+        "fiAge": 53,
+        "fiSuccess": 0.75,
+        "unpaidGoals": 1,
+        "netWorthReal": 15694000,
+        "health": 61
+      }
+    },
+    {
+      "key": "goal-loan",
+      "title": "Let a loan cover the gap for First car",
+      "before": {
+        "fiAge": 56,
+        "fiSuccess": 0.43,
+        "unpaidGoals": 1,
+        "netWorthReal": 14569000,
+        "health": 62
+      },
+      "after": {
+        "fiAge": 57,
+        "fiSuccess": 0.25,
+        "unpaidGoals": 0,
+        "netWorthReal": 13339000,
+        "health": 62
+      }
+    },
+    {
+      "key": "clear-debt",
+      "title": "Clear the ₹22,000 credit card",
+      "before": {
+        "fiAge": 56,
+        "fiSuccess": 0.43,
+        "unpaidGoals": 1,
+        "netWorthReal": 14569000,
+        "health": 62
+      },
+      "after": {
+        "fiAge": 56,
+        "fiSuccess": 0.43,
+        "unpaidGoals": 1,
+        "netWorthReal": 14597000,
+        "health": 68
+      }
+    },
+    {
+      "key": "fill-reserve",
+      "title": "Fill your emergency reserve: pause ₹15,000 of your SIP for 11 months",
+      "before": {
+        "fiAge": 56,
+        "fiSuccess": 0.43,
+        "unpaidGoals": 1,
+        "netWorthReal": 14569000,
+        "health": 62
+      },
+      "after": {
+        "fiAge": 56,
+        "fiSuccess": 0.43,
+        "unpaidGoals": 1,
+        "netWorthReal": 14565000,
+        "health": 74
+      }
+    }
+  ]
+}

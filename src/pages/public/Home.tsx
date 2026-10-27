@@ -1,96 +1,60 @@
-import { Suspense, lazy, useMemo, useRef, type ReactNode, type RefObject } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Minus, Target, LineChart, FlaskConical, MessageSquareText, Wallet, Landmark, CalendarRange, IndianRupee, TrendingUp, Mountain, PiggyBank, Receipt } from 'lucide-react';
+import { ArrowRight, Check, CalendarCheck, MonitorSmartphone, BookOpen } from 'lucide-react';
 import { ButtonLink, btn } from '@/components/ui/Button';
 import { DeviceFrame, Frame, SectionHead } from '@/components/ui/Misc';
-import { ScoreRing, scoreBand } from '@/components/ui/ScoreRing';
 import { HeroGraphic } from '@/features/landing/HeroGraphic';
-import { MicroLessons } from '@/features/landing/MicroLessons';
-import { SipPreview } from '@/features/sip/SipPreview';
-import { LifeScenarios } from '@/features/landing/LifeScenarios';
-import { CoachShowcase } from '@/features/landing/CoachShowcase';
-import { GoalTimeline, PLAN_STATUS } from '@/features/goals/GoalTimeline';
-import { computePlan, heroSeries, type Plan } from '@/state/selectors';
+import { CtcCalculator } from '@/features/landing/CtcCalculator';
+import { BeforeAfter, impactChip } from '@/features/fixplan/BeforeAfter';
+import { computePlan, heroSeries } from '@/state/selectors';
 import { DEFAULT_ASSUMPTIONS, demoProfile } from '@/state/demo';
 import { formatCompact, formatPct } from '@/finance/money';
 import { useExploreDemo } from '@/state/useDemo';
 import { Mark } from '@/components/layout/Wordmark';
 import { AnimatedNumber, Reveal } from '@/components/motion/Motion';
 import { TextReveal } from '@/components/motion/TextReveal';
-import { Marquee } from '@/components/motion/Marquee';
-import { ParallaxLayer } from '@/components/motion/Parallax';
-import { TiltCard } from '@/components/motion/TiltCard';
-import { TabsMorph } from '@/components/motion/TabsMorph';
-import { ScrollStack } from '@/components/motion/ScrollStack';
-import { AnimatedBeam } from '@/components/motion/AnimatedBeam';
+import { DISCLAIMER_SHORT } from '@/pages/public/Legal';
+import demoFix from '@/content/demoFix.json';
 
-/** Rules the engine applies, shown as a moving strip of facts (no testimonials: there are none to show). */
-const RULES = [
-  'New regime: ₹12.75 L salary pays no tax',
-  'Standard deduction ₹75,000',
-  'EPF at 8.25% a year',
-  'LTCG 12.5% above ₹1.25 L',
-  'STCG on equity at 20%',
-  'Lenders cap EMIs at 50% of take-home',
-  'Stamp duty, registration and GST on a flat',
-  'Promotions, career breaks and a new home',
-  'Lifestyle creep as pay rises',
-  '1,000 market paths with fat tails',
-  'Goals inflated to the year they fall due',
-  'Old-regime deductions, HRA worked out from your rent',
-];
+const section = 'container-x py-16 sm:py-24';
 
-const COMPARE: { row: string; calc: boolean }[] = [
-  { row: 'Compounding on a monthly SIP', calc: true },
-  { row: 'Take-home recalculated as your CTC crosses tax slabs', calc: false },
-  { row: 'EPF growing at the declared rate', calc: false },
-  { row: 'Loans, EMIs and the 50% lender limit', calc: false },
-  { row: 'Goals paid from savings or a loan in the year they fall due', calc: false },
-  { row: 'Capital-gains tax when you sell', calc: false },
-  { row: 'Market crashes and career breaks', calc: false },
-];
-
-const section = 'container-x py-20 sm:py-28 lg:py-32';
-
-// The Monte Carlo engine, its Nifty history and the coach load only when their tab is opened.
-const RiskPanel = lazy(() => import('@/features/landing/FeaturePanels').then((m) => ({ default: m.RiskPanel })));
-const CoachPanel = lazy(() => import('@/features/landing/FeaturePanels').then((m) => ({ default: m.CoachPanel })));
-const panelFallback = <div className="skeleton m-6 h-64" role="status" aria-label="Loading" />;
-
+/**
+ * The landing page in five parts: what it is, the CTC calculator, a plan getting fixed, why to trust the
+ * numbers, and where to start. Lessons, the feature tour and the coach live on /learn and /features.
+ */
 export default function Home() {
   const exploreDemo = useExploreDemo();
   const sample = useMemo(() => computePlan(demoProfile(), DEFAULT_ASSUMPTIONS), []);
   const series = useMemo(() => heroSeries(sample), [sample]);
-  const band = scoreBand(sample.health.score);
 
   return (
     <>
-      {/* HERO: headline left; live plan in a device frame right, with glass chips floating on parallax layers */}
+      {/* 1. HERO */}
       <section className="relative -mt-24 overflow-hidden pt-24 sm:-mt-28 sm:pt-28">
         <div aria-hidden className="glow left-[55%] top-10 h-[34rem] w-[34rem]" />
-        <div className="container-x relative grid items-center gap-16 pb-20 pt-10 lg:min-h-[min(calc(100dvh-7rem),860px)] lg:grid-cols-12 lg:gap-10 lg:pb-28 lg:pt-6">
+        <div className="container-x relative grid items-center gap-14 pb-16 pt-10 lg:grid-cols-12 lg:gap-10 lg:pb-20 lg:pt-6">
           <div className="lg:col-span-6">
-            <h1 className="display text-[50px] leading-[0.95] sm:text-[72px] lg:text-[92px]">
+            <h1 className="display text-[48px] leading-[0.95] sm:text-[68px] lg:text-[84px]">
               <TextReveal parts={['Your salary,', 'compounded into', { text: 'equity.', className: 'text-gradient' }]} delay={0.1} />
             </h1>
-            <Reveal delay={350}>
-              <p className="mt-8 max-w-[34rem] text-[17px] leading-relaxed text-grey">
-                Enter your CTC, spending, loans and goals. Get a year-by-year plan to {series.end.year} with income tax, EPF, inflation, EMIs and market crashes built in. Free, no sign-up, and your plan is saved only in your browser.
+            <Reveal delay={300}>
+              <p className="mt-7 max-w-[34rem] text-[17px] leading-relaxed text-grey">
+                Turn your first CTC into a 20-year plan: what actually reaches your bank, what each goal will cost in its year, and the changes that would fix the gaps.
               </p>
             </Reveal>
-            <Reveal delay={450}>
-              <div className="mt-10 flex flex-wrap items-center gap-3">
+            <Reveal delay={400}>
+              <div className="mt-9 flex flex-wrap items-center gap-3">
                 <ButtonLink to="/start" size="lg">
-                  Build your plan <ArrowRight size={16} aria-hidden />
+                  Start in 2 minutes <ArrowRight size={16} aria-hidden />
                 </ButtonLink>
-                <button type="button" onClick={() => exploreDemo('/app')} className={btn('secondary', 'lg')}>
-                  See the demo plan
+                <button type="button" onClick={() => exploreDemo('/app?fix=1')} className={btn('secondary', 'lg')}>
+                  See a plan get fixed
                 </button>
               </div>
             </Reveal>
-            <Reveal delay={550}>
-              <ul className="mt-10 flex flex-wrap gap-2" aria-label="What the plan models">
-                {['Tax year 2026-27', 'EPF 8.25%', '1,000-path Monte Carlo', 'Free AI coach', 'No sign-up'].map((c) => (
+            <Reveal delay={500}>
+              <ul className="mt-9 flex flex-wrap gap-2" aria-label="What the plan uses">
+                {['Tax year 2026-27', 'EPF ceiling ₹25,000', 'Labour Codes pay structure', 'No sign-up'].map((c) => (
                   <li key={c} className="chip">
                     <Check size={13} className="text-forest" aria-hidden /> {c}
                   </li>
@@ -98,543 +62,103 @@ export default function Home() {
               </ul>
             </Reveal>
           </div>
-
-          <Reveal delay={250} className="relative lg:col-span-6">
-            <div className="relative">
-              <DeviceFrame label="Overview · sample plan" chrome={<Mark size={18} />}>
-                <div className="p-5 sm:p-7">
-                  <p className="text-[10.5px] font-medium uppercase tracking-[0.2em] text-grey">Net worth in {series.end.year}, in today’s ₹</p>
-                  <p className="num mt-2 text-[34px] font-semibold leading-none tracking-[-0.04em] text-evergreen [&_.num]:font-sans">
-                    <AnimatedNumber value={series.end.netWorthReal} format={formatCompact} />
-                  </p>
-                  <HeroGraphic series={series} />
-                  <p className="mt-3 text-[12px] leading-relaxed text-grey">
-                    Fictional {sample.profile.about.age}-year-old in Pune on {formatCompact(sample.profile.income.ctc ?? 0)} a year, {formatPct(DEFAULT_ASSUMPTIONS.inflation, 0)} inflation, {formatPct(sample.portfolioReturn)} return after fund costs.
-                  </p>
-                </div>
-              </DeviceFrame>
-              <ParallaxLayer speed={90} className="mt-5 lg:absolute lg:-bottom-10 lg:-left-14 lg:mt-0">
-                <div className="frame-glass inline-flex flex-col px-5 py-4 lg:-rotate-3">
-                  <p className="text-[10.5px] font-medium uppercase tracking-[0.2em] text-grey">Net worth today</p>
-                  <p className="num mt-1.5 text-[24px] font-semibold leading-none tracking-[-0.04em] text-evergreen [&_.num]:font-sans">
-                    <AnimatedNumber value={sample.sheet.netWorth} format={formatCompact} />
-                  </p>
-                </div>
-              </ParallaxLayer>
-              <ParallaxLayer speed={140} className="mt-3 lg:absolute lg:-right-8 lg:-top-10 lg:mt-0">
-                <div className="frame-glass inline-flex items-center gap-3 px-4 py-3 lg:rotate-2">
-                  <ScoreRing score={sample.health.score} size={44} />
-                  <div>
-                    <p className="text-[10.5px] font-medium uppercase tracking-[0.2em] text-grey">Plan score</p>
-                    <p className="text-[13px] font-medium text-evergreen">{band.label}</p>
-                  </div>
-                </div>
-              </ParallaxLayer>
-              {series.fiBeyond && (
-                <ParallaxLayer speed={60} className="mt-3 hidden sm:block lg:absolute lg:-right-6 lg:bottom-24 lg:mt-0">
-                  <div className="frame-glass inline-flex items-center gap-2.5 px-4 py-3 lg:-rotate-1">
-                    <Mountain size={16} className="text-forest" aria-hidden />
-                    <p className="text-[13px] text-charcoal">
-                      Work optional at <span className="num font-semibold text-evergreen">{series.fiBeyond.age}</span>
-                    </p>
-                  </div>
-                </ParallaxLayer>
-              )}
-            </div>
-          </Reveal>
-        </div>
-
-        {/* By the numbers */}
-        <div className="container-x relative pb-10">
-          <Reveal>
-            <dl className="frame grid grid-cols-2 divide-line sm:grid-cols-4 sm:divide-x">
-              {[
-                { k: 'years projected, month by month', v: 20, f: (n: number) => `${Math.round(n)}` },
-                { k: 'connected planning tools', v: 14, f: (n: number) => `${Math.round(n)}` },
-                { k: 'lessons with quizzes', v: 11, f: (n: number) => `${Math.round(n)}` },
-                { k: 'market paths per stress test', v: 1000, f: (n: number) => Math.round(n).toLocaleString('en-IN') },
-              ].map((s) => (
-                <div key={s.k} className="px-6 py-6 sm:px-8">
-                  <dd className="num text-[32px] font-semibold leading-none tracking-[-0.04em] text-evergreen [&_.num]:font-sans">
-                    <AnimatedNumber value={s.v} format={s.f} />
-                  </dd>
-                  <dt className="mt-2 text-[12.5px] text-grey">{s.k}</dt>
-                </div>
-              ))}
-            </dl>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* RULES MARQUEE */}
-      <section aria-label="Rules the engine models" className="py-8">
-        <Marquee duration={55}>
-          {RULES.map((r) => (
-            <span key={r} className="chip">
-              <span className="h-1.5 w-1.5 rounded-full bg-forest" aria-hidden /> {r}
-            </span>
-          ))}
-        </Marquee>
-      </section>
-
-      {/* AI COACH: the on-device model, with answers calculated on the sample plan */}
-      <section aria-labelledby="coach-h">
-        <div className={section}>
-          <Reveal>
-            <SectionHead
-              id="coach-h"
-              title={
-                <>
-                  Ask your plan <span className="text-gradient">anything</span>
-                </>
-              }
-            >
-              <p>An AI model running in your browser explains your own projection in plain words and answers follow-up questions. The planner’s engine works out every figure first.</p>
-            </SectionHead>
-          </Reveal>
-          <Reveal>
-            <CoachShowcase plan={sample} />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* MICRO-LESSONS */}
-      <section aria-labelledby="learn-h">
-        <div className={section}>
-          <Reveal>
-            <SectionHead
-              id="learn-h"
-              title={
-                <>
-                  Six money lessons, <span className="text-gradient">live</span>
-                </>
-              }
-            >
-              <p>
-                Drag a slider and the numbers update from the planner’s own engine. Each card ends with a one-question check.{' '}
-                <Link to="/learn" className="link">
-                  All eleven lessons
-                </Link>
-              </p>
-            </SectionHead>
-          </Reveal>
-          <MicroLessons />
-        </div>
-      </section>
-
-      {/* HOW IT WORKS: pinned cards that stack */}
-      <section aria-labelledby="how-h">
-        <div className={section}>
-          <Reveal>
-            <SectionHead
-              id="how-h"
-              title={
-                <>
-                  Three steps, about <span className="text-gradient">eight minutes</span>
-                </>
-              }
-            >
-              <p>
-                Every screen then reads from the same 20-year projection.{' '}
-                <Link to="/how-it-works" className="link">
-                  Read the method
-                </Link>
-              </p>
-            </SectionHead>
-          </Reveal>
-          <ScrollStack items={[<StepPay key="pay" plan={sample} />, <StepGoals key="goals" plan={sample} />, <StepYears key="years" plan={sample} />]} />
-        </div>
-      </section>
-
-      {/* FEATURE TABS: the real panels, on the sample plan */}
-      <section aria-labelledby="feat-h">
-        <div className={section}>
-          <Reveal>
-            <SectionHead
-              id="feat-h"
-              center
-              title={
-                <>
-                  The planner, on the <span className="text-gradient">sample plan</span>
-                </>
-              }
-            >
-              <p>These are the same panels you get for your own numbers, not screenshots.</p>
-            </SectionHead>
-          </Reveal>
-          <Reveal>
-            <FeatureTabs plan={sample} />
-          </Reveal>
-          <div className="mt-12 flex justify-center">
-            <button type="button" onClick={() => exploreDemo('/app')} className={btn('secondary', 'md')}>
-              Open the demo plan <ArrowRight size={15} aria-hidden />
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ENGINE DIAGRAM */}
-      <section aria-labelledby="engine-h">
-        <div className={section}>
-          <Reveal>
-            <SectionHead
-              id="engine-h"
-              title={
-                <>
-                  One model connects <span className="text-gradient">everything</span>
-                </>
-              }
-            >
-              <p>Change your rent and the plan reruns: this month’s surplus, every goal, the stress tests and your FI age.</p>
-            </SectionHead>
-          </Reveal>
-          <Reveal>
-            <EngineDiagram year={series.end.year} />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* SIP CALCULATOR */}
-      <section aria-labelledby="sip-h">
-        <div className={section}>
-          <Reveal>
-            <SectionHead
-              id="sip-h"
-              title={
-                <>
-                  What could ₹10,000 a month <span className="text-gradient">become?</span>
-                </>
-              }
-            >
-              <p>Drag the sliders. The chart splits what you put in from what compounding adds.</p>
-            </SectionHead>
-          </Reveal>
-          <Reveal>
-            <Frame size="xl" className="p-6 sm:p-10 lg:p-12">
-              <SipPreview />
-            </Frame>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* WHAT-IF SCENARIOS */}
-      <section aria-labelledby="scen-h">
-        <div className={section}>
-          <Reveal>
-            <SectionHead
-              id="scen-h"
-              title={
-                <>
-                  What-if, <span className="text-gradient">in rupees</span>
-                </>
-              }
-            >
-              <p>Three changes to the sample plan, each measured in {series.end.year} net worth in today’s rupees.</p>
-            </SectionHead>
-          </Reveal>
-          <Reveal>
-            <Frame size="xl" className="p-6 sm:p-10 lg:p-12">
-              <LifeScenarios plan={sample} />
-            </Frame>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* COMPARISON: two tiers, the right one lit */}
-      <section aria-labelledby="cmp-h">
-        <div className={section}>
-          <Reveal>
-            <SectionHead
-              id="cmp-h"
-              center
-              title={
-                <>
-                  Beyond a SIP <span className="text-gradient">calculator</span>
-                </>
-              }
-            >
-              <p>What a typical online SIP calculator models, and what your plan adds.</p>
-            </SectionHead>
-          </Reveal>
-          <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
-            <Reveal>
-              <TiltCard className="frame frame-lg h-full p-7 sm:p-9">
-                <p className="text-[13px] font-medium text-grey">Typical SIP calculator</p>
-                <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-evergreen">One number</p>
-                <ul className="mt-8 flex flex-col gap-3.5">
-                  {COMPARE.map((r) => (
-                    <li key={r.row} className={`flex items-start gap-3 text-[14px] ${r.calc ? 'text-charcoal' : 'text-grey'}`}>
-                      {r.calc ? <Check size={16} className="mt-0.5 shrink-0 text-forest" aria-label="Included" /> : <Minus size={16} className="mt-0.5 shrink-0 text-grey" aria-label="Not included" />}
-                      {r.row}
-                    </li>
-                  ))}
-                </ul>
-              </TiltCard>
-            </Reveal>
-            <Reveal delay={120}>
-              <TiltCard className="frame frame-lg h-full overflow-hidden p-7 sm:p-9">
-                <div aria-hidden className="glow -right-20 -top-20 h-72 w-72" />
-                <p className="relative flex items-center gap-2 text-[13px] font-medium text-forest">
-                  <Mark size={16} animate={false} /> Earn to Equity
+          <Reveal delay={250} className="lg:col-span-6">
+            <DeviceFrame label="Overview · sample plan" chrome={<Mark size={18} />}>
+              <div className="p-5 sm:p-7">
+                <p className="text-[12px] font-medium text-grey">Net worth in {series.end.year}, in today’s ₹ (base case)</p>
+                <p className="num mt-2 text-[34px] font-semibold leading-none tracking-[-0.04em] text-evergreen [&_.num]:font-sans">
+                  <AnimatedNumber value={series.end.netWorthReal} format={formatCompact} />
                 </p>
-                <p className="relative mt-2 text-[28px] font-semibold tracking-[-0.04em] text-evergreen">Every year to {series.end.year}</p>
-                <ul className="relative mt-8 flex flex-col gap-3.5">
-                  {COMPARE.map((r) => (
-                    <li key={r.row} className="flex items-start gap-3 text-[14px] text-charcoal">
-                      <Check size={16} className="mt-0.5 shrink-0 text-forest" aria-label="Included" />
-                      {r.row}
-                    </li>
-                  ))}
-                </ul>
-              </TiltCard>
-            </Reveal>
-          </div>
+                <HeroGraphic series={series} />
+                <p className="mt-3 text-[12px] leading-relaxed text-grey">
+                  Riya, a fictional {sample.profile.about.age}-year-old in Pune on {formatCompact(sample.profile.income.ctc ?? 0)} CTC, {formatPct(DEFAULT_ASSUMPTIONS.inflation, 0)} inflation, {formatPct(sample.portfolioReturn)} return after fund costs.
+                </p>
+              </div>
+            </DeviceFrame>
+          </Reveal>
         </div>
       </section>
 
-      {/* CTA ISLAND */}
-      <section className="container-x pb-8 pt-16 lg:pt-24">
-        <Reveal>
-          <div className="relative overflow-hidden rounded-[2.5rem] bg-[rgb(7_7_10)] px-7 py-16 shadow-[0_0_0_1px_rgb(255_255_255/0.08),inset_0_1px_0_rgb(255_255_255/0.1)] sm:px-14 sm:py-24">
-            <div aria-hidden className="pointer-events-none absolute -right-24 -top-32 h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgb(45_212_191/0.3),rgb(0_0_0/0)_65%)]" />
-            <div className="relative grid gap-10 lg:grid-cols-12 lg:items-end">
-              <div className="lg:col-span-8">
-                <h2 className="text-[44px] font-semibold leading-[0.95] tracking-[-0.05em] !text-white sm:text-[64px] lg:text-[84px]">
-                  Build your <span className="text-[#2DD4BF]">plan</span>
-                </h2>
-                <p className="mt-6 max-w-xl text-[16px] leading-relaxed text-[#A8A8AC]">Eight steps: pay, spending, savings, loans, protection, goals and investments, then a review. About eight minutes.</p>
-              </div>
-              <div className="flex flex-wrap gap-3 lg:col-span-4 lg:justify-end">
-                <Link to="/start" className={btn('primary', 'lg', '!bg-white !text-[#07070A] hover:!bg-[#CCFBF1]')}>
-                  Start <ArrowRight size={16} aria-hidden />
-                </Link>
-              </div>
+      {/* 2. CTC → REAL IN-HAND */}
+      <section aria-labelledby="ctc-h">
+        <div className={section}>
+          <SectionHead id="ctc-h" title={<>Your CTC, <span className="text-gradient">in your bank</span></>}>
+            <p>PF, gratuity and variable pay all sit inside CTC. Here is what arrives each month under this year’s rules.</p>
+          </SectionHead>
+          <Frame size="xl" className="p-6 sm:p-10">
+            <CtcCalculator offerLink="/tools" />
+          </Frame>
+        </div>
+      </section>
+
+      {/* 3. A PLAN, FIXED */}
+      <section aria-labelledby="fix-h">
+        <div className={section}>
+          <SectionHead id="fix-h" title={<>Riya’s plan, <span className="text-gradient">fixed</span></>}>
+            <p>Her MBA and first car land a year apart, her emergency fund is short and her employer puts nothing in NPS. These are the planner’s changes, each tested on her projection and 300 market paths.</p>
+          </SectionHead>
+          <Frame size="xl" className="flex flex-col gap-6 p-6 sm:p-10">
+            <BeforeAfter before={demoFix.before} after={demoFix.after} targetAge={demoFix.targetAge} endYear={demoFix.endYear} money={formatCompact} />
+            <ol className="grid gap-3 sm:grid-cols-2">
+              {demoFix.fixes.map((f, i) => (
+                <li key={f.key} className="flex items-start gap-3 rounded-2xl bg-muted/50 p-4">
+                  <span className="num pt-0.5 text-xs text-champagne">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[14px] font-medium text-evergreen">{f.title}</span>
+                    <span className="num mt-1 inline-block rounded-full bg-forest/10 px-2 py-0.5 text-[11.5px] font-medium text-forest">{impactChip(f.before, f.after, formatCompact)}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" onClick={() => exploreDemo('/app?fix=1')} className={btn('primary', 'md')}>
+                Open Riya’s plan <ArrowRight size={15} aria-hidden />
+              </button>
+              <p className="text-[12.5px] text-grey">Computed on her plan from {demoFix.planStartYear}. Ranges come from simulated market paths, not forecasts.</p>
+            </div>
+          </Frame>
+        </div>
+      </section>
+
+      {/* 4. TRUST */}
+      <section aria-label="Why you can check these numbers" className="container-x py-10">
+        <ul className="grid gap-px overflow-hidden rounded-[1.75rem] bg-line sm:grid-cols-3">
+          {[
+            { icon: CalendarCheck, title: 'Every rate dated and sourced', body: 'Each rule shows the date it was checked and the official page.', to: '/sources', link: 'See the sources' },
+            { icon: MonitorSmartphone, title: 'Runs in your browser, no sign-up', body: 'Your plan stays on this device. There is no account and no server holding it.', to: '/legal', link: 'Privacy' },
+            { icon: BookOpen, title: 'Not investment advice; education only', body: DISCLAIMER_SHORT, to: '/faq', link: 'Why we never name funds' },
+          ].map(({ icon: Icon, title, body, to, link }) => (
+            <li key={title} className="flex flex-col gap-2 bg-surface p-6">
+              <Icon size={18} className="text-forest" aria-hidden />
+              <p className="text-[15px] font-semibold text-evergreen">{title}</p>
+              <p className="text-[13px] leading-relaxed text-grey">{body}</p>
+              <Link to={to} className="link mt-auto pt-1 text-[13px] font-medium">
+                {link}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* 5. FINAL CTA */}
+      <section className="container-x pb-8 pt-12 lg:pt-16">
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-[rgb(7_7_10)] px-7 py-14 shadow-[0_0_0_1px_rgb(255_255_255/0.08),inset_0_1px_0_rgb(255_255_255/0.1)] sm:px-14 sm:py-20">
+          <div aria-hidden className="pointer-events-none absolute -right-24 -top-32 h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgb(45_212_191/0.3),rgb(0_0_0/0)_65%)]" />
+          <div className="relative grid gap-8 lg:grid-cols-12 lg:items-end">
+            <div className="lg:col-span-8">
+              <h2 className="text-[40px] font-semibold leading-[0.95] tracking-[-0.05em] !text-white sm:text-[60px]">
+                Start with <span className="text-[#2DD4BF]">five numbers</span>
+              </h2>
+              <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-[#A8A8AC]">Age, CTC, city, monthly spending and one goal. Everything else starts from sensible defaults you can change later.</p>
+            </div>
+            <div className="flex flex-wrap gap-3 lg:col-span-4 lg:justify-end">
+              <Link to="/start" className={btn('primary', 'lg', '!bg-white !text-[#07070A] hover:!bg-[#CCFBF1]')}>
+                Start in 2 minutes <ArrowRight size={16} aria-hidden />
+              </Link>
             </div>
           </div>
-        </Reveal>
+        </div>
       </section>
     </>
-  );
-}
-
-/* ---------- How it works: three pinned step cards, each with a live mini visual ---------- */
-
-function StepCard({ n, title, body, children }: { n: number; title: string; body: string; children: ReactNode }) {
-  return (
-    <Frame size="xl" className="grid gap-8 overflow-hidden p-7 sm:p-10 lg:grid-cols-12 lg:gap-12 lg:p-14">
-      <div className="flex flex-col justify-between lg:col-span-5">
-        <span className="num text-[72px] font-light leading-none tracking-[-0.06em] text-forest/80">0{n}</span>
-        <div className="mt-10">
-          <h3 className="text-[26px] font-semibold tracking-[-0.03em] sm:text-[30px]">{title}</h3>
-          <p className="mt-4 max-w-md text-[15px] leading-relaxed text-grey">{body}</p>
-        </div>
-      </div>
-      <div className="well p-5 sm:p-7 lg:col-span-7">{children}</div>
-    </Frame>
-  );
-}
-
-function StepPay({ plan }: { plan: Plan }) {
-  const cf = plan.cashflow;
-  const rows = [
-    { label: 'Essentials', v: cf.essential, icon: Receipt, tone: 'bg-sage' },
-    { label: 'Lifestyle', v: cf.lifestyle, icon: Wallet, tone: 'bg-champagne' },
-    { label: 'EMIs', v: cf.debtPayments, icon: Landmark, tone: 'bg-danger' },
-    { label: 'Investments', v: cf.plannedInvestments, icon: TrendingUp, tone: 'bg-forest' },
-    { label: 'Savings', v: cf.plannedSavings, icon: PiggyBank, tone: 'bg-[rgb(var(--chart-2))]' },
-  ];
-  return (
-    <StepCard n={1} title="Enter your pay and spending" body="Your CTC, rent, EMIs and SIPs. The plan works out take-home under both tax regimes, and your EPF contribution.">
-      <p className="text-[12.5px] text-grey">Sample plan: monthly take-home</p>
-      <p className="num mt-1 font-sans text-[30px] font-semibold tracking-[-0.04em] text-evergreen">{formatCompact(cf.income)}</p>
-      <ul className="mt-6 flex flex-col gap-3.5">
-        {rows.map((r) => (
-          <li key={r.label} className="grid grid-cols-[1.5rem_6.5rem_1fr_4.5rem] items-center gap-3 text-[13px]">
-            <r.icon size={15} className="text-grey" aria-hidden />
-            <span className="text-charcoal">{r.label}</span>
-            <span className="h-1.5 overflow-hidden rounded-full bg-muted">
-              <span className={`block h-full rounded-full ${r.tone}`} style={{ width: `${Math.max(2, (r.v / cf.income) * 100)}%` }} />
-            </span>
-            <span className="num text-right text-evergreen">{formatCompact(r.v)}</span>
-          </li>
-        ))}
-      </ul>
-    </StepCard>
-  );
-}
-
-function StepGoals({ plan }: { plan: Plan }) {
-  return (
-    <StepCard n={2} title="Add goals and life events" body="An MBA in 2029, a flat in 2039, a wedding. Each goal is priced in today’s rupees and inflated to the year it falls due.">
-      <ul className="flex flex-col divide-y divide-line">
-        {plan.goalViews.slice(0, 5).map((v) => (
-          <li key={v.goal.id} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-muted text-forest">
-              <Target size={16} aria-hidden />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[14px] font-medium text-evergreen">{v.goal.name}</p>
-              <p className="text-[12px] text-grey">{v.goal.targetYear}</p>
-            </div>
-            <div className="hidden h-1.5 w-28 overflow-hidden rounded-full bg-muted sm:flex">
-              <span className="h-full bg-forest" style={{ width: `${v.split.savings * 100}%` }} />
-              <span className="h-full bg-[rgb(var(--chart-2))]" style={{ width: `${v.split.loan * 100}%` }} />
-            </div>
-            <span className="chip !py-1 !text-[11px]">{PLAN_STATUS[v.status].label}</span>
-          </li>
-        ))}
-      </ul>
-    </StepCard>
-  );
-}
-
-function StepYears({ plan }: { plan: Plan }) {
-  const pts = plan.sim.points.map((p) => p.netWorthReal);
-  const max = Math.max(...pts, 1);
-  const line = pts.map((v, i) => `${(i / (pts.length - 1)) * 100},${40 - (Math.max(0, v) / max) * 36}`).join(' ');
-  return (
-    <StepCard n={3} title={`See every year to ${plan.headline.year}`} body="One projection drives every screen. Change a number and the whole plan reruns, from this month’s surplus to your FI age.">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-[12.5px] text-grey">Net worth, today’s ₹</p>
-          <p className="num mt-1 font-sans text-[30px] font-semibold tracking-[-0.04em] text-evergreen">{formatCompact(plan.headline.netWorthReal)}</p>
-        </div>
-        <span className="chip">{plan.sim.points.length} years</span>
-      </div>
-      <svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden className="mt-6 h-40 w-full overflow-visible">
-        <defs>
-          <linearGradient id="step-years-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" style={{ stopColor: 'rgb(var(--accent))', stopOpacity: 0.3 }} />
-            <stop offset="1" style={{ stopColor: 'rgb(var(--accent))', stopOpacity: 0 }} />
-          </linearGradient>
-        </defs>
-        <polygon points={`0,40 ${line} 100,40`} fill="url(#step-years-fill)" />
-        <polyline points={line} fill="none" stroke="rgb(var(--accent))" strokeWidth={2} vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
-      </svg>
-      <div className="mt-3 flex justify-between text-[11.5px] text-grey">
-        <span className="num">{plan.sim.points[0].year}</span>
-        <span className="num">{plan.headline.year}</span>
-      </div>
-    </StepCard>
-  );
-}
-
-/* ---------- Feature tabs ---------- */
-
-function YearTable({ plan }: { plan: Plan }) {
-  const rows = plan.sim.rows.filter((_, i) => i === 0 || (i + 1) % 5 === 0);
-  return (
-    <div className="overflow-x-auto p-5 sm:p-7">
-      <table className="table-fin w-full min-w-[560px]">
-        <thead>
-          <tr>
-            {['Year', 'Age', 'Take-home', 'Income tax', 'Invested', 'Net worth (today’s ₹)'].map((h) => (
-              <th key={h} scope="col">
-                {h}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.year}>
-              <td>{r.year}</td>
-              <td>{r.age}</td>
-              <td>{formatCompact(r.income)}</td>
-              <td>{formatCompact(r.incomeTax)}</td>
-              <td>{formatCompact(r.contributions)}</td>
-              <td className="font-semibold text-evergreen">{formatCompact(r.netWorthReal)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="mt-4 text-[12px] text-grey">Every fifth year shown. The simulator lets you open any year and see what happened in it.</p>
-    </div>
-  );
-}
-
-function FeatureTabs({ plan }: { plan: Plan }) {
-  const frame = (label: string, node: ReactNode) => (
-    <DeviceFrame label={label} className="mx-auto max-w-5xl" chrome={<Mark size={16} animate={false} />}>
-      {node}
-    </DeviceFrame>
-  );
-  return (
-    <TabsMorph
-      label="Planner features"
-      tabs={[
-        { id: 'goals', label: 'Goals', icon: <Target size={15} aria-hidden />, content: frame('Goals · sample plan', <div className="p-5 sm:p-8"><GoalTimeline goals={plan.goalViews} /></div>) },
-        { id: 'sim', label: 'Simulator', icon: <LineChart size={15} aria-hidden />, content: frame('Simulator · year by year', <YearTable plan={plan} />) },
-        { id: 'risk', label: 'Risk lab', icon: <FlaskConical size={15} aria-hidden />, content: frame('Risk lab · Monte Carlo', <Suspense fallback={panelFallback}><RiskPanel plan={plan} /></Suspense>) },
-        { id: 'coach', label: 'Coach', icon: <MessageSquareText size={15} aria-hidden />, content: frame('Coach · your numbers', <Suspense fallback={panelFallback}><CoachPanel plan={plan} /></Suspense>) },
-      ]}
-    />
-  );
-}
-
-/* ---------- Engine diagram: inputs → one projection → outputs, joined by animated beams ---------- */
-
-function Node({ icon, label, nodeRef }: { icon: ReactNode; label: string; nodeRef: RefObject<HTMLDivElement> }) {
-  return (
-    <div ref={nodeRef} className="frame-glass relative z-10 flex items-center gap-2.5 !rounded-2xl px-4 py-3 text-[13px] font-medium text-evergreen">
-      <span className="text-forest">{icon}</span>
-      {label}
-    </div>
-  );
-}
-
-function EngineDiagram({ year }: { year: number }) {
-  const box = useRef<HTMLDivElement>(null);
-  const core = useRef<HTMLDivElement>(null);
-  const i1 = useRef<HTMLDivElement>(null);
-  const i2 = useRef<HTMLDivElement>(null);
-  const i3 = useRef<HTMLDivElement>(null);
-  const i4 = useRef<HTMLDivElement>(null);
-  const o1 = useRef<HTMLDivElement>(null);
-  const o2 = useRef<HTMLDivElement>(null);
-  const o3 = useRef<HTMLDivElement>(null);
-  const o4 = useRef<HTMLDivElement>(null);
-  const inputs = [
-    { ref: i1, label: 'CTC and tax regime', icon: <IndianRupee size={15} aria-hidden /> },
-    { ref: i2, label: 'Rent and spending', icon: <Wallet size={15} aria-hidden /> },
-    { ref: i3, label: 'Loans and EMIs', icon: <Landmark size={15} aria-hidden /> },
-    { ref: i4, label: 'Goals and life events', icon: <CalendarRange size={15} aria-hidden /> },
-  ];
-  const outputs = [
-    { ref: o1, label: 'Take-home and tax', icon: <Receipt size={15} aria-hidden /> },
-    { ref: o2, label: 'Net worth each year', icon: <TrendingUp size={15} aria-hidden /> },
-    { ref: o3, label: 'Goal funding', icon: <Target size={15} aria-hidden /> },
-    { ref: o4, label: 'FI age and odds', icon: <Mountain size={15} aria-hidden /> },
-  ];
-  return (
-    <Frame size="xl" className="overflow-hidden p-6 sm:p-10 lg:p-14">
-      <div ref={box} className="relative grid items-center gap-8 md:grid-cols-[1fr_auto_1fr] md:gap-16">
-        <div className="flex flex-col gap-4">
-          {inputs.map((n) => (
-            <Node key={n.label} nodeRef={n.ref} icon={n.icon} label={n.label} />
-          ))}
-        </div>
-        <div ref={core} className="relative z-10 mx-auto grid h-44 w-44 place-items-center rounded-full bg-[rgb(var(--card))] text-center shadow-[0_0_0_1px_var(--frame-line),var(--edge-highlight),0_0_80px_-10px_var(--glow-accent)]">
-          <div>
-            <Mark size={40} animate={false} />
-            <p className="mt-3 text-[13px] font-semibold text-evergreen">One projection</p>
-            <p className="num text-[11.5px] text-grey">monthly, to {year}</p>
-          </div>
-        </div>
-        <div className="flex flex-col gap-4">
-          {outputs.map((n) => (
-            <Node key={n.label} nodeRef={n.ref} icon={n.icon} label={n.label} />
-          ))}
-        </div>
-        <div className="hidden md:contents">
-          {inputs.map((n, i) => (
-            <AnimatedBeam key={n.label} container={box} from={n.ref} to={core} curvature={(i - 1.5) * -30} delay={i * 0.4} />
-          ))}
-          {outputs.map((n, i) => (
-            <AnimatedBeam key={n.label} container={box} from={core} to={n.ref} curvature={(i - 1.5) * 30} delay={1.6 + i * 0.4} />
-          ))}
-        </div>
-      </div>
-    </Frame>
   );
 }

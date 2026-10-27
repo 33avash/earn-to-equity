@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useSearchParams } from 'react-router-dom';
-import { ChevronRight, Menu, Search, Settings, PanelLeftClose, PanelLeftOpen, Sparkles, LayoutDashboard, Target, LineChart, MessageSquareText, MoreHorizontal } from 'lucide-react';
+import { ChevronRight, Menu, Search, Settings, PanelLeftClose, PanelLeftOpen, Sparkles, LayoutDashboard, Target, Route, MessageSquareText, MoreHorizontal, SlidersHorizontal } from 'lucide-react';
 import { Wordmark } from './Wordmark';
-import { APP_NAV, MODULE_GROUPS } from './nav';
+import { ADVANCED_NAV, APP_NAV, MODULE_GROUPS, SIMPLE_NAV, isAdvancedPath, type NavItem } from './nav';
 import { CommandPalette, PlanSwitcher, ThemeToggle, useCommandShortcut } from './ShellControls';
 import { useStore } from '@/state/store';
 import { Button } from '@/components/ui/Button';
@@ -23,31 +23,59 @@ const navItem = (active: boolean, collapsed: boolean) =>
     active ? 'font-medium text-evergreen' : 'text-charcoal/80 hover:bg-muted/50 hover:text-evergreen'
   }`;
 
+function NavList({ items, collapsed, onNavigate, pill, reduce }: { items: NavItem[]; collapsed: boolean; onNavigate?: () => void; pill: string; reduce: boolean | null }) {
+  return (
+    <ul className="flex flex-col gap-px">
+      {items.map(({ to, label, icon: Icon, end }) => (
+        <li key={to}>
+          <NavLink to={to} end={end} onClick={onNavigate} title={collapsed ? label : undefined} aria-label={collapsed ? label : undefined} className={({ isActive }) => navItem(isActive, collapsed)}>
+            {({ isActive }) => (
+              <>
+                {isActive && <motion.span layoutId={reduce ? undefined : pill} className="absolute inset-0 rounded-lg bg-muted shadow-[0_0_0_1px_var(--frame-line),var(--edge-highlight)]" transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
+                <Icon size={16} strokeWidth={1.75} aria-hidden className={`relative shrink-0 ${isActive ? 'text-forest' : ''}`} />
+                {!collapsed && <span className="relative">{label}</span>}
+              </>
+            )}
+          </NavLink>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Simple mode shows five screens; "Advanced tools" adds the rest underneath. */
 function NavItems({ collapsed = false, onNavigate, pill = 'nav-pill' }: { collapsed?: boolean; onNavigate?: () => void; pill?: string }) {
   const reduce = useReducedMotion();
+  const advanced = useStore((s) => s.settings.navMode === 'advanced');
   return (
     <nav aria-label="Application" className="flex flex-col gap-5">
-      {APP_NAV.map((g) => (
-        <div key={g.group}>
-          {collapsed ? <div className="mx-auto mb-2 h-px w-6 bg-line" aria-hidden /> : <p className="mb-1 px-2.5 text-[11px] font-medium text-grey">{g.group}</p>}
-          <ul className="flex flex-col gap-px">
-            {g.items.map(({ to, label, icon: Icon, end }) => (
-              <li key={to}>
-                <NavLink to={to} end={end} onClick={onNavigate} title={collapsed ? label : undefined} aria-label={collapsed ? label : undefined} className={({ isActive }) => navItem(isActive, collapsed)}>
-                  {({ isActive }) => (
-                    <>
-                      {isActive && <motion.span layoutId={reduce ? undefined : pill} className="absolute inset-0 rounded-lg bg-muted shadow-[0_0_0_1px_var(--frame-line),var(--edge-highlight)]" transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
-                      <Icon size={16} strokeWidth={1.75} aria-hidden className={`relative shrink-0 ${isActive ? 'text-forest' : ''}`} />
-                      {!collapsed && <span className="relative">{label}</span>}
-                    </>
-                  )}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
+      <NavList items={SIMPLE_NAV} collapsed={collapsed} onNavigate={onNavigate} pill={pill} reduce={reduce} />
+      {advanced && (
+        <div>
+          {collapsed ? <div className="mx-auto mb-2 h-px w-6 bg-line" aria-hidden /> : <p className="mb-1 px-2.5 text-[11px] font-medium text-grey">Advanced tools</p>}
+          <NavList items={ADVANCED_NAV} collapsed={collapsed} onNavigate={onNavigate} pill={pill} reduce={reduce} />
         </div>
-      ))}
+      )}
     </nav>
+  );
+}
+
+/** The sidebar switch between simple and advanced navigation. */
+function AdvancedToggle({ collapsed = false }: { collapsed?: boolean }) {
+  const advanced = useStore((s) => s.settings.navMode === 'advanced');
+  const setSettings = useStore((s) => s.setSettings);
+  return (
+    <button type="button" aria-pressed={advanced} onClick={() => setSettings({ navMode: advanced ? 'simple' : 'advanced' })} className={navItem(false, collapsed)} title={collapsed ? 'Advanced tools' : undefined} aria-label={collapsed ? 'Advanced tools' : undefined}>
+      <SlidersHorizontal size={16} aria-hidden />
+      {!collapsed && (
+        <>
+          <span className="flex-1 text-left">Advanced tools</span>
+          <span aria-hidden className={`relative h-4 w-7 rounded-full transition-colors ${advanced ? 'bg-forest' : 'bg-line'}`}>
+            <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-surface shadow transition-transform ${advanced ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
+          </span>
+        </>
+      )}
+    </button>
   );
 }
 
@@ -101,6 +129,7 @@ export function AppShell() {
     setSearch(next, { replace: true });
   }, [search, setSearch, setFixOpen]);
   const [group, page] = crumbs(pathname);
+  const advancedPage = useStore((s) => s.settings.navMode === 'simple') && isAdvancedPath(pathname);
 
   useEffect(() => {
     setDrawer(false);
@@ -141,6 +170,7 @@ export function AppShell() {
           <NavItems collapsed={collapsed} />
         </div>
         <div className="flex flex-col gap-px border-t border-line px-3 py-3">
+          <AdvancedToggle collapsed={collapsed} />
           <SettingsLink collapsed={collapsed} />
           <button type="button" onClick={toggleCollapsed} className={navItem(false, collapsed)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
             {collapsed ? <PanelLeftOpen size={16} aria-hidden /> : <PanelLeftClose size={16} aria-hidden />}
@@ -160,7 +190,8 @@ export function AppShell() {
             <PlanSwitcher />
             <NavItems onNavigate={() => setDrawer(false)} pill="nav-pill-drawer" />
           </div>
-          <div className="border-t border-line pt-3">
+          <div className="flex flex-col gap-px border-t border-line pt-3">
+            <AdvancedToggle />
             <SettingsLink onNavigate={() => setDrawer(false)} />
           </div>
         </SheetContent>
@@ -177,6 +208,7 @@ export function AppShell() {
               <span className="hidden text-grey sm:inline">{group}</span>
               <ChevronRight size={14} className="hidden text-grey sm:inline" aria-hidden />
               <span className="truncate font-medium text-evergreen">{page}</span>
+              {advancedPage && <span className="ml-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-grey">Advanced</span>}
             </p>
             <div className="ml-auto flex items-center gap-2">
               <button
@@ -230,7 +262,7 @@ function MobileTabBar({ onMore, onCoach, onCoachPage }: { onMore: () => void; on
   const tabs = [
     { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true },
     { to: '/app/goals', label: 'Goals', icon: Target },
-    { to: '/app/simulator', label: 'Simulator', icon: LineChart },
+    { to: '/app/plan', label: 'My plan', icon: Route },
   ];
   return (
     <nav aria-label="Quick navigation" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden">

@@ -7,11 +7,18 @@ import { MicroLessons } from '@/features/landing/MicroLessons';
 import { SectionHead } from '@/components/ui/Misc';
 import { useStore } from '@/state/store';
 import { useExploreDemo } from '@/state/useDemo';
+import { useMemo } from 'react';
+import { computePlan } from '@/state/selectors';
+import { DEFAULT_ASSUMPTIONS, demoProfile } from '@/state/demo';
+import { Frame } from '@/components/ui/Misc';
+import { SipPreview } from '@/features/sip/SipPreview';
+import { LifeScenarios } from '@/features/landing/LifeScenarios';
 
 export default function LearnPublic() {
   const hasPlan = useStore((s) => s.hasPlan);
   const explore = useExploreDemo();
   const open = (id: string) => explore(`/app/learn/${id}`, true);
+  const sample = useMemo(() => computePlan(demoProfile(), DEFAULT_ASSUMPTIONS), []);
   return (
     <>
       <PublicHero
@@ -29,6 +36,24 @@ export default function LearnPublic() {
           <p>Live widgets on the planner’s own engine, each with a one-question check. The full lessons follow below.</p>
         </SectionHead>
         <MicroLessons />
+      </section>
+
+      <section aria-labelledby="sip-h" className="container-x pb-24 lg:pb-32">
+        <SectionHead id="sip-h" title={<>What could ₹10,000 a month <span className="serif-accent">become?</span></>}>
+          <p>Drag the sliders. The chart splits what you put in from what compounding adds.</p>
+        </SectionHead>
+        <Frame size="xl" className="p-6 sm:p-10 lg:p-12">
+          <SipPreview />
+        </Frame>
+      </section>
+
+      <section aria-labelledby="scen-h" className="container-x pb-24 lg:pb-32">
+        <SectionHead id="scen-h" title={<>What-if, <span className="serif-accent">in rupees</span></>}>
+          <p>Three changes to the sample plan, each measured in {sample.headline.year} net worth in today’s rupees.</p>
+        </SectionHead>
+        <Frame size="xl" className="p-6 sm:p-10 lg:p-12">
+          <LifeScenarios plan={sample} />
+        </Frame>
       </section>
 
       <div className="container-x">

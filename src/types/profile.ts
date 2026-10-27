@@ -208,6 +208,8 @@ export interface FinancialProfile {
     regularPlanShare?: number;
   };
   lifeEvents: LifeEvent[];
+  /** Built from the five-question quick start: optional details still hold defaults. */
+  quickStart?: boolean;
 }
 
 export type RiskProfile = 'conservative' | 'balanced' | 'growth' | 'aggressive';

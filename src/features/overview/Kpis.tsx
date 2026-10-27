@@ -1,6 +1,7 @@
 import { ScoreRing } from '@/components/ui/ScoreRing';
 import { Link } from 'react-router-dom';
-import { ArrowDownRight, ArrowUpRight, ArrowRight, Check } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, ArrowRight, Check, Info } from 'lucide-react';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { kpis, monthWaterfall, useMoney, type Kpi, type Plan } from '@/state/selectors';
 import { useStore } from '@/state/store';
 import { formatPct } from '@/finance/money';
@@ -55,10 +56,22 @@ export function KpiStrip({ plan }: { plan: Plan }) {
   return (
     <ul className="bezel grid grid-cols-2 overflow-hidden sm:grid-cols-3 lg:grid-cols-5">
       {items.map((k) => (
-        <li key={k.key} className="border-b border-r border-line max-sm:last:odd:col-span-2 max-sm:[&:nth-child(2n)]:border-r-0 sm:max-lg:[&:nth-child(3n)]:border-r-0 lg:border-b-0 lg:last:border-r-0">
-          <Link to={links[k.key]} className="group flex h-full flex-col gap-3 p-4 transition-colors hover:bg-muted/40 sm:p-5">
+        <li key={k.key} className="group relative border-b border-r border-line transition-colors hover:bg-muted/40 max-sm:last:odd:col-span-2 max-sm:[&:nth-child(2n)]:border-r-0 sm:max-lg:[&:nth-child(3n)]:border-r-0 lg:border-b-0 lg:last:border-r-0">
+          <div className="flex h-full flex-col gap-3 p-4 sm:p-5">
             <span className="flex items-center justify-between text-[12.5px] font-medium text-grey">
-              {k.label}
+              <span className="flex items-center gap-1">
+                {/* The label is the link; it stretches over the whole tile. */}
+                <Link to={links[k.key]} className="after:absolute after:inset-0 after:content-['']">
+                  {k.label}
+                </Link>
+                {k.hint && (
+                  <span className="relative z-10">
+                    <Tooltip content={k.hint} label={`What “${k.label}” means`}>
+                      <Info size={12} aria-hidden />
+                    </Tooltip>
+                  </span>
+                )}
+              </span>
               <ArrowRight size={13} className="opacity-0 transition-opacity group-hover:opacity-100" aria-hidden />
             </span>
             <span className="flex flex-wrap items-end justify-between gap-x-2 gap-y-3">
@@ -69,7 +82,7 @@ export function KpiStrip({ plan }: { plan: Plan }) {
               {k.kind === 'score' && k.value !== null ? <ScoreRing score={k.value} size={40} stroke={3.5} showValue={false} /> : <Sparkline values={k.spark} className="hidden shrink-0 text-forest sm:block" />}
             </span>
             <DeltaChip k={k} money={money} />
-          </Link>
+          </div>
         </li>
       ))}
     </ul>
@@ -87,7 +100,7 @@ export function MonthWaterfall({ plan }: { plan: Plan }) {
   const colors: Record<string, string> = { income: t.chart[0], essential: t.chart[1], lifestyle: t.chart[5], debt: t.chart[3], invest: t.chart[0], save: t.chart[2], left: t.muted };
   return (
     <div>
-      <ul className="flex flex-col gap-3" aria-label="This month, from take-home to unassigned">
+      <ul className="flex flex-col gap-3" aria-label="This month, from take-home to what is not yet given a job">
         {bars.map((b) => (
           <li key={b.key} className="grid grid-cols-[84px_1fr_auto] items-center gap-3 text-[13px]">
             <span className="text-grey">{b.label}</span>
@@ -100,7 +113,12 @@ export function MonthWaterfall({ plan }: { plan: Plan }) {
           </li>
         ))}
       </ul>
-      <p className="mt-4 text-xs text-grey">SIPs and savings are transfers to your future self, not spending.</p>
+      <p className="mt-4 flex items-center gap-1 text-xs text-grey">
+        SIPs and savings are transfers to your future self, not spending.
+        <Tooltip content="“Not yet given a job” is what’s left once SIPs and savings are taken out of “Left after bills”. Point it at a goal or your SIP, or it builds up as cash." label="What “Not yet given a job” means">
+          <Info size={12} aria-hidden />
+        </Tooltip>
+      </p>
     </div>
   );
 }

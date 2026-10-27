@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { FinancialProfile, Goal, GoalCategory, RiskProfile } from '@/types/profile';
 import { ASSET_CLASSES } from '@/types/profile';
@@ -92,7 +92,10 @@ export default function Onboarding() {
   const hasPlan = useStore((s) => s.hasPlan);
   const profile = useStore((s) => s.profile);
   const [p, setP] = useState<FinancialProfile>(() => stored.draft ?? (hasPlan && !isDemo ? structuredClone(profile) : blankProfile()));
-  const [step, setStep] = useState(stored.draft ? stored.step : 0);
+  const [params] = useSearchParams();
+  // ?step=N jumps to a step (from Overview's accuracy checklist).
+  const jump = Number(params.get('step'));
+  const [step, setStep] = useState(Number.isInteger(jump) && jump > 0 && jump < STEPS.length ? jump : stored.draft ? stored.step : 0);
   const [tried, setTried] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -129,7 +132,7 @@ export default function Onboarding() {
     }
     setGenerating(true);
     setTimeout(() => {
-      complete({ ...p, preferences: { ...p.preferences, horizonYears: 20 } });
+      complete({ ...p, quickStart: false, preferences: { ...p.preferences, horizonYears: 20 } });
       toast('Your wealth plan is ready.');
       navigate('/app');
     }, 450);
@@ -194,7 +197,7 @@ export default function Onboarding() {
 
         <main className="lg:col-span-9">
           <p className="num text-[13px] text-grey">
-            Step {step + 1} of {STEPS.length}
+            Detailed setup · step {step + 1} of {STEPS.length}
           </p>
           <h1 id="step-title" tabIndex={-1} className="display mt-3 text-[40px] leading-[1] outline-none sm:text-[56px]">
             <AccentTitle text={STEPS[step].title} />

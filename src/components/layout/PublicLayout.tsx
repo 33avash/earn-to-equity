@@ -1,3 +1,4 @@
+import { DISCLAIMER_SHORT } from '@/pages/public/Legal';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { ArrowRight, Search } from 'lucide-react';
@@ -159,7 +160,7 @@ export function Footer() {
         </p>
         <div className="relative border-t border-line/70">
           <p className="px-6 py-6 text-xs leading-relaxed text-grey sm:px-10 lg:px-14">
-            Earn to Equity is an educational tool, not a SEBI-registered investment adviser. Projections are estimates from assumptions you can change, not guarantees of future returns.
+            {DISCLAIMER_SHORT}
           </p>
         </div>
       </div>

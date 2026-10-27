@@ -1,6 +1,9 @@
 import { Bezel } from '@/components/ui/Misc';
 import { Reveal } from '@/components/motion/Motion';
 
+/** The one-line disclaimer used in the footer and the landing page. */
+export const DISCLAIMER_SHORT = 'Earn to Equity is an educational tool, not a SEBI-registered investment adviser. Projections are estimates from assumptions you can change, not guarantees of future returns.';
+
 export const DISCLAIMER_TEXT = [
   'Earn to Equity is an educational financial-planning prototype. It is not a SEBI-registered investment adviser, research analyst, stockbroker, insurance intermediary or tax practitioner, and it does not provide personalised investment, tax, legal or insurance advice.',
   'All projections are illustrative estimates produced from the information you enter and assumptions you can change, including returns, inflation, salary growth and withdrawal rates. Markets are volatile and actual outcomes will differ, sometimes materially. Past performance and assumed return distributions do not predict future results.',

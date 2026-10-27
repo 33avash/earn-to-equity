@@ -63,7 +63,7 @@ export function LifeScenarios({ plan }: { plan: Plan }) {
           />
         </div>
         <Disclaimer className="mt-4">
-          Illustrative. The fictional sample plan: a {p.about.age}-year-old earning {formatCompact(p.income.monthlyTakeHome)} a month, {formatPct(p.income.salaryGrowth, 0)} salary growth, {formatPct(plan.assumptions.inflation, 0)} inflation and a portfolio assumed to return {formatPct(plan.portfolioReturn)} a year, with an MBA, a wedding and a flat along the way.
+          Illustrative. The fictional sample plan: a {p.about.age}-year-old taking home {formatCompact(plan.cashflow.income)} a month, {formatPct(p.income.salaryGrowth, 0)} salary growth, {formatPct(plan.assumptions.inflation, 0)} inflation and a portfolio assumed to return {formatPct(plan.portfolioReturn)} a year, with an MBA, a wedding and a flat along the way.
         </Disclaimer>
       </div>
     </div>

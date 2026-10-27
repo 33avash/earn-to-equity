@@ -40,7 +40,10 @@ Earn to Equity puts all of that into one model. Every screen reads from the same
 There are two ways in:
 
 - **See the demo plan.** Loads a fictional profile (Riya, 26, a software analyst in Pune on ₹11.5 L CTC with 10% variable pay) so you can look around without typing anything. Her plan has gaps on purpose: a part-time MBA and a first car a year apart that savings can't both pay for, a short emergency reserve, a ₹22,000 credit-card balance at 36%, no employer NPS, and no term cover for the parents she supports. **Fix my plan** shows what closing them does. A banner across the top reminds you it is demo data.
-- **Build your plan.** An eight-step setup: about you, income and career, monthly cash flow, what you own and owe, protection (emergency fund and insurance), goals, investment mix, and a review. Every step says why it asks what it asks. Optional fields can be skipped, and anything can be changed later.
+- **Start in 2 minutes.** Five answers on one screen: age, CTC (or monthly take-home), city, monthly spending (rent can be split out) and one top goal. Everything else starts from defaults: the Labour Codes salary structure, the cheaper tax regime each year, a six-month emergency target. Overview then shows a **plan accuracy** meter and links to each missing detail, with how far it could move your FI age.
+- **Detailed setup.** The eight-step setup (`/start/detailed`): about you, income and career, monthly cash flow, what you own and owe, protection, goals, investment mix, and a review. Every step says why it asks what it asks.
+
+The planner opens in **simple mode**: Overview, Salary & offers, Goals, My plan and Learn. **Advanced tools** at the foot of the sidebar adds Budget, Emergency & debt, Portfolio, SIP, Life events, the full Simulator, Risk lab, Financial independence, Financial health and News. Search (⌘K) finds every screen in either mode.
 
 If you already have a plan and open the demo, your own plan is set aside, not overwritten. The plan switcher at the top of the sidebar brings it back.
 

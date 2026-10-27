@@ -302,6 +302,8 @@ export interface Kpi {
   note?: string;
   /** Shown in place of the value when it is null. */
   emptyLabel?: string;
+  /** Plain-language definition, shown as a tooltip. */
+  hint?: string;
 }
 
 /** The Overview KPI strip, read from the projection. */
@@ -313,7 +315,7 @@ export function kpis(plan: Plan): Kpi[] {
   const nw1 = sim.points[1].netWorth;
   return [
     { key: 'netWorth', label: 'Net worth', value: plan.sheet.netWorth, kind: 'money', spark: sim.points.slice(0, 11).map((p) => p.netWorth), delta: { value: nw1 - nw0, kind: 'money' }, note: 'in 12 months' },
-    { key: 'surplus', label: 'Monthly surplus', value: cf.investableSurplus, kind: 'money', spark: rows.map((r) => r.investableSurplus / 12), delta: sim.rows[1] ? { value: sim.rows[1].investableSurplus / 12 - cf.investableSurplus, kind: 'money' } : null, note: 'next year' },
+    { key: 'surplus', label: 'Left after bills', hint: 'Take-home minus essentials, lifestyle and EMIs.', value: cf.investableSurplus, kind: 'money', spark: rows.map((r) => r.investableSurplus / 12), delta: sim.rows[1] ? { value: sim.rows[1].investableSurplus / 12 - cf.investableSurplus, kind: 'money' } : null, note: 'next year' },
     { key: 'savingsRate', label: 'Savings rate', value: cf.savingsRate, kind: 'pct', spark: rows.map(rate), delta: sim.rows[1] ? { value: rate(sim.rows[1]) - cf.savingsRate, kind: 'pts' } : null, note: 'next year' },
     {
       key: 'fiAge',
@@ -348,7 +350,7 @@ export function monthWaterfall(plan: Plan) {
     running = s.kind === 'total' ? s.value : running + s.value;
     return { ...s, from: Math.min(start, running), to: Math.max(start, running) };
   });
-  bars.push({ key: 'left', label: 'Unassigned', value: running, kind: 'total', from: Math.min(0, running), to: Math.max(0, running) });
+  bars.push({ key: 'left', label: 'Not yet given a job', value: running, kind: 'total', from: Math.min(0, running), to: Math.max(0, running) });
   return bars;
 }
 

@@ -13,7 +13,10 @@ const Tools = lazy(() => import('@/pages/public/Tools'));
 const LearnPublic = lazy(() => import('@/pages/public/LearnPublic'));
 const Legal = lazy(() => import('@/pages/public/Legal'));
 const About = lazy(() => import('@/pages/public/About'));
+const Sources = lazy(() => import('@/pages/public/Sources'));
+const Faq = lazy(() => import('@/pages/public/Faq'));
 const Onboarding = lazy(() => import('@/features/onboarding/Onboarding'));
+const QuickStart = lazy(() => import('@/features/onboarding/QuickStart'));
 
 const Overview = lazy(() => import('@/pages/app/Overview'));
 const Health = lazy(() => import('@/pages/app/Health'));
@@ -31,6 +34,8 @@ const News = lazy(() => import('@/pages/app/News'));
 const Learn = lazy(() => import('@/pages/app/Learn'));
 const LearnModule = lazy(() => import('@/pages/app/LearnModule'));
 const Settings = lazy(() => import('@/pages/app/Settings'));
+const MyPlan = lazy(() => import('@/pages/app/MyPlan'));
+const Offers = lazy(() => import('@/pages/app/Offers'));
 
 /** Skeleton shaped like a page (heading, a row of figures, a chart) while a lazy route loads. */
 function Loading() {
@@ -85,12 +90,17 @@ export function App() {
           <Route path="sign-in" element={<Navigate to="/" replace />} />
           <Route path="legal" element={<S><Legal /></S>} />
           <Route path="about" element={<S><About /></S>} />
+          <Route path="sources" element={<S><Sources /></S>} />
+          <Route path="faq" element={<S><Faq /></S>} />
           <Route path="*" element={<NotFound />} />
         </Route>
-        <Route path="start" element={<S><Onboarding /></S>} />
+        <Route path="start" element={<S><QuickStart /></S>} />
+        <Route path="start/detailed" element={<S><Onboarding /></S>} />
         <Route path="app" element={<AppShell />}>
           <Route index element={<S><Overview /></S>} />
           <Route path="health" element={<S><Health /></S>} />
+          <Route path="plan" element={<S><MyPlan /></S>} />
+          <Route path="offers" element={<S><Offers /></S>} />
           <Route path="budget" element={<S><Budget /></S>} />
           <Route path="emergency-debt" element={<S><EmergencyDebt /></S>} />
           <Route path="goals" element={<S><Goals /></S>} />

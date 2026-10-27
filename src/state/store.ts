@@ -71,7 +71,8 @@ export interface AppState {
   /** A saved copy of the plan to compare against in the Wealth Simulator. */
   baseline: { profile: FinancialProfile; assumptions: Assumptions; savedAt: string; label: string } | null;
   onboarding: { step: number; draft: FinancialProfile | null };
-  settings: { compact: boolean; showRule503020: boolean };
+  /** navMode: simple (the default) shows five screens; advanced adds every tool to the sidebar. */
+  settings: { compact: boolean; showRule503020: boolean; navMode: 'simple' | 'advanced' };
   riskLab: RiskLabSettings;
   tax: TaxAssumptions;
   coach: CoachMessage[];
@@ -144,7 +145,7 @@ const initial = () => ({
   doneSteps: {} as Record<string, boolean>,
   baseline: null as AppState['baseline'],
   onboarding: { step: 0, draft: null },
-  settings: { compact: true, showRule503020: false },
+  settings: { compact: true, showRule503020: false, navMode: 'simple' as 'simple' | 'advanced' },
   riskLab: defaultRiskLab(),
   tax: structuredClone(DEFAULT_TAX),
   coach: [] as CoachMessage[],

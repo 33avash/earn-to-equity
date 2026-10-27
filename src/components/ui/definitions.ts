@@ -5,7 +5,7 @@ export const DEFINITIONS = {
   liabilities: 'Outstanding principal on all loans and credit cards.',
   income: 'Monthly take-home pay plus any other regular income, after tax and payroll deductions.',
   expenses: 'Essential and lifestyle spending. Money moved into savings or investments is a transfer, not an expense.',
-  surplus: 'Income left after living expenses and loan repayments. This is what you can save or invest each month.',
+  surplus: 'Left after bills: take-home minus essentials, lifestyle and EMIs. This is what you can save or invest each month.',
   savingsRate: 'Investable surplus as a share of income.',
   emergencyCoverage: 'How many months of essential expenses and EMIs your liquid savings could cover if income stopped.',
   portfolio: 'Current value of your investments across all asset classes (excluding EPF/PPF/NPS, which are shown as retirement savings).',
