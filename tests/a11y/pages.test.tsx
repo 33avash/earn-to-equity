@@ -51,6 +51,7 @@ const ROUTES = [
   '/app/risk-lab',
   '/app/fi',
   '/app/coach',
+  '/app/news',
   '/app/learn',
   '/app/learn/tax-awareness',
   '/app/settings',

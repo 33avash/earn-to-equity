@@ -1,8 +1,10 @@
 import { handleCoach, MAX_BODY } from '../server/handler';
+import { handleNews } from '../server/news';
 
 /**
  * The Gemini coach endpoint as a Cloudflare Worker, so the static GitHub Pages site can use Gemini without
- * exposing the key. Set the key with `npx wrangler secret put GEMINI_API_KEY`; see worker/README.md.
+ * exposing the key. Set the key with `npx wrangler secret put GEMINI_API_KEY`; see the README.
+ * GET /news returns the day's headlines from free RSS feeds, which need no key.
  */
 
 interface Env {
@@ -24,6 +26,10 @@ export default {
     if (request.method === 'OPTIONS') return new Response(null, { status: headers['Access-Control-Allow-Origin'] ? 204 : 403, headers });
     // Only the planner's own pages may spend the key's quota.
     if (!headers['Access-Control-Allow-Origin']) return Response.json({ error: 'origin-not-allowed' }, { status: 403 });
+    if (new URL(request.url).pathname.replace(/\/+$/, '').endsWith('/news')) {
+      const { status, body } = await handleNews(request.method);
+      return Response.json(body, { status, headers: { ...headers, 'Cache-Control': 'public, max-age=600' } });
+    }
     const raw = request.method === 'POST' ? (await request.text()).slice(0, MAX_BODY + 1) : '';
     const { status, body } = await handleCoach(request.method, raw, env.GEMINI_API_KEY, env.GEMINI_MODEL || undefined);
     return Response.json(body, { status, headers: { ...headers, 'Cache-Control': 'no-store' } });

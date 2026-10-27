@@ -6,6 +6,7 @@ import { DEFAULT_TAX, type TaxAssumptions } from '@/features/learn/tax';
 import type { EngineId } from '@/services/coach/engines/types';
 import { DEFAULT_WEBLLM_MODEL, WEBLLM_MODELS } from '@/services/coach/engines/webllm';
 import { DEFAULT_OLLAMA_MODEL } from '@/services/coach/engines/ollama';
+import { setFinnhubKey } from '@/services/news/client';
 import { DEFAULT_ASSUMPTIONS, blankProfile, demoProfile } from './demo';
 
 export interface CoachMessage {
@@ -193,7 +194,10 @@ export const useStore = create<AppState>()(
       setCoachSettings: (patch) => set((s) => ({ coachSettings: { ...s.coachSettings, ...patch } })),
       setCoachOpen: (open) => set({ coachOpen: open }),
       setLearnScore: (id, score) => set((s) => ({ learnProgress: { ...s.learnProgress, [id]: Math.max(score, s.learnProgress[id] ?? 0) } })),
-      clearAll: () => set({ ...initial() }),
+      clearAll: () => {
+        setFinnhubKey('');
+        set({ ...initial() });
+      },
     }),
     {
       name: 'e2e:v1',

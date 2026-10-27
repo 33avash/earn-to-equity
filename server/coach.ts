@@ -1,8 +1,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { handleCoach, MAX_BODY } from './handler';
+import { handleNews } from './news';
 
 /**
- * The Gemini coach endpoint for the Vite dev and preview servers, mounted at /api/coach (see vite.config.ts).
+ * The Gemini coach endpoint for the Vite dev and preview servers, mounted at /api/coach (see vite.config.ts),
+ * and the day's headlines at /api/news.
  * The key is read from GEMINI_API_KEY in .env. For the hosted site, deploy worker/coach.ts instead.
  */
 
@@ -42,6 +44,13 @@ export function coachMiddleware(apiKey: string | undefined, model?: string) {
       }
     }
     const { status, body } = await handleCoach(req.method ?? 'GET', raw, apiKey, model);
+    send(res, status, body);
+  };
+}
+
+export function newsMiddleware() {
+  return async (req: IncomingMessage, res: ServerResponse) => {
+    const { status, body } = await handleNews(req.method ?? 'GET');
     send(res, status, body);
   };
 }

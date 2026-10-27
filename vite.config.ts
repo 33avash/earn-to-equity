@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'node:path';
-import { coachMiddleware } from './server/coach';
+import { coachMiddleware, newsMiddleware } from './server/coach';
 
 export default defineConfig(({ mode }) => {
   // Server-only env: GEMINI_API_KEY is read here and never exposed to the client bundle
@@ -16,9 +16,11 @@ export default defineConfig(({ mode }) => {
         name: 'e2e-coach-api',
         configureServer(server) {
           server.middlewares.use('/api/coach', coachMiddleware(env.GEMINI_API_KEY, env.GEMINI_MODEL || undefined));
+          server.middlewares.use('/api/news', newsMiddleware());
         },
         configurePreviewServer(server) {
           server.middlewares.use('/api/coach', coachMiddleware(env.GEMINI_API_KEY, env.GEMINI_MODEL || undefined));
+          server.middlewares.use('/api/news', newsMiddleware());
         },
       },
     ],

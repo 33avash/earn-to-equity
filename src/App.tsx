@@ -27,6 +27,7 @@ const LifeEvents = lazy(() => import('@/pages/app/LifeEvents'));
 const RiskLab = lazy(() => import('@/pages/app/RiskLab'));
 const Fi = lazy(() => import('@/pages/app/Fi'));
 const Coach = lazy(() => import('@/pages/app/Coach'));
+const News = lazy(() => import('@/pages/app/News'));
 const Learn = lazy(() => import('@/pages/app/Learn'));
 const LearnModule = lazy(() => import('@/pages/app/LearnModule'));
 const Settings = lazy(() => import('@/pages/app/Settings'));
@@ -100,6 +101,7 @@ export function App() {
           <Route path="risk-lab" element={<S><RiskLab /></S>} />
           <Route path="fi" element={<S><Fi /></S>} />
           <Route path="coach" element={<S><Coach /></S>} />
+          <Route path="news" element={<S><News /></S>} />
           <Route path="learn" element={<S><Learn /></S>} />
           <Route path="learn/:id" element={<S><LearnModule /></S>} />
           <Route path="settings" element={<S><Settings /></S>} />

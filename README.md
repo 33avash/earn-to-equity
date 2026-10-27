@@ -59,11 +59,13 @@ Press **⌘K** (or **Ctrl+K**) anywhere to search pages, lessons, glossary terms
 
 ## What the planner does
 
-The planner lives at `/app` and has thirteen modules in four groups.
+The planner lives at `/app` and has fourteen modules in four groups.
 
 ### Today
 
 **Overview.** Net worth, monthly surplus, savings rate, FI age and plan health, each with a small trend line and the change expected over the next year. Below that: the 20-year net-worth chart in both future and today's rupees with your life events marked on it, a breakdown of this month's take-home (essentials, lifestyle, EMIs, SIPs, savings, and whatever is left unassigned), and a short list of next steps you can tick off. If a goal can't be paid for, a warning at the top says which one, by how much, and links to the fix.
+
+**News.** The day's Indian money headlines from Economic Times, ET Wealth, Mint, Business Standard and the RBI, newest first, split into today and earlier (Indian time). Each headline is tagged markets, rates and loans, tax, investing, property or global, can be filtered by topic, and links to the planner screen it affects: a repo-rate change to your loans and EMIs, a tax change to your take-home pay, a market fall to your allocation. Global market headlines are optional: paste a free [Finnhub](https://finnhub.io/register) API key on the page. The key is checked once, kept in your browser and sent only to Finnhub.
 
 **Financial health.** A score from 0 to 100 built from six parts. The rule for each part is shown on the page:
 
@@ -308,6 +310,10 @@ Then add the worker's URL (for example `https://earn-to-equity-coach.<you>.worke
 
 **Ollama.** Install [Ollama](https://ollama.com), run `ollama pull gemma3:4b`, then switch on **Use Ollama on this computer** in the coach's AI settings. To use it from the hosted site rather than `localhost`, start Ollama with `OLLAMA_ORIGINS=https://33avash.github.io`.
 
+### Optional: news on the live site
+
+Indian headlines come from the publishers' RSS feeds, which need no key but can't be read by a browser on another site. `server/news.ts` fetches and merges them; the dev and preview servers mount it at `/api/news`, and the Cloudflare Worker serves it at `/news`. Once the worker is deployed and `COACH_API_URL` is set, the hosted site uses it automatically (or set `VITE_NEWS_API_URL` to point elsewhere). Results are cached for 10 minutes. Without the worker, the News page still offers Finnhub's global headlines with a reader's own key.
+
 ## Project layout
 
 ```
@@ -319,11 +325,11 @@ src/
   types/        The FinancialProfile model and simulation types.
   components/   UI primitives, charts, layout (public site and planner shell) and motion helpers.
   features/     Larger pieces: onboarding, editors, the coach chat and side panel, landing-page sections, lessons.
-  pages/        The public pages and the thirteen planner screens.
-  services/     The coach (rule-based answers, prompt, retrieval, figure check and model engines) and data export.
+  pages/        The public pages and the fourteen planner screens.
+  services/     The coach (rule-based answers, prompt, retrieval, figure check and model engines), news clients and data export.
   theme/        Light, dark and system theme handling.
-server/         The optional Gemini handler (shared logic, plus the dev/preview middleware).
-worker/         The same handler as a Cloudflare Worker, for Gemini on the live site.
+server/         The optional Gemini and news handlers (shared logic, plus the dev/preview middleware).
+worker/         The same handlers as a Cloudflare Worker, for Gemini and news on the live site.
 tests/          Engine, accessibility and copy tests.
 docs/           Screenshots used in this README.
 ```
@@ -332,11 +338,12 @@ Built with React 18, TypeScript, Vite, Tailwind CSS, Radix UI, Recharts, Zustand
 
 ## Tests
 
-`npm test` runs 266 tests across nine files:
+`npm test` runs 272 tests across ten files:
 
 - **Engine (`tests/finance`).** Formula checks for tax, EMIs, SIPs and inflation; invariants that must always hold, such as net worth equalling assets minus liabilities in every year and a zero-return run giving back exactly what was put in; goal funding, shortfalls and linked events; and a saved snapshot of the demo plan's 21-point projection, so any change to the numbers is caught and has to be reviewed on purpose.
 - **Accessibility (`tests/a11y`).** Every public page and planner screen, and the coach side panel, is rendered and checked with axe in both light and dark themes, and colour contrast is computed from the theme tokens (at least 4.5:1 for text and 3:1 for controls).
 - **Coach (`tests/coach`).** The figure check (accepts quoted figures in any rupee format, flags invented ones, passes every figure in the engine's own answers), the prompt (facts added for recognised questions, history trimmed, no name in the context), reference retrieval, the order engines are chosen in, and answer formatting.
+- **News (`tests/news`).** RSS parsing (CDATA, HTML entities, http links upgraded, routine RBI notices dropped), merging duplicates across publishers, topic tagging and the Indian-time cut-off for today.
 - **Copy (`tests/copy`).** Fails the build if retired taglines or banned words come back into the interface.
 
 ## Deployment

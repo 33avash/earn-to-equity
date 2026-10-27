@@ -1,4 +1,4 @@
-import { LayoutDashboard, HeartPulse, Wallet, ShieldCheck, Target, PieChart, Repeat, LineChart, CalendarRange, FlaskConical, Mountain, MessageSquareText, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, HeartPulse, Wallet, ShieldCheck, Target, PieChart, Repeat, LineChart, CalendarRange, FlaskConical, Mountain, MessageSquareText, GraduationCap, Newspaper } from 'lucide-react';
 
 /**
  * Sidebar navigation, grouped the way people use it: today's money, the plan, what-ifs, and learning.
@@ -9,6 +9,7 @@ export const APP_NAV = [
     group: 'Today',
     items: [
       { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true },
+      { to: '/app/news', label: 'Today’s news', icon: Newspaper },
       { to: '/app/budget', label: 'Budget', icon: Wallet },
       { to: '/app/emergency-debt', label: 'Emergency & debt', icon: ShieldCheck },
     ],
